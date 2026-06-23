@@ -1,0 +1,2 @@
+- [Express 5 params typing](express5-params.md) — Express 5 types req.params values as `string | string[]`; always cast before using in Drizzle eq().
+- [Orval base URL + route prefix](orval-route-prefix.md) — Orval prepends `/api` (baseUrl in orval.config.ts); Express router mounts at `/api`; routes must start with `/v1/...`.

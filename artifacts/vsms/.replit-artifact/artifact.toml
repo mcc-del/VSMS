@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Volunteer Service Management System"
+version = "1.0.0"
+id = "artifacts/vsms"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19450
+
+[services.development]
+run = "pnpm --filter @workspace/vsms run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/vsms", "run", "build" ]
+publicDir = "artifacts/vsms/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19450"
+BASE_PATH = "/"

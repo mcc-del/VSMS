@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Volunteer Service Management System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: events
+    description: Calendar event operations
+  - name: submissions
+    description: Volunteer submission operations
+  - name: supervisor
+    description: Supervisor operations
+  - name: admin
+    description: Admin operations
+  - name: dashboard
+    description: Dashboard operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,376 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /v1/auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new participant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user info
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List all calendar events
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create a new event (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "403":
+          description: Forbidden
+
+  /v1/events/{eventId}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get a single event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "404":
+          description: Not found
+
+    delete:
+      operationId: deleteEvent
+      tags: [events]
+      summary: Delete an event (admin only)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "403":
+          description: Forbidden
+
+  /v1/submissions:
+    get:
+      operationId: listMySubmissions
+      tags: [submissions]
+      summary: List the current participant's submissions
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Submission"
+
+    post:
+      operationId: claimHours
+      tags: [submissions]
+      summary: Claim hours for a past event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmissionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already claimed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/supervisor/submissions:
+    get:
+      operationId: listPendingSubmissions
+      tags: [supervisor]
+      summary: List all pending submissions (supervisor/admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubmissionDetail"
+
+  /v1/supervisor/submissions/{submissionId}/review:
+    put:
+      operationId: reviewSubmission
+      tags: [supervisor]
+      summary: Approve or reject a submission
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/supervisor/history:
+    get:
+      operationId: listReviewedSubmissions
+      tags: [supervisor]
+      summary: List reviewed submissions (supervisor/admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubmissionDetail"
+
+  /v1/admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      summary: List all users (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserProfile"
+
+    post:
+      operationId: createUser
+      tags: [admin]
+      summary: Create a user with a specific role (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateUserInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Validation error
+
+  /v1/admin/users/{userId}:
+    delete:
+      operationId: deleteUser
+      tags: [admin]
+      summary: Delete a user (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /v1/admin/submissions/{submissionId}/override:
+    put:
+      operationId: overrideSubmission
+      tags: [admin]
+      summary: Override a submission status (admin only)
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OverrideInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /v1/dashboard/participant:
+    get:
+      operationId: getParticipantDashboard
+      tags: [dashboard]
+      summary: Get participant dashboard summary
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParticipantDashboard"
+
+  /v1/dashboard/supervisor:
+    get:
+      operationId: getSupervisorDashboard
+      tags: [dashboard]
+      summary: Get supervisor dashboard summary
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupervisorDashboard"
+
+  /v1/dashboard/admin:
+    get:
+      operationId: getAdminDashboard
+      tags: [dashboard]
+      summary: Get admin dashboard summary
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDashboard"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +415,262 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+      required:
+        - status
+        - message
+
+    RegisterInput:
+      type: object
+      required: [firstName, lastName, email, password]
+      properties:
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [token, role, firstName]
+      properties:
+        token:
+          type: string
+        role:
+          type: string
+        firstName:
+          type: string
+        userId:
+          type: string
+
+    UserProfile:
+      type: object
+      required: [userId, email, firstName, lastName, role, createdAt]
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+        createdAt:
+          type: string
+
+    AdminCreateUserInput:
+      type: object
+      required: [firstName, lastName, email, password, role]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 8
+        role:
+          type: string
+
+    Event:
+      type: object
+      required: [eventId, title, description, eventDate, hoursValue, maxCapacity, supervisorId]
+      properties:
+        eventId:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        eventDate:
+          type: string
+        hoursValue:
+          type: number
+        maxCapacity:
+          type: integer
+        supervisorId:
+          type: string
+        supervisorName:
+          type: ["string", "null"]
+        registrationCount:
+          type: integer
+
+    EventInput:
+      type: object
+      required: [title, description, eventDate, hoursValue, maxCapacity, supervisorId]
+      properties:
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        eventDate:
+          type: string
+        hoursValue:
+          type: number
+        maxCapacity:
+          type: integer
+        supervisorId:
+          type: string
+
+    Submission:
+      type: object
+      required: [submissionId, eventId, userId, status, submittedAt]
+      properties:
+        submissionId:
+          type: string
+        eventId:
+          type: string
+        userId:
+          type: string
+        status:
+          type: string
+        supervisorComments:
+          type: ["string", "null"]
+        submittedAt:
+          type: string
+        reviewedAt:
+          type: ["string", "null"]
+        eventTitle:
+          type: ["string", "null"]
+        eventDate:
+          type: ["string", "null"]
+        hoursValue:
+          type: ["number", "null"]
+
+    SubmissionDetail:
+      type: object
+      required: [submissionId, eventId, userId, status, submittedAt]
+      properties:
+        submissionId:
+          type: string
+        eventId:
+          type: string
+        userId:
+          type: string
+        status:
+          type: string
+        supervisorComments:
+          type: ["string", "null"]
+        submittedAt:
+          type: string
+        reviewedAt:
+          type: ["string", "null"]
+        eventTitle:
+          type: ["string", "null"]
+        eventDate:
+          type: ["string", "null"]
+        hoursValue:
+          type: ["number", "null"]
+        participantFirstName:
+          type: ["string", "null"]
+        participantLastName:
+          type: ["string", "null"]
+        participantEmail:
+          type: ["string", "null"]
+
+    SubmissionInput:
+      type: object
+      required: [eventId]
+      properties:
+        eventId:
+          type: string
+
+    ReviewInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+        comments:
+          type: ["string", "null"]
+
+    OverrideInput:
+      type: object
+      required: [status, comments]
+      properties:
+        status:
+          type: string
+        comments:
+          type: string
+
+    ParticipantDashboard:
+      type: object
+      required: [totalApprovedHours, pendingCount, approvedCount, rejectedCount]
+      properties:
+        totalApprovedHours:
+          type: number
+        pendingCount:
+          type: integer
+        approvedCount:
+          type: integer
+        rejectedCount:
+          type: integer
+
+    SupervisorDashboard:
+      type: object
+      required: [pendingCount, approvedCount, rejectedCount]
+      properties:
+        pendingCount:
+          type: integer
+        approvedCount:
+          type: integer
+        rejectedCount:
+          type: integer
+
+    AdminDashboard:
+      type: object
+      required: [totalUsers, totalEvents, totalSubmissions, pendingSubmissions, approvedSubmissions, rejectedSubmissions]
+      properties:
+        totalUsers:
+          type: integer
+        totalEvents:
+          type: integer
+        totalSubmissions:
+          type: integer
+        pendingSubmissions:
+          type: integer
+        approvedSubmissions:
+          type: integer
+        rejectedSubmissions:
+          type: integer
+        participantCount:
+          type: integer
+        supervisorCount:
+          type: integer
