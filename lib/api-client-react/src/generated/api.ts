@@ -26,6 +26,9 @@ import type {
   ErrorResponse,
   Event,
   EventInput,
+  ExternalSubmission,
+  ExternalSubmissionDetail,
+  ExternalSubmissionInput,
   HealthStatus,
   LoginInput,
   OverrideInput,
@@ -1005,6 +1008,380 @@ export function useListReviewedSubmissions<TData = Awaited<ReturnType<typeof lis
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListReviewedSubmissionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListMyExternalSubmissionsUrl = () => {
+
+
+
+
+  return `/api/v1/external-submissions`
+}
+
+/**
+ * @summary List my external volunteer submissions (participant)
+ */
+export const listMyExternalSubmissions = async ( options?: RequestInit): Promise<ExternalSubmission[]> => {
+
+  return customFetch<ExternalSubmission[]>(getListMyExternalSubmissionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyExternalSubmissionsQueryKey = () => {
+    return [
+    `/api/v1/external-submissions`
+    ] as const;
+    }
+
+
+export const getListMyExternalSubmissionsQueryOptions = <TData = Awaited<ReturnType<typeof listMyExternalSubmissions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyExternalSubmissions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyExternalSubmissionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyExternalSubmissions>>> = ({ signal }) => listMyExternalSubmissions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyExternalSubmissions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyExternalSubmissionsQueryResult = NonNullable<Awaited<ReturnType<typeof listMyExternalSubmissions>>>
+export type ListMyExternalSubmissionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List my external volunteer submissions (participant)
+ */
+
+export function useListMyExternalSubmissions<TData = Awaited<ReturnType<typeof listMyExternalSubmissions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyExternalSubmissions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyExternalSubmissionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSubmitExternalActivityUrl = () => {
+
+
+
+
+  return `/api/v1/external-submissions`
+}
+
+/**
+ * @summary Submit an external volunteer activity (participant)
+ */
+export const submitExternalActivity = async (externalSubmissionInput: ExternalSubmissionInput, options?: RequestInit): Promise<ExternalSubmission> => {
+
+  return customFetch<ExternalSubmission>(getSubmitExternalActivityUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      externalSubmissionInput,)
+  }
+);}
+
+
+
+
+export const getSubmitExternalActivityMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitExternalActivity>>, TError,{data: BodyType<ExternalSubmissionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitExternalActivity>>, TError,{data: BodyType<ExternalSubmissionInput>}, TContext> => {
+
+const mutationKey = ['submitExternalActivity'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitExternalActivity>>, {data: BodyType<ExternalSubmissionInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitExternalActivity(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitExternalActivityMutationResult = NonNullable<Awaited<ReturnType<typeof submitExternalActivity>>>
+    export type SubmitExternalActivityMutationBody = BodyType<ExternalSubmissionInput>
+    export type SubmitExternalActivityMutationError = ErrorType<void>
+
+    /**
+ * @summary Submit an external volunteer activity (participant)
+ */
+export const useSubmitExternalActivity = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitExternalActivity>>, TError,{data: BodyType<ExternalSubmissionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitExternalActivity>>,
+        TError,
+        {data: BodyType<ExternalSubmissionInput>},
+        TContext
+      > => {
+      return useMutation(getSubmitExternalActivityMutationOptions(options));
+    }
+
+export const getListPendingExternalSubmissionsUrl = () => {
+
+
+
+
+  return `/api/v1/supervisor/external-submissions`
+}
+
+/**
+ * @summary List pending external submissions (supervisor/admin)
+ */
+export const listPendingExternalSubmissions = async ( options?: RequestInit): Promise<ExternalSubmissionDetail[]> => {
+
+  return customFetch<ExternalSubmissionDetail[]>(getListPendingExternalSubmissionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPendingExternalSubmissionsQueryKey = () => {
+    return [
+    `/api/v1/supervisor/external-submissions`
+    ] as const;
+    }
+
+
+export const getListPendingExternalSubmissionsQueryOptions = <TData = Awaited<ReturnType<typeof listPendingExternalSubmissions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPendingExternalSubmissions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPendingExternalSubmissionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPendingExternalSubmissions>>> = ({ signal }) => listPendingExternalSubmissions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPendingExternalSubmissions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPendingExternalSubmissionsQueryResult = NonNullable<Awaited<ReturnType<typeof listPendingExternalSubmissions>>>
+export type ListPendingExternalSubmissionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List pending external submissions (supervisor/admin)
+ */
+
+export function useListPendingExternalSubmissions<TData = Awaited<ReturnType<typeof listPendingExternalSubmissions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPendingExternalSubmissions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPendingExternalSubmissionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getReviewExternalSubmissionUrl = (externalSubmissionId: string,) => {
+
+
+
+
+  return `/api/v1/supervisor/external-submissions/${externalSubmissionId}/review`
+}
+
+/**
+ * @summary Approve or reject an external submission (supervisor/admin)
+ */
+export const reviewExternalSubmission = async (externalSubmissionId: string,
+    reviewInput: ReviewInput, options?: RequestInit): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getReviewExternalSubmissionUrl(externalSubmissionId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reviewInput,)
+  }
+);}
+
+
+
+
+export const getReviewExternalSubmissionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewExternalSubmission>>, TError,{externalSubmissionId: string;data: BodyType<ReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviewExternalSubmission>>, TError,{externalSubmissionId: string;data: BodyType<ReviewInput>}, TContext> => {
+
+const mutationKey = ['reviewExternalSubmission'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewExternalSubmission>>, {externalSubmissionId: string;data: BodyType<ReviewInput>}> = (props) => {
+          const {externalSubmissionId,data} = props ?? {};
+
+          return  reviewExternalSubmission(externalSubmissionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewExternalSubmissionMutationResult = NonNullable<Awaited<ReturnType<typeof reviewExternalSubmission>>>
+    export type ReviewExternalSubmissionMutationBody = BodyType<ReviewInput>
+    export type ReviewExternalSubmissionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Approve or reject an external submission (supervisor/admin)
+ */
+export const useReviewExternalSubmission = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewExternalSubmission>>, TError,{externalSubmissionId: string;data: BodyType<ReviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reviewExternalSubmission>>,
+        TError,
+        {externalSubmissionId: string;data: BodyType<ReviewInput>},
+        TContext
+      > => {
+      return useMutation(getReviewExternalSubmissionMutationOptions(options));
+    }
+
+export const getListReviewedExternalSubmissionsUrl = () => {
+
+
+
+
+  return `/api/v1/supervisor/external-history`
+}
+
+/**
+ * @summary List reviewed external submissions (supervisor/admin)
+ */
+export const listReviewedExternalSubmissions = async ( options?: RequestInit): Promise<ExternalSubmissionDetail[]> => {
+
+  return customFetch<ExternalSubmissionDetail[]>(getListReviewedExternalSubmissionsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListReviewedExternalSubmissionsQueryKey = () => {
+    return [
+    `/api/v1/supervisor/external-history`
+    ] as const;
+    }
+
+
+export const getListReviewedExternalSubmissionsQueryOptions = <TData = Awaited<ReturnType<typeof listReviewedExternalSubmissions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listReviewedExternalSubmissions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListReviewedExternalSubmissionsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listReviewedExternalSubmissions>>> = ({ signal }) => listReviewedExternalSubmissions({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listReviewedExternalSubmissions>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListReviewedExternalSubmissionsQueryResult = NonNullable<Awaited<ReturnType<typeof listReviewedExternalSubmissions>>>
+export type ListReviewedExternalSubmissionsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List reviewed external submissions (supervisor/admin)
+ */
+
+export function useListReviewedExternalSubmissions<TData = Awaited<ReturnType<typeof listReviewedExternalSubmissions>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listReviewedExternalSubmissions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListReviewedExternalSubmissionsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -287,6 +287,96 @@ paths:
                 items:
                   $ref: "#/components/schemas/SubmissionDetail"
 
+  /v1/external-submissions:
+    get:
+      operationId: listMyExternalSubmissions
+      tags: [submissions]
+      summary: List my external volunteer submissions (participant)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExternalSubmission"
+
+    post:
+      operationId: submitExternalActivity
+      tags: [submissions]
+      summary: Submit an external volunteer activity (participant)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExternalSubmissionInput"
+      responses:
+        "201":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalSubmission"
+        "400":
+          description: Validation error or 25% cap exceeded
+
+  /v1/supervisor/external-submissions:
+    get:
+      operationId: listPendingExternalSubmissions
+      tags: [supervisor]
+      summary: List pending external submissions (supervisor/admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExternalSubmissionDetail"
+
+  /v1/supervisor/external-submissions/{externalSubmissionId}/review:
+    put:
+      operationId: reviewExternalSubmission
+      tags: [supervisor]
+      summary: Approve or reject an external submission (supervisor/admin)
+      parameters:
+        - name: externalSubmissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /v1/supervisor/external-history:
+    get:
+      operationId: listReviewedExternalSubmissions
+      tags: [supervisor]
+      summary: List reviewed external submissions (supervisor/admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExternalSubmissionDetail"
+
   /v1/admin/users:
     get:
       operationId: listUsers
@@ -629,6 +719,102 @@ components:
           type: string
         comments:
           type: string
+
+    ExternalSubmissionInput:
+      type: object
+      required: [activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail]
+      properties:
+        activityName:
+          type: string
+          minLength: 2
+          maxLength: 200
+        organizationName:
+          type: string
+          minLength: 2
+          maxLength: 200
+        volunteerDate:
+          type: string
+        hoursWorked:
+          type: number
+          minimum: 0.5
+          maximum: 24
+        extSupervisorName:
+          type: string
+          minLength: 2
+          maxLength: 100
+        extSupervisorEmail:
+          type: string
+          format: email
+        description:
+          type: string
+
+    ExternalSubmission:
+      type: object
+      required: [externalSubmissionId, userId, activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail, status, submittedAt]
+      properties:
+        externalSubmissionId:
+          type: string
+        userId:
+          type: string
+        activityName:
+          type: string
+        organizationName:
+          type: string
+        volunteerDate:
+          type: string
+        hoursWorked:
+          type: number
+        extSupervisorName:
+          type: string
+        extSupervisorEmail:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+        supervisorComments:
+          type: ["string", "null"]
+        submittedAt:
+          type: string
+        reviewedAt:
+          type: ["string", "null"]
+
+    ExternalSubmissionDetail:
+      type: object
+      required: [externalSubmissionId, userId, activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail, status, submittedAt]
+      properties:
+        externalSubmissionId:
+          type: string
+        userId:
+          type: string
+        activityName:
+          type: string
+        organizationName:
+          type: string
+        volunteerDate:
+          type: string
+        hoursWorked:
+          type: number
+        extSupervisorName:
+          type: string
+        extSupervisorEmail:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+        supervisorComments:
+          type: ["string", "null"]
+        submittedAt:
+          type: string
+        reviewedAt:
+          type: ["string", "null"]
+        participantFirstName:
+          type: ["string", "null"]
+        participantLastName:
+          type: ["string", "null"]
+        participantEmail:
+          type: ["string", "null"]
 
     ParticipantDashboard:
       type: object

@@ -144,6 +144,76 @@ export interface OverrideInput {
   comments: string;
 }
 
+export interface ExternalSubmissionInput {
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  activityName: string;
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  organizationName: string;
+  volunteerDate: string;
+  /**
+     * @minimum 0.5
+     * @maximum 24
+     */
+  hoursWorked: number;
+  /**
+     * @minLength 2
+     * @maxLength 100
+     */
+  extSupervisorName: string;
+  extSupervisorEmail: string;
+  description?: string;
+}
+
+export interface ExternalSubmission {
+  externalSubmissionId: string;
+  userId: string;
+  activityName: string;
+  organizationName: string;
+  volunteerDate: string;
+  hoursWorked: number;
+  extSupervisorName: string;
+  extSupervisorEmail: string;
+  /** @nullable */
+  description?: string | null;
+  status: string;
+  /** @nullable */
+  supervisorComments?: string | null;
+  submittedAt: string;
+  /** @nullable */
+  reviewedAt?: string | null;
+}
+
+export interface ExternalSubmissionDetail {
+  externalSubmissionId: string;
+  userId: string;
+  activityName: string;
+  organizationName: string;
+  volunteerDate: string;
+  hoursWorked: number;
+  extSupervisorName: string;
+  extSupervisorEmail: string;
+  /** @nullable */
+  description?: string | null;
+  status: string;
+  /** @nullable */
+  supervisorComments?: string | null;
+  submittedAt: string;
+  /** @nullable */
+  reviewedAt?: string | null;
+  /** @nullable */
+  participantFirstName?: string | null;
+  /** @nullable */
+  participantLastName?: string | null;
+  /** @nullable */
+  participantEmail?: string | null;
+}
+
 export interface ParticipantDashboard {
   totalApprovedHours: number;
   pendingCount: number;

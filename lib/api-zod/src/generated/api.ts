@@ -220,6 +220,121 @@ export const ListReviewedSubmissionsResponse = zod.array(ListReviewedSubmissions
 
 
 /**
+ * @summary List my external volunteer submissions (participant)
+ */
+export const ListMyExternalSubmissionsResponseItem = zod.object({
+  "externalSubmissionId": zod.string(),
+  "userId": zod.string(),
+  "activityName": zod.string(),
+  "organizationName": zod.string(),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number(),
+  "extSupervisorName": zod.string(),
+  "extSupervisorEmail": zod.string(),
+  "description": zod.string().nullish(),
+  "status": zod.string(),
+  "supervisorComments": zod.string().nullish(),
+  "submittedAt": zod.string(),
+  "reviewedAt": zod.string().nullish()
+})
+export const ListMyExternalSubmissionsResponse = zod.array(ListMyExternalSubmissionsResponseItem)
+
+
+/**
+ * @summary Submit an external volunteer activity (participant)
+ */
+export const submitExternalActivityBodyActivityNameMin = 2;
+export const submitExternalActivityBodyActivityNameMax = 200;
+
+export const submitExternalActivityBodyOrganizationNameMin = 2;
+export const submitExternalActivityBodyOrganizationNameMax = 200;
+
+export const submitExternalActivityBodyHoursWorkedMin = 0.5;
+export const submitExternalActivityBodyHoursWorkedMax = 24;
+
+export const submitExternalActivityBodyExtSupervisorNameMin = 2;
+export const submitExternalActivityBodyExtSupervisorNameMax = 100;
+
+
+
+export const SubmitExternalActivityBody = zod.object({
+  "activityName": zod.string().min(submitExternalActivityBodyActivityNameMin).max(submitExternalActivityBodyActivityNameMax),
+  "organizationName": zod.string().min(submitExternalActivityBodyOrganizationNameMin).max(submitExternalActivityBodyOrganizationNameMax),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number().min(submitExternalActivityBodyHoursWorkedMin).max(submitExternalActivityBodyHoursWorkedMax),
+  "extSupervisorName": zod.string().min(submitExternalActivityBodyExtSupervisorNameMin).max(submitExternalActivityBodyExtSupervisorNameMax),
+  "extSupervisorEmail": zod.string().email(),
+  "description": zod.string().optional()
+})
+
+
+/**
+ * @summary List pending external submissions (supervisor/admin)
+ */
+export const ListPendingExternalSubmissionsResponseItem = zod.object({
+  "externalSubmissionId": zod.string(),
+  "userId": zod.string(),
+  "activityName": zod.string(),
+  "organizationName": zod.string(),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number(),
+  "extSupervisorName": zod.string(),
+  "extSupervisorEmail": zod.string(),
+  "description": zod.string().nullish(),
+  "status": zod.string(),
+  "supervisorComments": zod.string().nullish(),
+  "submittedAt": zod.string(),
+  "reviewedAt": zod.string().nullish(),
+  "participantFirstName": zod.string().nullish(),
+  "participantLastName": zod.string().nullish(),
+  "participantEmail": zod.string().nullish()
+})
+export const ListPendingExternalSubmissionsResponse = zod.array(ListPendingExternalSubmissionsResponseItem)
+
+
+/**
+ * @summary Approve or reject an external submission (supervisor/admin)
+ */
+export const ReviewExternalSubmissionParams = zod.object({
+  "externalSubmissionId": zod.coerce.string()
+})
+
+export const ReviewExternalSubmissionBody = zod.object({
+  "status": zod.string(),
+  "comments": zod.string().nullish()
+})
+
+export const ReviewExternalSubmissionResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary List reviewed external submissions (supervisor/admin)
+ */
+export const ListReviewedExternalSubmissionsResponseItem = zod.object({
+  "externalSubmissionId": zod.string(),
+  "userId": zod.string(),
+  "activityName": zod.string(),
+  "organizationName": zod.string(),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number(),
+  "extSupervisorName": zod.string(),
+  "extSupervisorEmail": zod.string(),
+  "description": zod.string().nullish(),
+  "status": zod.string(),
+  "supervisorComments": zod.string().nullish(),
+  "submittedAt": zod.string(),
+  "reviewedAt": zod.string().nullish(),
+  "participantFirstName": zod.string().nullish(),
+  "participantLastName": zod.string().nullish(),
+  "participantEmail": zod.string().nullish()
+})
+export const ListReviewedExternalSubmissionsResponse = zod.array(ListReviewedExternalSubmissionsResponseItem)
+
+
+/**
  * @summary List all users (admin only)
  */
 export const ListUsersResponseItem = zod.object({

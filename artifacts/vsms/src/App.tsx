@@ -14,6 +14,7 @@ import SupervisorHistory from "@/pages/supervisor/history";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminNewEvent from "@/pages/admin/new-event";
+import ExternalSubmissionPage from "@/pages/participant/external-submission";
 import { useAuth } from "@/hooks/use-auth";
 
 const queryClient = new QueryClient({
@@ -42,6 +43,7 @@ function Router() {
 
       <ProtectedRoute path="/dashboard" component={ParticipantDashboard} allowedRoles={["participant"]} />
       <ProtectedRoute path="/calendar" component={CalendarPage} allowedRoles={["participant"]} />
+      <ProtectedRoute path="/external" component={ExternalSubmissionPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/history" component={HistoryPage} allowedRoles={["participant"]} />
 
       <ProtectedRoute path="/supervisor/pending" component={SupervisorPending} allowedRoles={["supervisor", "admin"]} />

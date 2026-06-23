@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LogOut, Home, Calendar, Clock, CheckSquare, Users, FileText, LayoutDashboard } from "lucide-react";
+import { LogOut, Calendar, Clock, CheckSquare, Users, FileText, LayoutDashboard, ExternalLink } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +11,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ...(role === "participant" ? [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Calendar", href: "/calendar", icon: Calendar },
+      { label: "External Activity", href: "/external", icon: ExternalLink },
       { label: "History", href: "/history", icon: Clock },
     ] : []),
     ...(role === "supervisor" ? [
