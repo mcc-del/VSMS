@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, volunteerSubmissionsTable, eventsTable, usersTable } from "@workspace/db";
+import { db, volunteerSubmissionsTable, eventsTable, usersTable, eventRegistrationsTable } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { ClaimHoursBody, ReviewSubmissionBody, OverrideSubmissionBody } from "@workspace/api-zod";
@@ -81,6 +81,33 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
   const today = new Date().toISOString().split("T")[0];
   if (event.eventDate >= today) {
     res.status(400).json({ error: "You can only claim hours for past events" });
+    return;
+  }
+
+  // Require an attended registration — no-show or unregistered participants cannot claim hours
+  const [registration] = await db
+    .select()
+    .from(eventRegistrationsTable)
+    .where(
+      and(
+        eq(eventRegistrationsTable.userId, userId),
+        eq(eventRegistrationsTable.eventId, eventId),
+      ),
+    )
+    .limit(1);
+
+  if (!registration) {
+    res.status(400).json({ error: "You are not registered for this event and cannot claim hours." });
+    return;
+  }
+
+  if (registration.status === "no_show") {
+    res.status(400).json({ error: "You were marked as a no-show for this event and cannot claim hours." });
+    return;
+  }
+
+  if (registration.status !== "attended") {
+    res.status(400).json({ error: "Hours can only be claimed after checking in to the event." });
     return;
   }
 
