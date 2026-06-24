@@ -10,7 +10,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     ...(role === "participant" ? [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Calendar", href: "/calendar", icon: Calendar },
+      { label: "Opportunities", href: "/opportunities", icon: Calendar },
       { label: "External Activity", href: "/external", icon: ExternalLink },
       { label: "History", href: "/history", icon: Clock },
     ] : []),
@@ -21,7 +21,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ...(role === "admin" ? [
       { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
       { label: "Users", href: "/admin/users", icon: Users },
-      { label: "New Event", href: "/admin/events/new", icon: Calendar },
+      { label: "Events", href: "/admin/events", icon: Calendar },
+      { label: "New Event", href: "/admin/events/new", icon: FileText },
     ] : []),
   ];
 

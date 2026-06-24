@@ -10,8 +10,12 @@ export interface EventInput {
   /** @maxLength 150 */
   title: string;
   description: string;
+  location: string;
   eventDate: string;
+  startTime: string;
+  endTime: string;
   hoursValue: number;
   maxCapacity: number;
   supervisorId: string;
+  imageUrl?: string;
 }

@@ -21,6 +21,8 @@ tags:
     description: Admin operations
   - name: dashboard
     description: Dashboard operations
+  - name: Storage
+    description: Object storage upload and serving endpoints.
 
 paths:
   /healthz:
@@ -140,6 +142,21 @@ paths:
         "403":
           description: Forbidden
 
+  /v1/events/my-registrations:
+    get:
+      operationId: listMyRegistrations
+      tags: [events]
+      summary: List the current participant's event registrations
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventRegistration"
+
   /v1/events/{eventId}:
     get:
       operationId: getEvent
@@ -158,6 +175,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Event"
+        "404":
+          description: Not found
+
+    patch:
+      operationId: updateEvent
+      tags: [events]
+      summary: Update an existing event (admin only)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventUpdateInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "403":
+          description: Forbidden
         "404":
           description: Not found
 
@@ -180,6 +225,62 @@ paths:
                 $ref: "#/components/schemas/SuccessResponse"
         "403":
           description: Forbidden
+
+  /v1/events/{eventId}/register:
+    post:
+      operationId: registerForEvent
+      tags: [events]
+      summary: Register for an upcoming event (participant)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventRegistration"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/events/{eventId}/checkin:
+    post:
+      operationId: checkInToEvent
+      tags: [events]
+      summary: Check in to a day-of event (participant)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Checked in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckInResponse"
+        "400":
+          description: Outside time window or not registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/submissions:
     get:
@@ -495,6 +596,59 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdminDashboard"
 
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+        "400":
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an object entity from PRIVATE_OBJECT_DIR
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object content streamed.
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Object not found.
+
 components:
   schemas:
     HealthStatus:
@@ -600,7 +754,7 @@ components:
 
     Event:
       type: object
-      required: [eventId, title, description, eventDate, hoursValue, maxCapacity, supervisorId]
+      required: [eventId, title, description, location, eventDate, startTime, endTime, hoursValue, maxCapacity, supervisorId, registrationCount]
       properties:
         eventId:
           type: string
@@ -608,35 +762,118 @@ components:
           type: string
         description:
           type: string
+        location:
+          type: string
         eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
           type: string
         hoursValue:
           type: number
         maxCapacity:
           type: integer
+        imageUrl:
+          type: ["string", "null"]
         supervisorId:
           type: string
         supervisorName:
           type: ["string", "null"]
         registrationCount:
           type: integer
+        myRegistrationStatus:
+          type: ["string", "null"]
 
     EventInput:
       type: object
-      required: [title, description, eventDate, hoursValue, maxCapacity, supervisorId]
+      required: [title, description, location, eventDate, startTime, endTime, hoursValue, maxCapacity, supervisorId]
       properties:
         title:
           type: string
           maxLength: 150
         description:
           type: string
+        location:
+          type: string
         eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
           type: string
         hoursValue:
           type: number
         maxCapacity:
           type: integer
         supervisorId:
+          type: string
+        imageUrl:
+          type: string
+
+    EventUpdateInput:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        location:
+          type: string
+        eventDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        hoursValue:
+          type: number
+        maxCapacity:
+          type: integer
+        supervisorId:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+
+    EventRegistration:
+      type: object
+      required: [registrationId, eventId, userId, status, registeredAt]
+      properties:
+        registrationId:
+          type: string
+        eventId:
+          type: string
+        userId:
+          type: string
+        status:
+          type: string
+        registeredAt:
+          type: string
+        eventTitle:
+          type: ["string", "null"]
+        eventDate:
+          type: ["string", "null"]
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        hoursValue:
+          type: ["number", "null"]
+        imageUrl:
+          type: ["string", "null"]
+
+    CheckInResponse:
+      type: object
+      required: [status, message, submissionId]
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        submissionId:
           type: string
 
     Submission:
@@ -860,3 +1097,26 @@ components:
           type: integer
         supervisorCount:
           type: integer
+
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+          minLength: 1
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string

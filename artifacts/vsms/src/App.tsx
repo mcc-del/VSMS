@@ -9,11 +9,13 @@ import RegisterPage from "@/pages/register";
 import ParticipantDashboard from "@/pages/participant/dashboard";
 import CalendarPage from "@/pages/participant/calendar";
 import HistoryPage from "@/pages/participant/history";
+import OpportunitiesPage from "@/pages/participant/opportunities";
 import SupervisorPending from "@/pages/supervisor/pending";
 import SupervisorHistory from "@/pages/supervisor/history";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminNewEvent from "@/pages/admin/new-event";
+import AdminEventsPage from "@/pages/admin/events";
 import ExternalSubmissionPage from "@/pages/participant/external-submission";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -42,6 +44,7 @@ function Router() {
       <Route path="/register" component={RegisterPage} />
 
       <ProtectedRoute path="/dashboard" component={ParticipantDashboard} allowedRoles={["participant"]} />
+      <ProtectedRoute path="/opportunities" component={OpportunitiesPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/calendar" component={CalendarPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/external" component={ExternalSubmissionPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/history" component={HistoryPage} allowedRoles={["participant"]} />
@@ -52,6 +55,7 @@ function Router() {
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/users" component={AdminUsers} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/events/new" component={AdminNewEvent} allowedRoles={["admin"]} />
+      <ProtectedRoute path="/admin/events" component={AdminEventsPage} allowedRoles={["admin"]} />
 
       <Route component={NotFound} />
     </Switch>

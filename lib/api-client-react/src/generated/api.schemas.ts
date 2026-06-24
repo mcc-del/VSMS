@@ -68,23 +68,77 @@ export interface Event {
   eventId: string;
   title: string;
   description: string;
+  location: string;
   eventDate: string;
+  startTime: string;
+  endTime: string;
   hoursValue: number;
   maxCapacity: number;
+  /** @nullable */
+  imageUrl?: string | null;
   supervisorId: string;
   /** @nullable */
   supervisorName?: string | null;
-  registrationCount?: number;
+  registrationCount: number;
+  /** @nullable */
+  myRegistrationStatus?: string | null;
 }
 
 export interface EventInput {
   /** @maxLength 150 */
   title: string;
   description: string;
+  location: string;
   eventDate: string;
+  startTime: string;
+  endTime: string;
   hoursValue: number;
   maxCapacity: number;
   supervisorId: string;
+  imageUrl?: string;
+}
+
+export interface EventUpdateInput {
+  /** @maxLength 150 */
+  title?: string;
+  description?: string;
+  location?: string;
+  eventDate?: string;
+  startTime?: string;
+  endTime?: string;
+  hoursValue?: number;
+  maxCapacity?: number;
+  supervisorId?: string;
+  /** @nullable */
+  imageUrl?: string | null;
+}
+
+export interface EventRegistration {
+  registrationId: string;
+  eventId: string;
+  userId: string;
+  status: string;
+  registeredAt: string;
+  /** @nullable */
+  eventTitle?: string | null;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  hoursValue?: number | null;
+  /** @nullable */
+  imageUrl?: string | null;
+}
+
+export interface CheckInResponse {
+  status: string;
+  message: string;
+  submissionId: string;
 }
 
 export interface Submission {
@@ -236,5 +290,19 @@ export interface AdminDashboard {
   rejectedSubmissions: number;
   participantCount?: number;
   supervisorCount?: number;
+}
+
+export interface UploadUrlRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
 }
 

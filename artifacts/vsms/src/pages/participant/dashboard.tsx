@@ -1,9 +1,20 @@
-import { useGetParticipantDashboard, useListMySubmissions } from "@workspace/api-client-react";
+import {
+  useGetParticipantDashboard,
+  useListMySubmissions,
+  useListMyRegistrations,
+  useCheckInToEvent,
+  getListMySubmissionsQueryKey,
+  getGetParticipantDashboardQueryKey,
+  getListMyRegistrationsQueryKey,
+} from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Clock, CheckCircle, XCircle, AlertCircle, MapPin, CheckCheck } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "approved") return <Badge className="bg-green-100 text-green-800 border-0">Approved</Badge>;
@@ -11,11 +22,63 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge className="bg-yellow-100 text-yellow-800 border-0">Pending</Badge>;
 }
 
+function formatTime(t: string) {
+  if (!t) return "";
+  const [hStr, mStr] = t.split(":");
+  const h = Number(hStr);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${mStr} ${ampm}`;
+}
+
 export default function ParticipantDashboard() {
   const { data: dashboard, isLoading: dashLoading } = useGetParticipantDashboard();
   const { data: submissions, isLoading: subLoading } = useListMySubmissions();
+  const { data: registrations } = useListMyRegistrations();
+  const checkIn = useCheckInToEvent();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const today = new Date().toISOString().split("T")[0];
+  const nowTime = new Date().toTimeString().slice(0, 5);
 
   const pending = submissions?.filter((s) => s.status === "pending") ?? [];
+
+  // Today's registrations that are still "registered" (not yet checked in)
+  const todayRegistrations = (registrations ?? []).filter(
+    (r) => r.eventDate === today && r.status === "registered",
+  );
+
+  function handleCheckIn(eventId: string, title: string) {
+    checkIn.mutate(
+      { eventId },
+      {
+        onSuccess: (data) => {
+          toast({
+            title: "Check-in successful!",
+            description: "Your internal hours have been generated and routed to your supervisor for pending review.",
+          });
+          queryClient.invalidateQueries({ queryKey: getListMyRegistrationsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getListMySubmissionsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetParticipantDashboardQueryKey() });
+        },
+        onError: (err: any) => {
+          toast({
+            title: "Check-in failed",
+            description: err?.data?.error ?? "Something went wrong",
+            variant: "destructive",
+          });
+        },
+      },
+    );
+  }
+
+  function isWithinTimeWindow(startTime: string | null | undefined, endTime: string | null | undefined) {
+    if (!startTime || !endTime) return false;
+    const start = startTime.slice(0, 5);
+    const end = endTime.slice(0, 5);
+    return nowTime >= start && nowTime <= end;
+  }
 
   return (
     <AppLayout>
@@ -75,6 +138,56 @@ export default function ParticipantDashboard() {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Today's Check-In Panel */}
+        {todayRegistrations.length > 0 && (
+          <Card className="border-green-200 bg-green-50/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2 text-green-800">
+                <CheckCheck className="w-4 h-4" /> Today's Events — Check In Now
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {todayRegistrations.map((reg) => {
+                const withinWindow = isWithinTimeWindow(reg.startTime, reg.endTime);
+                return (
+                  <div
+                    key={reg.registrationId}
+                    className="flex items-center justify-between gap-3 bg-white rounded-lg p-3 border border-green-100"
+                  >
+                    <div>
+                      <p className="font-medium text-sm">{reg.eventTitle}</p>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                        {reg.startTime && reg.endTime && (
+                          <span>{formatTime(reg.startTime)} – {formatTime(reg.endTime)}</span>
+                        )}
+                        {reg.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> {reg.location}
+                          </span>
+                        )}
+                      </div>
+                      {!withinWindow && (
+                        <p className="text-xs text-amber-600 mt-1">
+                          Check-in opens at {reg.startTime ? formatTime(reg.startTime) : "event start"}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      data-testid={`button-checkin-${reg.eventId}`}
+                      onClick={() => handleCheckIn(reg.eventId, reg.eventTitle ?? "")}
+                      disabled={!withinWindow || checkIn.isPending}
+                      className={withinWindow ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                    >
+                      {withinWindow ? "Check In" : "Not Open Yet"}
+                    </Button>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
         )}
 
         <Card>

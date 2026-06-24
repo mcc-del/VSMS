@@ -10,11 +10,18 @@ export interface Event {
   eventId: string;
   title: string;
   description: string;
+  location: string;
   eventDate: string;
+  startTime: string;
+  endTime: string;
   hoursValue: number;
   maxCapacity: number;
+  /** @nullable */
+  imageUrl?: string | null;
   supervisorId: string;
   /** @nullable */
   supervisorName?: string | null;
-  registrationCount?: number;
+  registrationCount: number;
+  /** @nullable */
+  myRegistrationStatus?: string | null;
 }

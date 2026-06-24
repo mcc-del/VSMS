@@ -73,12 +73,17 @@ export const ListEventsResponseItem = zod.object({
   "eventId": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
+  "location": zod.string(),
   "eventDate": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
   "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
+  "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
-  "registrationCount": zod.number().optional()
+  "registrationCount": zod.number(),
+  "myRegistrationStatus": zod.string().nullish()
 })
 export const ListEventsResponse = zod.array(ListEventsResponseItem)
 
@@ -93,11 +98,35 @@ export const createEventBodyTitleMax = 150;
 export const CreateEventBody = zod.object({
   "title": zod.string().max(createEventBodyTitleMax),
   "description": zod.string(),
+  "location": zod.string(),
   "eventDate": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
   "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
-  "supervisorId": zod.string()
+  "supervisorId": zod.string(),
+  "imageUrl": zod.string().optional()
 })
+
+
+/**
+ * @summary List the current participant's event registrations
+ */
+export const ListMyRegistrationsResponseItem = zod.object({
+  "registrationId": zod.string(),
+  "eventId": zod.string(),
+  "userId": zod.string(),
+  "status": zod.string(),
+  "registeredAt": zod.string(),
+  "eventTitle": zod.string().nullish(),
+  "eventDate": zod.string().nullish(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hoursValue": zod.number().nullish(),
+  "imageUrl": zod.string().nullish()
+})
+export const ListMyRegistrationsResponse = zod.array(ListMyRegistrationsResponseItem)
 
 
 /**
@@ -111,12 +140,59 @@ export const GetEventResponse = zod.object({
   "eventId": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
+  "location": zod.string(),
   "eventDate": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
   "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
+  "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
-  "registrationCount": zod.number().optional()
+  "registrationCount": zod.number(),
+  "myRegistrationStatus": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update an existing event (admin only)
+ */
+export const UpdateEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const updateEventBodyTitleMax = 150;
+
+
+
+export const UpdateEventBody = zod.object({
+  "title": zod.string().max(updateEventBodyTitleMax).optional(),
+  "description": zod.string().optional(),
+  "location": zod.string().optional(),
+  "eventDate": zod.string().optional(),
+  "startTime": zod.string().optional(),
+  "endTime": zod.string().optional(),
+  "hoursValue": zod.number().optional(),
+  "maxCapacity": zod.number().optional(),
+  "supervisorId": zod.string().optional(),
+  "imageUrl": zod.string().nullish()
+})
+
+export const UpdateEventResponse = zod.object({
+  "eventId": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "location": zod.string(),
+  "eventDate": zod.string(),
+  "startTime": zod.string(),
+  "endTime": zod.string(),
+  "hoursValue": zod.number(),
+  "maxCapacity": zod.number(),
+  "imageUrl": zod.string().nullish(),
+  "supervisorId": zod.string(),
+  "supervisorName": zod.string().nullish(),
+  "registrationCount": zod.number(),
+  "myRegistrationStatus": zod.string().nullish()
 })
 
 
@@ -130,6 +206,28 @@ export const DeleteEventParams = zod.object({
 export const DeleteEventResponse = zod.object({
   "status": zod.string(),
   "message": zod.string()
+})
+
+
+/**
+ * @summary Register for an upcoming event (participant)
+ */
+export const RegisterForEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+
+/**
+ * @summary Check in to a day-of event (participant)
+ */
+export const CheckInToEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const CheckInToEventResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string(),
+  "submissionId": zod.string()
 })
 
 
@@ -428,6 +526,34 @@ export const GetAdminDashboardResponse = zod.object({
   "rejectedSubmissions": zod.number(),
   "participantCount": zod.number().optional(),
   "supervisorCount": zod.number().optional()
+})
+
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+
+
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1),
+  "size": zod.number().min(1),
+  "contentType": zod.string().min(1)
+})
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string(),
+  "objectPath": zod.string()
+})
+
+
+/**
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string()
 })
 
 

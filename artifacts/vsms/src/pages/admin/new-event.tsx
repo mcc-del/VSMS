@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { ImageUpload } from "@/components/image-upload";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -15,10 +16,14 @@ import { useToast } from "@/hooks/use-toast";
 const schema = z.object({
   title: z.string().min(1, "Title is required").max(150),
   description: z.string().min(1, "Description is required"),
+  location: z.string().min(1, "Location is required"),
   eventDate: z.string().min(1, "Date is required"),
+  startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().min(1, "End time is required"),
   hoursValue: z.coerce.number().positive("Must be greater than 0"),
   maxCapacity: z.coerce.number().int().positive("Must be a positive integer"),
   supervisorId: z.string().min(1, "Select a supervisor"),
+  imageUrl: z.string().nullable(),
 });
 
 export default function AdminNewEvent() {
@@ -29,21 +34,25 @@ export default function AdminNewEvent() {
 
   const supervisors = (users ?? []).filter(u => u.role === "supervisor");
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
       title: "",
       description: "",
+      location: "",
       eventDate: "",
+      startTime: "09:00",
+      endTime: "17:00",
       hoursValue: 4,
       maxCapacity: 50,
       supervisorId: "",
+      imageUrl: null,
     },
   });
 
   function onSubmit(values: z.infer<typeof schema>) {
     createEvent.mutate(
-      { data: values },
+      { data: values as any },
       {
         onSuccess: () => {
           toast({ title: "Event created", description: `"${values.title}" has been added to the calendar.` });
@@ -93,6 +102,16 @@ export default function AdminNewEvent() {
                   </FormItem>
                 )} />
 
+                <FormField control={form.control} name="location" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input data-testid="input-location" placeholder="Room 101 / Main Hall" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
                 <div className="grid grid-cols-2 gap-3">
                   <FormField control={form.control} name="eventDate" render={({ field }) => (
                     <FormItem>
@@ -114,9 +133,30 @@ export default function AdminNewEvent() {
                   )} />
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField control={form.control} name="startTime" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start time</FormLabel>
+                      <FormControl>
+                        <Input data-testid="input-start-time" type="time" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="endTime" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End time</FormLabel>
+                      <FormControl>
+                        <Input data-testid="input-end-time" type="time" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+
                 <FormField control={form.control} name="maxCapacity" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Max capacity</FormLabel>
+                    <FormLabel>Max capacity (volunteers)</FormLabel>
                     <FormControl>
                       <Input data-testid="input-capacity" type="number" min="1" {...field} />
                     </FormControl>
@@ -146,6 +186,15 @@ export default function AdminNewEvent() {
                       </SelectContent>
                     </Select>
                     <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event image (optional)</FormLabel>
+                    <FormControl>
+                      <ImageUpload value={field.value} onChange={field.onChange} />
+                    </FormControl>
                   </FormItem>
                 )} />
 
