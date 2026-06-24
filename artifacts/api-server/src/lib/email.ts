@@ -70,13 +70,17 @@ export async function sendRegistrationConfirmation(
   ].join("\n");
 
   try {
-    await client.emails.send({
+    const { data, error } = await client.emails.send({
       from: FROM_ADDRESS,
       to: toEmail,
       subject,
       text,
     });
-    logger.info({ toEmail, eventTitle: event.title }, "Confirmation email sent");
+    if (error) {
+      logger.error({ error, toEmail, eventTitle: event.title }, "Failed to send confirmation email");
+    } else {
+      logger.info({ emailId: data?.id, toEmail, eventTitle: event.title }, "Confirmation email sent");
+    }
   } catch (err) {
     logger.error({ err, toEmail, eventTitle: event.title }, "Failed to send confirmation email");
   }
@@ -121,13 +125,17 @@ export async function sendReminderEmail(
   ].join("\n");
 
   try {
-    await client.emails.send({
+    const { data, error } = await client.emails.send({
       from: FROM_ADDRESS,
       to: toEmail,
       subject,
       text,
     });
-    logger.info({ toEmail, eventTitle: event.title }, "Reminder email sent");
+    if (error) {
+      logger.error({ error, toEmail, eventTitle: event.title }, "Failed to send reminder email");
+      return false;
+    }
+    logger.info({ emailId: data?.id, toEmail, eventTitle: event.title }, "Reminder email sent");
     return true;
   } catch (err) {
     logger.error({ err, toEmail, eventTitle: event.title }, "Failed to send reminder email");
