@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { usersTable } from "./users";
 import { eventsTable } from "./events";
 
-export const submissionStatusEnum = pgEnum("submission_status", ["pending", "approved", "rejected"]);
+export const submissionStatusEnum = pgEnum("submission_status", ["pending", "approved", "rejected", "deferred_overflow"]);
 
 export const volunteerSubmissionsTable = pgTable("volunteer_submissions", {
   submissionId: uuid("submission_id").primaryKey().defaultRandom(),

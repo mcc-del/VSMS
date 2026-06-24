@@ -102,18 +102,7 @@ router.post(
     const totalExternalIfApproved = externalApprovedHours + externalPendingHours + hoursWorked;
     const maxAllowedExternal = calendarApprovedHours * 0.25;
 
-    if (calendarApprovedHours > 0 && totalExternalIfApproved > maxAllowedExternal) {
-      const remaining = Math.max(0, maxAllowedExternal - externalApprovedHours - externalPendingHours);
-      res.status(400).json({
-        error: `External hours are limited to 25% of your approved calendar hours. You have ${calendarApprovedHours.toFixed(1)} approved calendar hours, so your external limit is ${maxAllowedExternal.toFixed(1)}h. You have already submitted ${(externalApprovedHours + externalPendingHours).toFixed(1)}h external (approved + pending). You can submit up to ${remaining.toFixed(1)} more hours.`,
-      });
-      return;
-    }
-
-    if (calendarApprovedHours === 0) {
-      // No calendar hours approved yet — still allow submission but note the cap
-      // (The cap check will apply once calendar hours are approved)
-    }
+    const isDeferred = calendarApprovedHours > 0 && totalExternalIfApproved > maxAllowedExternal;
 
     const [submission] = await db
       .insert(externalSubmissionsTable)
@@ -126,6 +115,7 @@ router.post(
         extSupervisorName,
         extSupervisorEmail,
         description: description ?? null,
+        status: isDeferred ? "deferred_overflow" : "pending",
       })
       .returning();
 
@@ -160,7 +150,7 @@ router.get(
       })
       .from(externalSubmissionsTable)
       .leftJoin(usersTable, eq(externalSubmissionsTable.userId, usersTable.userId))
-      .where(eq(externalSubmissionsTable.status, "pending"))
+      .where(inArray(externalSubmissionsTable.status, ["pending", "deferred_overflow"]))
       .orderBy(externalSubmissionsTable.submittedAt);
 
     res.json(
@@ -196,7 +186,7 @@ router.put(
     const { status, comments } = req.body as { status: string; comments?: string | null };
 
     if (!["approved", "rejected"].includes(status)) {
-      res.status(400).json({ error: "Invalid status" });
+      res.status(400).json({ error: "Invalid status. Use 'approved' or 'rejected'." });
       return;
     }
 

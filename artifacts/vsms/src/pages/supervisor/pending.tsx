@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { Info } from "lucide-react";
 
 export default function SupervisorPending() {
   const { data: calendarSubs, isLoading: calLoading } = useListPendingSubmissions();
@@ -52,9 +53,11 @@ export default function SupervisorPending() {
       return;
     }
 
+    const isDeferred = reviewing.type === "external" && reviewing.data.status === "deferred_overflow";
     const mutateOptions = {
       onSuccess: () => {
-        toast({ title: status === "approved" ? "Approved" : "Rejected", description: "Submission updated." });
+        const label = status === "approved" ? (isDeferred ? "Released" : "Approved") : "Rejected";
+        toast({ title: label, description: "Submission updated." });
         invalidateAll();
         setReviewing(null);
       },
@@ -78,6 +81,7 @@ export default function SupervisorPending() {
 
   const isPending = reviewCalendar.isPending || reviewExternal.isPending;
   const totalPending = (calendarSubs?.length ?? 0) + (externalSubs?.length ?? 0);
+  const isDeferred = reviewing?.type === "external" && reviewing.data.status === "deferred_overflow";
 
   return (
     <AppLayout>
@@ -168,6 +172,7 @@ export default function SupervisorPending() {
                         <th className="pb-2 font-medium text-muted-foreground">Organization</th>
                         <th className="pb-2 font-medium text-muted-foreground">Date</th>
                         <th className="pb-2 font-medium text-muted-foreground">Hours</th>
+                        <th className="pb-2 font-medium text-muted-foreground">Status</th>
                         <th className="pb-2" />
                       </tr>
                     </thead>
@@ -180,8 +185,20 @@ export default function SupervisorPending() {
                           <td className="py-3 text-muted-foreground">{s.volunteerDate}</td>
                           <td className="py-3">{s.hoursWorked}h</td>
                           <td className="py-3">
-                            <Button size="sm" variant="outline" data-testid={`button-review-ext-${s.externalSubmissionId}`} onClick={() => openReview("external", s)}>
-                              Review
+                            {s.status === "deferred_overflow" ? (
+                              <Badge className="bg-gray-100 text-gray-600 border-0 text-xs">Deferred</Badge>
+                            ) : (
+                              <Badge className="bg-yellow-100 text-yellow-800 border-0 text-xs">Pending</Badge>
+                            )}
+                          </td>
+                          <td className="py-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              data-testid={`button-review-ext-${s.externalSubmissionId}`}
+                              onClick={() => openReview("external", s)}
+                            >
+                              {s.status === "deferred_overflow" ? "Release" : "Review"}
                             </Button>
                           </td>
                         </tr>
@@ -201,12 +218,23 @@ export default function SupervisorPending() {
             <>
               <DialogHeader>
                 <DialogTitle>
-                  Review {reviewing.type === "external" ? "External Activity" : "Calendar Submission"}
+                  {isDeferred
+                    ? "Release Deferred External Activity"
+                    : `Review ${reviewing.type === "external" ? "External Activity" : "Calendar Submission"}`}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-2">
+                {isDeferred && (
+                  <div className="flex gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800">
+                    <Info className="w-4 h-4 mt-0.5 shrink-0 text-blue-500" />
+                    <p>
+                      This submission was deferred because it exceeded the participant's 25% external
+                      hours cap. If they've since logged enough internal hours, you can release it to approved.
+                    </p>
+                  </div>
+                )}
                 <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
-                  <p><span className="font-medium">Participant:</span> {reviewing.type === "calendar" ? `${reviewing.data.participantFirstName} ${reviewing.data.participantLastName}` : `${reviewing.data.participantFirstName} ${reviewing.data.participantLastName}`}</p>
+                  <p><span className="font-medium">Participant:</span> {reviewing.data.participantFirstName} {reviewing.data.participantLastName}</p>
                   <p><span className="font-medium">Email:</span> {reviewing.data.participantEmail}</p>
                   {reviewing.type === "calendar" ? (
                     <>
@@ -245,7 +273,7 @@ export default function SupervisorPending() {
                     disabled={isPending}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                   >
-                    Approve
+                    {isDeferred ? "Release & Approve" : "Approve"}
                   </Button>
                   <Button
                     data-testid="button-reject"

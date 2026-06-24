@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, CheckCircle, XCircle, AlertCircle, MapPin, CheckCheck } from "lucide-react";
+import { Clock, CheckCircle, XCircle, AlertCircle, MapPin, CheckCheck, Trophy } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -139,6 +139,56 @@ export default function ParticipantDashboard() {
             </Card>
           </div>
         )}
+
+        {/* Milestone Progress */}
+        {!dashLoading && (() => {
+          const MILESTONES = [
+            { label: "Bronze Award", goal: 40, color: "bg-amber-600" },
+            { label: "Silver Award", goal: 75, color: "bg-gray-400" },
+            { label: "Gold Award", goal: 80, color: "bg-yellow-400" },
+          ];
+          const totalHours = dashboard?.totalApprovedHours ?? 0;
+          const next = MILESTONES.find((m) => totalHours < m.goal);
+          if (!next) {
+            return (
+              <Card className="border-yellow-300 bg-yellow-50/50">
+                <CardContent className="py-4 flex items-center gap-3">
+                  <Trophy className="w-6 h-6 text-yellow-500 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-yellow-800">Gold Award Achieved!</p>
+                    <p className="text-xs text-yellow-700">You've reached all milestones. Outstanding work!</p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          }
+          const prevGoal = MILESTONES[MILESTONES.indexOf(next) - 1]?.goal ?? 0;
+          const pct = Math.min(100, Math.round(((totalHours - prevGoal) / (next.goal - prevGoal)) * 100));
+          return (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-yellow-500" /> Milestone Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <p className="text-sm font-medium">
+                  {pct}% progress towards {next.label}{" "}
+                  <span className="text-muted-foreground font-normal">(Goal: {next.goal} Hours)</span>
+                </p>
+                <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className={`${next.color} h-2.5 rounded-full transition-all`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {totalHours.toFixed(1)}h of {next.goal}h completed
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Today's Check-In Panel */}
         {todayRegistrations.length > 0 && (

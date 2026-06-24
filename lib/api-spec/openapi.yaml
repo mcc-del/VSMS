@@ -421,7 +421,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ExternalSubmission"
         "400":
-          description: Validation error or 25% cap exceeded
+          description: Validation error
 
   /v1/supervisor/external-submissions:
     get:
