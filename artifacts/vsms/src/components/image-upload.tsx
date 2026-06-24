@@ -26,14 +26,21 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
     setIsUploading(true);
 
     try {
+      const token = localStorage.getItem("vsms_token");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
       const urlRes = await fetch("/api/storage/uploads/request-url", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
       });
 
-      if (!urlRes.ok) throw new Error("Failed to get upload URL");
-      const { uploadURL, objectPath } = await urlRes.json();
+      if (!urlRes.ok) {
+        const err = await urlRes.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Failed to get upload URL");
+      }
+      const { uploadURL, objectPath } = await urlRes.json() as { uploadURL: string; objectPath: string };
 
       const uploadRes = await fetch(uploadURL, {
         method: "PUT",
@@ -43,8 +50,8 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
 
       if (!uploadRes.ok) throw new Error("Upload failed");
       onChange(objectPath);
-    } catch (e: any) {
-      setError(e.message ?? "Upload failed");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setIsUploading(false);
     }
@@ -67,7 +74,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       />
 
       {previewSrc ? (
-        <div className="relative inline-block">
+        <div className="relative inline-block w-full">
           <img
             src={previewSrc}
             alt="Event image"
