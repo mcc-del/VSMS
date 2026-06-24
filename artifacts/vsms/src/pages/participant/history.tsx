@@ -1,4 +1,4 @@
-import { useListMySubmissions } from "@workspace/api-client-react";
+import { useListMySubmissions, useListMyExternalSubmissions } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,8 +13,13 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function HistoryPage() {
   const { data: submissions, isLoading } = useListMySubmissions();
+  const { data: externalSubmissions, isLoading: extLoading } = useListMyExternalSubmissions();
 
   const sorted = [...(submissions ?? [])].sort(
+    (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+  );
+
+  const sortedExternal = [...(externalSubmissions ?? [])].sort(
     (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
   );
 
@@ -28,14 +33,14 @@ export default function HistoryPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">All Submissions</CardTitle>
+            <CardTitle className="text-base">Calendar Submissions</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="space-y-2">{[0,1,2,3].map(i => <Skeleton key={i} className="h-14" />)}</div>
             ) : sorted.length === 0 ? (
               <p className="text-muted-foreground text-sm py-8 text-center">
-                No submissions yet. Go to the Calendar to claim hours for past events.
+                No calendar submissions yet. Go to the Calendar to claim hours for past events.
               </p>
             ) : (
               <div className="space-y-3">
@@ -55,6 +60,54 @@ export default function HistoryPage() {
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {s.eventDate} &middot; {s.hoursValue}h &middot; Submitted {new Date(s.submittedAt).toLocaleDateString()}
                         </p>
+                        {s.supervisorComments && (
+                          <p className="text-xs text-muted-foreground mt-1 italic">"{s.supervisorComments}"</p>
+                        )}
+                      </div>
+                      <StatusBadge status={s.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">External Activity Submissions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {extLoading ? (
+              <div className="space-y-2">{[0,1,2].map(i => <Skeleton key={i} className="h-14" />)}</div>
+            ) : sortedExternal.length === 0 ? (
+              <p className="text-muted-foreground text-sm py-8 text-center">
+                No external submissions yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {sortedExternal.map((s) => (
+                  <div
+                    key={s.externalSubmissionId}
+                    data-testid={`card-external-submission-${s.externalSubmissionId}`}
+                    className={`rounded-lg border p-4 transition-colors ${
+                      s.status === "approved" ? "border-l-4 border-l-green-500" :
+                      s.status === "rejected" ? "border-l-4 border-l-red-500" :
+                      s.status === "deferred_overflow" ? "border-l-4 border-l-gray-400" :
+                      "border-l-4 border-l-yellow-400"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{s.activityName}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {s.organizationName} &middot; {s.volunteerDate} &middot; {s.hoursWorked}h &middot; Submitted {new Date(s.submittedAt).toLocaleDateString()}
+                        </p>
+                        {s.status === "deferred_overflow" && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Held in Deferred Repository — pending release by supervisor.
+                          </p>
+                        )}
                         {s.supervisorComments && (
                           <p className="text-xs text-muted-foreground mt-1 italic">"{s.supervisorComments}"</p>
                         )}
