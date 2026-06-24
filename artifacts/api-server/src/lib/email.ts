@@ -1,0 +1,125 @@
+import { Resend } from "resend";
+import { logger } from "./logger";
+
+const FROM_ADDRESS = "VSMS <noreply@vsms.org>";
+
+function getClient(): Resend | null {
+  const apiKey = process.env["RESEND_API_KEY"];
+  if (!apiKey) {
+    logger.warn("RESEND_API_KEY is not set — email sending is disabled");
+    return null;
+  }
+  return new Resend(apiKey);
+}
+
+export interface EventDetails {
+  title: string;
+  eventDate: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+}
+
+function formatEventDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const d = new Date(year, month - 1, day);
+  return d.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function formatTime(timeStr: string): string {
+  const [hourStr, minStr] = timeStr.split(":");
+  const hour = Number(hourStr);
+  const min = Number(minStr);
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const h = hour % 12 || 12;
+  return `${h}:${min.toString().padStart(2, "0")} ${suffix}`;
+}
+
+export async function sendRegistrationConfirmation(
+  toEmail: string,
+  toName: string,
+  event: EventDetails,
+): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+
+  const formattedDate = formatEventDate(event.eventDate);
+  const startFmt = formatTime(event.startTime);
+  const endFmt = formatTime(event.endTime);
+
+  const subject = `You're registered: ${event.title}`;
+  const text = [
+    `Hi ${toName},`,
+    "",
+    `You have successfully registered for the following volunteer opportunity:`,
+    "",
+    `Event:    ${event.title}`,
+    `Date:     ${formattedDate}`,
+    `Time:     ${startFmt} – ${endFmt}`,
+    `Location: ${event.location}`,
+    "",
+    "Please remember to check in on the day of the event using the VSMS app.",
+    "",
+    "Thank you for volunteering!",
+    "— The VSMS Team",
+  ].join("\n");
+
+  try {
+    await client.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject,
+      text,
+    });
+    logger.info({ toEmail, eventTitle: event.title }, "Confirmation email sent");
+  } catch (err) {
+    logger.error({ err, toEmail, eventTitle: event.title }, "Failed to send confirmation email");
+  }
+}
+
+export async function sendReminderEmail(
+  toEmail: string,
+  toName: string,
+  event: EventDetails,
+): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+
+  const formattedDate = formatEventDate(event.eventDate);
+  const startFmt = formatTime(event.startTime);
+  const endFmt = formatTime(event.endTime);
+
+  const subject = `Reminder: ${event.title} is in 2 days`;
+  const text = [
+    `Hi ${toName},`,
+    "",
+    `This is a friendly reminder that you are registered for a volunteer event in 2 days:`,
+    "",
+    `Event:    ${event.title}`,
+    `Date:     ${formattedDate}`,
+    `Time:     ${startFmt} – ${endFmt}`,
+    `Location: ${event.location}`,
+    "",
+    "Remember to check in on the day of the event using the VSMS app.",
+    "",
+    "See you there!",
+    "— The VSMS Team",
+  ].join("\n");
+
+  try {
+    await client.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject,
+      text,
+    });
+    logger.info({ toEmail, eventTitle: event.title }, "Reminder email sent");
+  } catch (err) {
+    logger.error({ err, toEmail, eventTitle: event.title }, "Failed to send reminder email");
+  }
+}

@@ -9,6 +9,7 @@ import {
 import { eq, count, sql, and, lt } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
+import { sendRegistrationConfirmation } from "../lib/email";
 
 const router = Router();
 
@@ -300,6 +301,26 @@ router.post(
       hoursValue: Number(event.hoursValue),
       imageUrl: event.imageUrl ?? null,
     });
+
+    // Fire-and-forget confirmation email (does not block the HTTP response)
+    const [user] = await db
+      .select({ email: usersTable.email, firstName: usersTable.firstName, lastName: usersTable.lastName })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+
+    if (user) {
+      const toName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+      sendRegistrationConfirmation(user.email, toName, {
+        title: event.title,
+        eventDate: event.eventDate,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        location: event.location,
+      }).catch((err) => {
+        req.log.error({ err }, "Unhandled error sending registration confirmation");
+      });
+    }
   },
 );
 
