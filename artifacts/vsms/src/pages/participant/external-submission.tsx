@@ -70,6 +70,7 @@ export default function ExternalSubmissionPage() {
   });
 
   const watchedHours = form.watch("hoursWorked");
+  const watchedGuidelines = form.watch("guidelines");
 
   const approvedCalendarHours = (calendarSubs ?? [])
     .filter((s) => s.status === "approved")
@@ -350,7 +351,7 @@ export default function ExternalSubmissionPage() {
                   data-testid="button-submit-external"
                   type="submit"
                   className="w-full"
-                  disabled={submitMutation.isPending}
+                  disabled={submitMutation.isPending || !watchedGuidelines?.length}
                 >
                   {submitMutation.isPending ? "Submitting..." : "Submit for Review"}
                 </Button>

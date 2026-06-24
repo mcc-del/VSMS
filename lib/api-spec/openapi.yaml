@@ -1015,6 +1015,9 @@ components:
           type: string
         reviewedAt:
           type: ["string", "null"]
+        message:
+          type: ["string", "null"]
+          description: Present when status is deferred_overflow; explains why the submission was deferred.
 
     ExternalSubmissionDetail:
       type: object

@@ -241,6 +241,11 @@ export interface ExternalSubmission {
   submittedAt: string;
   /** @nullable */
   reviewedAt?: string | null;
+  /**
+     * Present when status is deferred_overflow; explains why the submission was deferred.
+     * @nullable
+     */
+  message?: string | null;
 }
 
 export interface ExternalSubmissionDetail {

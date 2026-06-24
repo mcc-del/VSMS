@@ -333,7 +333,8 @@ export const ListMyExternalSubmissionsResponseItem = zod.object({
   "status": zod.string(),
   "supervisorComments": zod.string().nullish(),
   "submittedAt": zod.string(),
-  "reviewedAt": zod.string().nullish()
+  "reviewedAt": zod.string().nullish(),
+  "message": zod.string().nullish().describe('Present when status is deferred_overflow; explains why the submission was deferred.')
 })
 export const ListMyExternalSubmissionsResponse = zod.array(ListMyExternalSubmissionsResponseItem)
 

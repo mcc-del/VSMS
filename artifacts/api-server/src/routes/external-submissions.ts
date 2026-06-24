@@ -102,6 +102,10 @@ router.post(
     const totalExternalIfApproved = externalApprovedHours + externalPendingHours + hoursWorked;
     const maxAllowedExternal = calendarApprovedHours * 0.25;
 
+    // Defer only when there are calendar hours to compare against.
+    // With zero approved calendar hours the 25% cap has no baseline, so we
+    // let the submission through as "pending" — the cap enforces on future
+    // submissions once internal hours accrue.
     const isDeferred = calendarApprovedHours > 0 && totalExternalIfApproved > maxAllowedExternal;
 
     const [submission] = await db
@@ -119,7 +123,12 @@ router.post(
       })
       .returning();
 
-    res.status(201).json(formatExternal(submission));
+    const responseBody: ReturnType<typeof formatExternal> & { message?: string } = formatExternal(submission);
+    if (isDeferred) {
+      responseBody.message =
+        "Your submission exceeds the 25% external hours cap. It has been safely stored in your Deferred Repository and will be released once you complete more in-organization volunteer hours.";
+    }
+    res.status(201).json(responseBody);
   },
 );
 
