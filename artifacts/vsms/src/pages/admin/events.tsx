@@ -110,13 +110,15 @@ export default function AdminEventsPage() {
 
   function onSubmit(values: z.infer<typeof editSchema>) {
     if (!editingEvent) return;
+    const payload: Record<string, unknown> = { ...values };
+    if (payload.imageUrl === null || payload.imageUrl === undefined || payload.imageUrl === "") {
+      payload.imageUrl = null;
+    }
+
     updateEvent.mutate(
       {
         eventId: editingEvent.eventId,
-        data: {
-          ...values,
-          imageUrl: values.imageUrl ?? null,
-        } as any,
+        data: payload as any,
       },
       {
         onSuccess: () => {

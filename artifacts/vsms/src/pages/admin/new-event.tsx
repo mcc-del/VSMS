@@ -51,8 +51,11 @@ export default function AdminNewEvent() {
   });
 
   function onSubmit(values: z.infer<typeof schema>) {
+    const payload: Record<string, unknown> = { ...values };
+    if (!payload.imageUrl) delete payload.imageUrl;
+
     createEvent.mutate(
-      { data: values as any },
+      { data: payload as any },
       {
         onSuccess: () => {
           toast({ title: "Event created", description: `"${values.title}" has been added to the calendar.` });
