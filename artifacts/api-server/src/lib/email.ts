@@ -82,13 +82,22 @@ export async function sendRegistrationConfirmation(
   }
 }
 
+/**
+ * Sends a 2-day reminder email.
+ * Returns true only when the email was successfully accepted by the provider.
+ * Returns false when the API key is missing or the provider call fails.
+ * Callers must inspect the return value before marking reminder_sent=true.
+ */
 export async function sendReminderEmail(
   toEmail: string,
   toName: string,
   event: EventDetails,
-): Promise<void> {
+): Promise<boolean> {
   const client = getClient();
-  if (!client) return;
+  if (!client) {
+    logger.warn({ toEmail, eventTitle: event.title }, "Reminder skipped — RESEND_API_KEY not configured");
+    return false;
+  }
 
   const formattedDate = formatEventDate(event.eventDate);
   const startFmt = formatTime(event.startTime);
@@ -119,7 +128,9 @@ export async function sendReminderEmail(
       text,
     });
     logger.info({ toEmail, eventTitle: event.title }, "Reminder email sent");
+    return true;
   } catch (err) {
     logger.error({ err, toEmail, eventTitle: event.title }, "Failed to send reminder email");
+    return false;
   }
 }

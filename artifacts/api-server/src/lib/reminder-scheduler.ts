@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { db, eventRegistrationsTable, eventsTable, usersTable } from "@workspace/db";
-import { eq, and, or, sql } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { logger } from "./logger";
 import { sendReminderEmail } from "./email";
 
@@ -31,6 +31,7 @@ async function sendTwoDayReminders(): Promise<void> {
         and(
           eq(eventsTable.eventDate, targetDate),
           eq(eventRegistrationsTable.reminderSent, false),
+          eq(usersTable.role, "participant"),
           or(
             eq(eventRegistrationsTable.status, "registered"),
             eq(eventRegistrationsTable.status, "attended"),
@@ -40,10 +41,13 @@ async function sendTwoDayReminders(): Promise<void> {
 
     logger.info({ count: rows.length, targetDate }, "Found registrations to remind");
 
+    let sent = 0;
+    let failed = 0;
+
     for (const row of rows) {
       const toName = [row.userFirstName, row.userLastName].filter(Boolean).join(" ") || row.userEmail;
 
-      await sendReminderEmail(row.userEmail, toName, {
+      const delivered = await sendReminderEmail(row.userEmail, toName, {
         title: row.eventTitle ?? "",
         eventDate: row.eventDate ?? "",
         startTime: row.startTime ?? "",
@@ -51,13 +55,18 @@ async function sendTwoDayReminders(): Promise<void> {
         location: row.location ?? "",
       });
 
-      await db
-        .update(eventRegistrationsTable)
-        .set({ reminderSent: true })
-        .where(eq(eventRegistrationsTable.registrationId, row.registrationId));
+      if (delivered) {
+        await db
+          .update(eventRegistrationsTable)
+          .set({ reminderSent: true })
+          .where(eq(eventRegistrationsTable.registrationId, row.registrationId));
+        sent++;
+      } else {
+        failed++;
+      }
     }
 
-    logger.info({ count: rows.length }, "2-day reminder job completed");
+    logger.info({ sent, failed, targetDate }, "2-day reminder job completed");
   } catch (err) {
     logger.error({ err }, "Error in 2-day reminder job");
   }
