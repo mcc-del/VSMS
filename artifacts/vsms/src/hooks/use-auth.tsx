@@ -48,11 +48,10 @@ export function useAuth() {
     window.fetch = async (input, init) => {
       const token = localStorage.getItem("vsms_token");
       if (token) {
-        init = init || {};
-        init.headers = {
-          ...init.headers,
-          Authorization: `Bearer ${token}`
-        };
+        init = { ...(init || {}) };
+        const headers = new Headers(init.headers);
+        headers.set("Authorization", `Bearer ${token}`);
+        init.headers = headers;
       }
       return originalFetch(input, init);
     };
