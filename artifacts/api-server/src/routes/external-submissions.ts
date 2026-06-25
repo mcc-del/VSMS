@@ -49,7 +49,8 @@ router.post(
   async (req, res) => {
     const parsed = SubmitExternalActivityBody.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: "Invalid input" });
+      req.log.warn({ body: req.body, issues: parsed.error.issues }, "External submission validation failed");
+      res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });
       return;
     }
 

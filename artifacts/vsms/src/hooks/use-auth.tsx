@@ -30,17 +30,20 @@ export function useAuth() {
     setLocation("/login");
   }, [setLocation]);
 
-  const login = useCallback((token: string, role: string, firstName: string, userId: string) => {
-    localStorage.setItem("vsms_token", token);
-    localStorage.setItem("vsms_role", role);
-    localStorage.setItem("vsms_firstName", firstName);
-    localStorage.setItem("vsms_userId", userId);
-    setAuth({ token, role: role as Role, firstName, userId });
-    
-    if (role === "admin") setLocation("/admin/dashboard");
-    else if (role === "supervisor") setLocation("/supervisor/pending");
-    else setLocation("/dashboard");
-  }, [setLocation]);
+  const login = useCallback(
+    (token: string, role: string, firstName: string, userId: string) => {
+      localStorage.setItem("vsms_token", token);
+      localStorage.setItem("vsms_role", role);
+      localStorage.setItem("vsms_firstName", firstName);
+      localStorage.setItem("vsms_userId", userId);
+      setAuth({ token, role: role as Role, firstName, userId });
+
+      if (role === "admin") setLocation("/admin/dashboard");
+      else if (role === "supervisor") setLocation("/supervisor/pending");
+      else setLocation("/dashboard");
+    },
+    [setLocation],
+  );
 
   useEffect(() => {
     // Inject token to customFetch defaults
@@ -48,11 +51,10 @@ export function useAuth() {
     window.fetch = async (input, init) => {
       const token = localStorage.getItem("vsms_token");
       if (token) {
-        init = init || {};
-        init.headers = {
-          ...init.headers,
-          Authorization: `Bearer ${token}`
-        };
+        init = { ...(init || {}) };
+        const headers = new Headers(init.headers);
+        headers.set("Authorization", `Bearer ${token}`);
+        init.headers = headers;
       }
       return originalFetch(input, init);
     };
@@ -66,22 +68,25 @@ export function useAuth() {
     if (!auth.token) return;
 
     let timeoutId: number;
-    
+
     const resetTimer = () => {
       window.clearTimeout(timeoutId);
       // 30 minutes
-      timeoutId = window.setTimeout(() => {
-        logout();
-      }, 30 * 60 * 1000);
+      timeoutId = window.setTimeout(
+        () => {
+          logout();
+        },
+        30 * 60 * 1000,
+      );
     };
 
     resetTimer();
 
     const events = ["mousemove", "keydown", "scroll", "click"];
-    events.forEach(event => window.addEventListener(event, resetTimer));
+    events.forEach((event) => window.addEventListener(event, resetTimer));
 
     return () => {
-      events.forEach(event => window.removeEventListener(event, resetTimer));
+      events.forEach((event) => window.removeEventListener(event, resetTimer));
       window.clearTimeout(timeoutId);
     };
   }, [auth.token, logout]);
