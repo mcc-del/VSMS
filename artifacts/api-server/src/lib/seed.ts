@@ -16,6 +16,13 @@ import { logger } from "./logger";
  */
 const TEST_ACCOUNTS = [
   {
+    email: "participant@test.com",
+    password: "Participant123!",
+    firstName: "Pat",
+    lastName: "Participant",
+    role: "participant" as const,
+  },
+  {
     email: "supervisor@test.com",
     password: "Supervisor123!",
     firstName: "Sam",
