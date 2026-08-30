@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/protected-route";
 import NotFound from "@/pages/not-found";
+import LandingPage from "@/pages/landing";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
 import ParticipantDashboard from "@/pages/participant/dashboard";
@@ -30,7 +31,9 @@ const queryClient = new QueryClient({
 
 function RootRedirect() {
   const { token, role } = useAuth();
-  if (!token) return <Redirect to="/login" />;
+  // Anonymous visitors see the marketing landing page; authenticated users
+  // go straight to their role's home.
+  if (!token) return <LandingPage />;
   if (role === "admin") return <Redirect to="/admin/dashboard" />;
   if (role === "supervisor") return <Redirect to="/supervisor/pending" />;
   return <Redirect to="/dashboard" />;
