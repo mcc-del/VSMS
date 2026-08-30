@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, usersTable, eventsTable, volunteerSubmissionsTable, manualHoursTable } from "@workspace/db";
-import { eq, and, sum, count } from "drizzle-orm";
+import { eq, sum, count } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 
 const router = Router();
@@ -16,7 +16,8 @@ router.get(
     const allSubs = await db
       .select({
         status: volunteerSubmissionsTable.status,
-        hoursValue: eventsTable.hoursValue,
+        hoursWorked: volunteerSubmissionsTable.hoursWorked,
+        plannedHours: eventsTable.hoursValue,
       })
       .from(volunteerSubmissionsTable)
       .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
@@ -29,9 +30,9 @@ router.get(
 
     for (const sub of allSubs) {
       if (sub.status === "approved") {
-        totalApprovedHours += Number(sub.hoursValue ?? 0);
+        totalApprovedHours += Number(sub.hoursWorked ?? sub.plannedHours ?? 0);
         approvedCount++;
-      } else if (sub.status === "pending") {
+      } else if (sub.status === "pending" && sub.hoursWorked !== null) {
         pendingCount++;
       } else if (sub.status === "rejected") {
         rejectedCount++;

@@ -15,7 +15,7 @@ export default function HistoryPage() {
   const { data: submissions, isLoading } = useListMySubmissions();
   const { data: externalSubmissions, isLoading: extLoading } = useListMyExternalSubmissions();
 
-  const sorted = [...(submissions ?? [])].sort(
+  const sorted = [...(submissions ?? [])].filter((submission) => submission.hoursWorked != null).sort(
     (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
   );
 
@@ -33,14 +33,14 @@ export default function HistoryPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Calendar Submissions</CardTitle>
+            <CardTitle className="text-base">Internal Event Hours</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="space-y-2">{[0,1,2,3].map(i => <Skeleton key={i} className="h-14" />)}</div>
             ) : sorted.length === 0 ? (
               <p className="text-muted-foreground text-sm py-8 text-center">
-                No calendar submissions yet. Go to the Calendar to claim hours for past events.
+                No internal event hours submitted yet. After a registered event ends, submit the actual hours you worked from My Schedule.
               </p>
             ) : (
               <div className="space-y-3">
@@ -58,7 +58,7 @@ export default function HistoryPage() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{s.eventTitle ?? "Event"}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {s.eventDate} &middot; {s.hoursValue}h &middot; Submitted {new Date(s.submittedAt).toLocaleDateString()}
+                          {s.eventDate} &middot; {s.hoursWorked ?? "—"}h worked &middot; Submitted {new Date(s.submittedAt).toLocaleDateString()}
                         </p>
                         {s.supervisorComments && (
                           <p className="text-xs text-muted-foreground mt-1 italic">"{s.supervisorComments}"</p>

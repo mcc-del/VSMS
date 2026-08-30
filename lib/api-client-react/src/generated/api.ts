@@ -1019,7 +1019,7 @@ export function useListMySubmissions<TData = Awaited<ReturnType<typeof listMySub
 
 
 
-export const getClaimHoursUrl = () => {
+export const getSubmitInternalHoursUrl = () => {
 
 
 
@@ -1028,11 +1028,11 @@ export const getClaimHoursUrl = () => {
 }
 
 /**
- * @summary Claim hours for a past event
+ * @summary Submit actual hours worked for a past registered event
  */
-export const claimHours = async (submissionInput: SubmissionInput, options?: RequestInit): Promise<Submission> => {
+export const submitInternalHours = async (submissionInput: SubmissionInput, options?: RequestInit): Promise<Submission> => {
 
-  return customFetch<Submission>(getClaimHoursUrl(),
+  return customFetch<Submission>(getSubmitInternalHoursUrl(),
   {
     ...options,
     method: 'POST',
@@ -1045,11 +1045,11 @@ export const claimHours = async (submissionInput: SubmissionInput, options?: Req
 
 
 
-export const getClaimHoursMutationOptions = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof claimHours>>, TError,{data: BodyType<SubmissionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof claimHours>>, TError,{data: BodyType<SubmissionInput>}, TContext> => {
+export const getSubmitInternalHoursMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitInternalHours>>, TError,{data: BodyType<SubmissionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitInternalHours>>, TError,{data: BodyType<SubmissionInput>}, TContext> => {
 
-const mutationKey = ['claimHours'];
+const mutationKey = ['submitInternalHours'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1059,10 +1059,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof claimHours>>, {data: BodyType<SubmissionInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitInternalHours>>, {data: BodyType<SubmissionInput>}> = (props) => {
           const {data} = props ?? {};
 
-          return  claimHours(data,requestOptions)
+          return  submitInternalHours(data,requestOptions)
         }
 
 
@@ -1072,22 +1072,22 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type ClaimHoursMutationResult = NonNullable<Awaited<ReturnType<typeof claimHours>>>
-    export type ClaimHoursMutationBody = BodyType<SubmissionInput>
-    export type ClaimHoursMutationError = ErrorType<ErrorResponse>
+    export type SubmitInternalHoursMutationResult = NonNullable<Awaited<ReturnType<typeof submitInternalHours>>>
+    export type SubmitInternalHoursMutationBody = BodyType<SubmissionInput>
+    export type SubmitInternalHoursMutationError = ErrorType<ErrorResponse>
 
     /**
- * @summary Claim hours for a past event
+ * @summary Submit actual hours worked for a past registered event
  */
-export const useClaimHours = <TError = ErrorType<ErrorResponse>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof claimHours>>, TError,{data: BodyType<SubmissionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useSubmitInternalHours = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitInternalHours>>, TError,{data: BodyType<SubmissionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof claimHours>>,
+        Awaited<ReturnType<typeof submitInternalHours>>,
         TError,
         {data: BodyType<SubmissionInput>},
         TContext
       > => {
-      return useMutation(getClaimHoursMutationOptions(options));
+      return useMutation(getSubmitInternalHoursMutationOptions(options));
     }
 
 export const getListPendingSubmissionsUrl = () => {

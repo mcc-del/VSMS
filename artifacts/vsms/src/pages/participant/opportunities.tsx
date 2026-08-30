@@ -27,6 +27,7 @@ import {
 import { MapPin, Clock, Users, Calendar, Search, User, Mail, Award } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { AuthenticatedImage } from "@/components/authenticated-image";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -112,8 +113,8 @@ export default function OpportunitiesPage() {
         <div className="flex flex-col md:flex-row">
           {event.imageUrl && (
             <div className="md:w-48 md:shrink-0">
-              <img
-                src={`/api/storage${event.imageUrl}`}
+              <AuthenticatedImage
+                objectPath={event.imageUrl}
                 alt={event.title}
                 className="w-full h-40 md:h-full object-cover"
               />

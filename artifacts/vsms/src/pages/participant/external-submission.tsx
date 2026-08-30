@@ -74,7 +74,7 @@ export default function ExternalSubmissionPage() {
 
   const approvedCalendarHours = (calendarSubs ?? [])
     .filter((s) => s.status === "approved")
-    .reduce((sum, s) => sum + (Number(s.hoursValue) || 0), 0);
+    .reduce((sum, s) => sum + (Number(s.hoursWorked) || 0), 0);
 
   const approvedExternalHours = (externals ?? [])
     .filter((s) => s.status === "approved")

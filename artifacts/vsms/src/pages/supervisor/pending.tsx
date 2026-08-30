@@ -13,7 +13,7 @@ import {
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Info } from "lucide-react";
 
 export default function SupervisorPending() {
-  const { data: calendarSubs, isLoading: calLoading } = useListPendingSubmissions();
+  const { data: internalSubs, isLoading: internalLoading } = useListPendingSubmissions();
   const { data: externalSubs, isLoading: extLoading } = useListPendingExternalSubmissions();
   const reviewCalendar = useReviewSubmission();
   const reviewExternal = useReviewExternalSubmission();
@@ -80,7 +80,7 @@ export default function SupervisorPending() {
   }
 
   const isPending = reviewCalendar.isPending || reviewExternal.isPending;
-  const totalPending = (calendarSubs?.length ?? 0) + (externalSubs?.length ?? 0);
+  const totalPending = (internalSubs?.length ?? 0) + (externalSubs?.length ?? 0);
   const isDeferred = reviewing?.type === "external" && reviewing.data.status === "deferred_overflow";
 
   return (
@@ -96,9 +96,9 @@ export default function SupervisorPending() {
         <Tabs defaultValue="calendar">
           <TabsList>
             <TabsTrigger value="calendar" className="gap-2">
-              Calendar Submissions
-              {(calendarSubs?.length ?? 0) > 0 && (
-                <Badge className="bg-yellow-100 text-yellow-800 border-0 text-xs">{calendarSubs?.length}</Badge>
+              Internal Event Hours
+              {(internalSubs?.length ?? 0) > 0 && (
+                <Badge className="bg-yellow-100 text-yellow-800 border-0 text-xs">{internalSubs?.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="external" className="gap-2">
@@ -112,13 +112,13 @@ export default function SupervisorPending() {
           <TabsContent value="calendar" className="mt-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Pending Calendar Submissions</CardTitle>
+                <CardTitle className="text-base">Internal Hours Awaiting Approval</CardTitle>
               </CardHeader>
               <CardContent>
-                {calLoading ? (
+                {internalLoading ? (
                   <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12" />)}</div>
-                ) : calendarSubs?.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-8 text-center">No pending calendar submissions. All caught up.</p>
+                ) : internalSubs?.length === 0 ? (
+                  <p className="text-muted-foreground text-sm py-8 text-center">No internal event hours awaiting approval. All caught up.</p>
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
@@ -132,12 +132,12 @@ export default function SupervisorPending() {
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {calendarSubs?.map((s) => (
+                      {internalSubs?.map((s) => (
                         <tr key={s.submissionId} data-testid={`row-cal-${s.submissionId}`}>
                           <td className="py-3 font-medium">{s.participantFirstName} {s.participantLastName}</td>
                           <td className="py-3">{s.eventTitle}</td>
                           <td className="py-3 text-muted-foreground">{s.eventDate}</td>
-                          <td className="py-3">{s.hoursValue}h</td>
+                          <td className="py-3">{s.hoursWorked ?? "—"}h</td>
                           <td className="py-3 text-muted-foreground">{new Date(s.submittedAt).toLocaleDateString()}</td>
                           <td className="py-3">
                             <Button size="sm" variant="outline" data-testid={`button-review-cal-${s.submissionId}`} onClick={() => openReview("calendar", s)}>
@@ -220,8 +220,11 @@ export default function SupervisorPending() {
                 <DialogTitle>
                   {isDeferred
                     ? "Release Deferred External Activity"
-                    : `Review ${reviewing.type === "external" ? "External Activity" : "Calendar Submission"}`}
+                    : `Review ${reviewing.type === "external" ? "External Activity" : "Internal Event Hours"}`}
                 </DialogTitle>
+                <DialogDescription>
+                  Compare the submitted hours with the event details before approving or rejecting.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 {isDeferred && (
@@ -240,7 +243,8 @@ export default function SupervisorPending() {
                     <>
                       <p><span className="font-medium">Event:</span> {reviewing.data.eventTitle}</p>
                       <p><span className="font-medium">Date:</span> {reviewing.data.eventDate}</p>
-                      <p><span className="font-medium">Hours:</span> {reviewing.data.hoursValue}h</p>
+                      <p><span className="font-medium">Actual hours worked:</span> {reviewing.data.hoursWorked}h</p>
+                      <p><span className="font-medium">Planned duration:</span> {reviewing.data.plannedHours}h</p>
                     </>
                   ) : (
                     <>

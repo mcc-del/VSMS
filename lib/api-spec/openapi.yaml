@@ -298,9 +298,9 @@ paths:
                   $ref: "#/components/schemas/Submission"
 
     post:
-      operationId: claimHours
+      operationId: submitInternalHours
       tags: [submissions]
-      summary: Claim hours for a past event
+      summary: Submit actual hours worked for a past registered event
       requestBody:
         required: true
         content:
@@ -321,7 +321,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
-          description: Already claimed
+          description: Hours already submitted
           content:
             application/json:
               schema:
@@ -887,7 +887,7 @@ components:
 
     EventInput:
       type: object
-      required: [title, description, location, eventDate, startTime, endTime, hoursValue, maxCapacity, supervisorId]
+      required: [title, description, location, eventDate, startTime, endTime, maxCapacity, supervisorId]
       properties:
         title:
           type: string
@@ -902,8 +902,6 @@ components:
           type: string
         endTime:
           type: string
-        hoursValue:
-          type: number
         maxCapacity:
           type: integer
         supervisorId:
@@ -927,8 +925,6 @@ components:
           type: string
         endTime:
           type: string
-        hoursValue:
-          type: number
         maxCapacity:
           type: integer
         supervisorId:
@@ -971,15 +967,12 @@ components:
 
     CheckInResponse:
       type: object
-      required: [status, message, submissionId]
+      required: [status, message]
       properties:
         status:
           type: string
         message:
           type: string
-        submissionId:
-          type: string
-
     Submission:
       type: object
       required: [submissionId, eventId, userId, status, submittedAt]
@@ -1002,7 +995,9 @@ components:
           type: ["string", "null"]
         eventDate:
           type: ["string", "null"]
-        hoursValue:
+        hoursWorked:
+          type: ["number", "null"]
+        plannedHours:
           type: ["number", "null"]
 
     SubmissionDetail:
@@ -1027,7 +1022,9 @@ components:
           type: ["string", "null"]
         eventDate:
           type: ["string", "null"]
-        hoursValue:
+        hoursWorked:
+          type: ["number", "null"]
+        plannedHours:
           type: ["number", "null"]
         participantFirstName:
           type: ["string", "null"]
@@ -1038,10 +1035,15 @@ components:
 
     SubmissionInput:
       type: object
-      required: [eventId]
+      required: [eventId, hoursWorked]
       properties:
         eventId:
           type: string
+        hoursWorked:
+          type: number
+          minimum: 0.25
+          maximum: 24
+          multipleOf: 0.25
 
     ReviewInput:
       type: object

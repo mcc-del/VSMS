@@ -1,17 +1,39 @@
+import { useState } from "react";
 import {
   useGetParticipantDashboard,
   useListMySubmissions,
   useListMyRegistrations,
   useCheckInToEvent,
+  useSubmitInternalHours,
   getListMySubmissionsQueryKey,
   getGetParticipantDashboardQueryKey,
   getListMyRegistrationsQueryKey,
 } from "@workspace/api-client-react";
+import type { EventRegistration } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Clock, XCircle, AlertCircle, MapPin, CheckCheck, Trophy, CalendarDays } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -36,21 +58,36 @@ export default function ParticipantDashboard() {
   const { data: submissions, isLoading: subLoading } = useListMySubmissions();
   const { data: registrations, isLoading: registrationsLoading } = useListMyRegistrations();
   const checkIn = useCheckInToEvent();
+  const submitInternalHours = useSubmitInternalHours();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [hoursRegistration, setHoursRegistration] = useState<EventRegistration | null>(null);
+  const [hoursWorked, setHoursWorked] = useState("");
+  const [confirmHours, setConfirmHours] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5);
 
-  const pending = submissions?.filter((s) => s.status === "pending") ?? [];
+  const pending = submissions?.filter((s) => s.status === "pending" && s.hoursWorked != null) ?? [];
 
   // Today's registrations that are still "registered" (not yet checked in)
+  function hasEventEnded(registration: EventRegistration) {
+    if (!registration.eventDate) return false;
+    if (registration.eventDate < today) return true;
+    return registration.eventDate === today &&
+      !!registration.endTime &&
+      nowTime > registration.endTime.slice(0, 5);
+  }
+
   const todayRegistrations = (registrations ?? []).filter(
-    (r) => r.eventDate === today && r.status === "registered",
+    (r) => r.eventDate === today && r.status === "registered" && !hasEventEnded(r),
   );
   const upcomingSchedule = (registrations ?? [])
-    .filter((r) => r.eventDate && r.eventDate >= today && r.status !== "no_show")
+    .filter((r) => r.eventDate && !hasEventEnded(r) && r.status !== "no_show")
     .sort((a, b) => (a.eventDate ?? "").localeCompare(b.eventDate ?? ""));
+  const postEventRegistrations = (registrations ?? [])
+    .filter((r) => hasEventEnded(r) && r.status !== "no_show")
+    .sort((a, b) => (b.eventDate ?? "").localeCompare(a.eventDate ?? ""));
   const submissionByEvent = new Map((submissions ?? []).map((submission) => [submission.eventId, submission]));
 
   function getScheduleStatus(registration: (typeof upcomingSchedule)[number]) {
@@ -66,10 +103,10 @@ export default function ParticipantDashboard() {
     checkIn.mutate(
       { eventId },
       {
-        onSuccess: (data) => {
+        onSuccess: () => {
           toast({
             title: "Check-in successful!",
-            description: "Your internal hours have been generated and routed to your supervisor for pending review.",
+            description: "After the event ends, return here to submit the actual hours you worked.",
           });
           queryClient.invalidateQueries({ queryKey: getListMyRegistrationsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getListMySubmissionsQueryKey() });
@@ -81,6 +118,59 @@ export default function ParticipantDashboard() {
             description: err?.data?.error ?? "Something went wrong",
             variant: "destructive",
           });
+        },
+      },
+    );
+  }
+
+  function openHoursForm(registration: EventRegistration) {
+    setHoursRegistration(registration);
+    setHoursWorked("");
+    setConfirmHours(false);
+  }
+
+  function requestHoursConfirmation() {
+    const value = Number(hoursWorked);
+    if (!Number.isFinite(value) || value < 0.25 || value > 24 || value * 4 % 1 !== 0) {
+      toast({
+        title: "Enter valid hours",
+        description: "Use a value from 0.25 to 24 hours in 15-minute increments.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setConfirmHours(true);
+  }
+
+  function handleHoursSubmit() {
+    if (!hoursRegistration) return;
+    submitInternalHours.mutate(
+      {
+        data: {
+          eventId: hoursRegistration.eventId,
+          hoursWorked: Number(hoursWorked),
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Hours submitted",
+            description: "Your actual hours are now awaiting supervisor approval.",
+          });
+          queryClient.invalidateQueries({ queryKey: getListMySubmissionsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetParticipantDashboardQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getListMyRegistrationsQueryKey() });
+          setConfirmHours(false);
+          setHoursRegistration(null);
+          setHoursWorked("");
+        },
+        onError: (err: any) => {
+          toast({
+            title: "Could not submit hours",
+            description: err?.data?.error ?? "Something went wrong",
+            variant: "destructive",
+          });
+          setConfirmHours(false);
         },
       },
     );
@@ -269,6 +359,80 @@ export default function ParticipantDashboard() {
           </CardContent>
         </Card>
 
+        {/* Post-event actual hours */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" /> Post-Event Hours
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              After a registered event ends, report the actual time you volunteered.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {registrationsLoading || subLoading ? (
+              <div className="space-y-3">
+                {[0, 1].map((i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+              </div>
+            ) : postEventRegistrations.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-5 text-center">
+                No completed registered events need attention.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {postEventRegistrations.map((registration) => {
+                  const submission = submissionByEvent.get(registration.eventId);
+                  const hasSubmittedHours = submission?.hoursWorked != null;
+                  const status =
+                    hasSubmittedHours && submission?.status === "approved"
+                      ? { label: "Approved", className: "bg-green-100 text-green-800" }
+                      : hasSubmittedHours && submission?.status === "rejected"
+                        ? { label: "Rejected", className: "bg-red-100 text-red-800" }
+                        : hasSubmittedHours && submission?.status === "pending"
+                          ? { label: "Awaiting approval", className: "bg-yellow-100 text-yellow-800" }
+                          : { label: "Submit hours", className: "bg-blue-100 text-blue-800" };
+
+                  return (
+                    <div
+                      key={registration.registrationId}
+                      data-testid={`post-event-${registration.eventId}`}
+                      className="rounded-lg border p-3 sm:p-4"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold">{registration.eventTitle ?? "Volunteer event"}</p>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1.5">
+                            <span>{registration.eventDate}</span>
+                            {registration.hoursValue != null && <span>{registration.hoursValue}h planned</span>}
+                            {submission?.hoursWorked != null && <span>{submission.hoursWorked}h submitted</span>}
+                          </div>
+                          {submission?.status === "rejected" && submission.supervisorComments && (
+                            <p className="text-xs text-red-700 mt-2">
+                              Supervisor note: {submission.supervisorComments}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 self-start">
+                          <Badge className={`${status.className} border-0`}>{status.label}</Badge>
+                          {!hasSubmittedHours && (
+                            <Button
+                              size="sm"
+                              data-testid={`button-submit-hours-${registration.eventId}`}
+                              onClick={() => openHoursForm(registration)}
+                            >
+                              Enter actual hours
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Today's Check-In Panel */}
         {todayRegistrations.length > 0 && (
           <Card className="border-green-200 bg-green-50/50">
@@ -343,7 +507,7 @@ export default function ParticipantDashboard() {
                     <tr key={s.submissionId} data-testid={`row-submission-${s.submissionId}`}>
                       <td className="py-3 font-medium">{s.eventTitle}</td>
                       <td className="py-3 text-muted-foreground">{s.eventDate}</td>
-                      <td className="py-3">{s.hoursValue}h</td>
+                      <td className="py-3">{s.hoursWorked ?? "—"}h</td>
                       <td className="py-3"><StatusBadge status={s.status} /></td>
                     </tr>
                   ))}
@@ -353,6 +517,68 @@ export default function ParticipantDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={hoursRegistration !== null && !confirmHours} onOpenChange={(open) => !open && setHoursRegistration(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Submit actual hours worked</DialogTitle>
+            <DialogDescription>
+              Enter the time you actually volunteered. This can be different from the event’s planned duration.
+            </DialogDescription>
+          </DialogHeader>
+          {hoursRegistration && (
+            <div className="space-y-4">
+              <div className="rounded-lg border p-3 text-sm">
+                <p className="font-semibold">{hoursRegistration.eventTitle}</p>
+                <p className="text-muted-foreground mt-1">
+                  {hoursRegistration.eventDate}
+                  {hoursRegistration.hoursValue != null ? ` · ${hoursRegistration.hoursValue}h planned` : ""}
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="actual-hours" className="text-sm font-medium">Actual hours worked</label>
+                <Input
+                  id="actual-hours"
+                  data-testid="input-actual-hours"
+                  type="number"
+                  min="0.25"
+                  max="24"
+                  step="0.25"
+                  value={hoursWorked}
+                  onChange={(event) => setHoursWorked(event.target.value)}
+                  placeholder="For example, 2.5"
+                />
+                <p className="text-xs text-muted-foreground">Use 15-minute increments.</p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setHoursRegistration(null)}>Cancel</Button>
+                <Button data-testid="button-review-hours" onClick={requestHoursConfirmation}>Review submission</Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmHours} onOpenChange={setConfirmHours}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Submit {hoursWorked} actual hours for {hoursRegistration?.eventTitle ?? "this event"}? Your supervisor will review this entry before it is credited to your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="button-confirm-hours"
+              onClick={handleHoursSubmit}
+              disabled={submitInternalHours.isPending}
+            >
+              {submitInternalHours.isPending ? "Submitting..." : "Submit for approval"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

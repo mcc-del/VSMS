@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { calculateEventDuration, formatHours } from "@/lib/event-duration";
 
 const schema = z.object({
   title: z.string().min(1, "Title is required").max(150),
@@ -20,10 +21,13 @@ const schema = z.object({
   eventDate: z.string().min(1, "Date is required"),
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
-  hoursValue: z.coerce.number().positive("Must be greater than 0"),
   maxCapacity: z.coerce.number().int().positive("Must be a positive integer"),
   supervisorId: z.string().min(1, "Select a supervisor"),
   imageUrl: z.string().nullable(),
+}).superRefine((values, ctx) => {
+  if (calculateEventDuration(values.startTime, values.endTime) === null) {
+    ctx.addIssue({ code: "custom", path: ["endTime"], message: "End time must be later than start time" });
+  }
 });
 
 export default function AdminNewEvent() {
@@ -43,12 +47,12 @@ export default function AdminNewEvent() {
       eventDate: "",
       startTime: "09:00",
       endTime: "17:00",
-      hoursValue: 4,
       maxCapacity: 50,
       supervisorId: "",
       imageUrl: null,
     },
   });
+  const plannedHours = calculateEventDuration(form.watch("startTime"), form.watch("endTime"));
 
   function onSubmit(values: z.infer<typeof schema>) {
     const payload: Record<string, unknown> = { ...values };
@@ -115,26 +119,15 @@ export default function AdminNewEvent() {
                   </FormItem>
                 )} />
 
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField control={form.control} name="eventDate" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Event date</FormLabel>
-                      <FormControl>
-                        <Input data-testid="input-event-date" type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="hoursValue" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Hours value</FormLabel>
-                      <FormControl>
-                        <Input data-testid="input-hours" type="number" step="0.5" min="0.5" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
+                <FormField control={form.control} name="eventDate" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event date</FormLabel>
+                    <FormControl>
+                      <Input data-testid="input-event-date" type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
 
                 <div className="grid grid-cols-2 gap-3">
                   <FormField control={form.control} name="startTime" render={({ field }) => (
@@ -155,6 +148,15 @@ export default function AdminNewEvent() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                </div>
+                <div className="rounded-lg border bg-muted/40 px-4 py-3">
+                  <p className="text-sm font-medium">Planned service credit</p>
+                  <p data-testid="text-calculated-hours" className="text-2xl font-bold text-primary mt-1">
+                    {plannedHours === null ? "—" : `${formatHours(plannedHours)}h`}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Calculated automatically from the start and end times.
+                  </p>
                 </div>
 
                 <FormField control={form.control} name="maxCapacity" render={({ field }) => (
