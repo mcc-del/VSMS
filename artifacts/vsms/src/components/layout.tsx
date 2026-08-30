@@ -16,6 +16,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ...(role === "participant" ? [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Opportunities", href: "/opportunities", icon: Calendar },
+      { label: "Calendar", href: "/calendar", icon: Calendar },
       { label: "External Activity", href: "/external", icon: ExternalLink },
       { label: "History", href: "/history", icon: Clock },
     ] : []),

@@ -103,7 +103,6 @@ export const CreateEventBody = zod.object({
   "eventDate": zod.string(),
   "startTime": zod.string(),
   "endTime": zod.string(),
-  "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
   "supervisorId": zod.string(),
   "imageUrl": zod.string().optional()
@@ -176,7 +175,6 @@ export const UpdateEventBody = zod.object({
   "eventDate": zod.string().optional(),
   "startTime": zod.string().optional(),
   "endTime": zod.string().optional(),
-  "hoursValue": zod.number().optional(),
   "maxCapacity": zod.number().optional(),
   "supervisorId": zod.string().optional(),
   "imageUrl": zod.string().nullish()
@@ -231,8 +229,7 @@ export const CheckInToEventParams = zod.object({
 
 export const CheckInToEventResponse = zod.object({
   "status": zod.string(),
-  "message": zod.string(),
-  "submissionId": zod.string()
+  "message": zod.string()
 })
 
 
@@ -249,16 +246,24 @@ export const ListMySubmissionsResponseItem = zod.object({
   "reviewedAt": zod.string().nullish(),
   "eventTitle": zod.string().nullish(),
   "eventDate": zod.string().nullish(),
-  "hoursValue": zod.number().nullish()
+  "hoursWorked": zod.number().nullish(),
+  "plannedHours": zod.number().nullish()
 })
 export const ListMySubmissionsResponse = zod.array(ListMySubmissionsResponseItem)
 
 
 /**
- * @summary Claim hours for a past event
+ * @summary Submit actual hours worked for a past registered event
  */
-export const ClaimHoursBody = zod.object({
-  "eventId": zod.string()
+export const submitInternalHoursBodyHoursWorkedMin = 0.25;
+export const submitInternalHoursBodyHoursWorkedMax = 24;
+export const submitInternalHoursBodyHoursWorkedMultipleOf = 0.25;
+
+
+
+export const SubmitInternalHoursBody = zod.object({
+  "eventId": zod.string(),
+  "hoursWorked": zod.number().min(submitInternalHoursBodyHoursWorkedMin).max(submitInternalHoursBodyHoursWorkedMax).multipleOf(submitInternalHoursBodyHoursWorkedMultipleOf)
 })
 
 
@@ -275,7 +280,8 @@ export const ListPendingSubmissionsResponseItem = zod.object({
   "reviewedAt": zod.string().nullish(),
   "eventTitle": zod.string().nullish(),
   "eventDate": zod.string().nullish(),
-  "hoursValue": zod.number().nullish(),
+  "hoursWorked": zod.number().nullish(),
+  "plannedHours": zod.number().nullish(),
   "participantFirstName": zod.string().nullish(),
   "participantLastName": zod.string().nullish(),
   "participantEmail": zod.string().nullish()
@@ -314,7 +320,8 @@ export const ListReviewedSubmissionsResponseItem = zod.object({
   "reviewedAt": zod.string().nullish(),
   "eventTitle": zod.string().nullish(),
   "eventDate": zod.string().nullish(),
-  "hoursValue": zod.number().nullish(),
+  "hoursWorked": zod.number().nullish(),
+  "plannedHours": zod.number().nullish(),
   "participantFirstName": zod.string().nullish(),
   "participantLastName": zod.string().nullish(),
   "participantEmail": zod.string().nullish()

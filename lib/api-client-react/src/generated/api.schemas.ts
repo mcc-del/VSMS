@@ -94,7 +94,6 @@ export interface EventInput {
   eventDate: string;
   startTime: string;
   endTime: string;
-  hoursValue: number;
   maxCapacity: number;
   supervisorId: string;
   imageUrl?: string;
@@ -108,7 +107,6 @@ export interface EventUpdateInput {
   eventDate?: string;
   startTime?: string;
   endTime?: string;
-  hoursValue?: number;
   maxCapacity?: number;
   supervisorId?: string;
   /** @nullable */
@@ -144,7 +142,6 @@ export interface EventRegistration {
 export interface CheckInResponse {
   status: string;
   message: string;
-  submissionId: string;
 }
 
 export interface Submission {
@@ -162,7 +159,9 @@ export interface Submission {
   /** @nullable */
   eventDate?: string | null;
   /** @nullable */
-  hoursValue?: number | null;
+  hoursWorked?: number | null;
+  /** @nullable */
+  plannedHours?: number | null;
 }
 
 export interface SubmissionDetail {
@@ -180,7 +179,9 @@ export interface SubmissionDetail {
   /** @nullable */
   eventDate?: string | null;
   /** @nullable */
-  hoursValue?: number | null;
+  hoursWorked?: number | null;
+  /** @nullable */
+  plannedHours?: number | null;
   /** @nullable */
   participantFirstName?: string | null;
   /** @nullable */
@@ -191,6 +192,11 @@ export interface SubmissionDetail {
 
 export interface SubmissionInput {
   eventId: string;
+  /**
+     * @minimum 0.25
+     * @maximum 24
+     */
+  hoursWorked: number;
 }
 
 export interface ReviewInput {

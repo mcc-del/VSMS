@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useListEvents, useClaimHours, useListMySubmissions, getListMySubmissionsQueryKey, getGetParticipantDashboardQueryKey } from "@workspace/api-client-react";
+import { useListEvents } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
+import { AuthenticatedImage } from "@/components/authenticated-image";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -37,10 +37,6 @@ export default function CalendarPage() {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
 
   const { data: events, isLoading } = useListEvents();
-  const { data: mySubmissions } = useListMySubmissions();
-  const claimMutation = useClaimHours();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const grid = getMonthGrid(year, month);
   const todayStr = today.toISOString().split("T")[0];
@@ -59,35 +55,14 @@ export default function CalendarPage() {
     return (events ?? []).filter(e => e.eventDate === dateStr);
   }
 
-  const claimedEventIds = new Set((mySubmissions ?? []).map(s => s.eventId));
-
-  function handleClaim() {
-    if (!selectedEvent) return;
-    claimMutation.mutate(
-      { data: { eventId: selectedEvent.eventId } },
-      {
-        onSuccess: () => {
-          toast({ title: "Hours claimed", description: "Your submission is pending review." });
-          queryClient.invalidateQueries({ queryKey: getListMySubmissionsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetParticipantDashboardQueryKey() });
-          setSelectedEvent(null);
-        },
-        onError: (err: any) => {
-          toast({ title: "Failed to claim", description: err?.data?.error ?? "Something went wrong", variant: "destructive" });
-        },
-      }
-    );
-  }
-
   const isPast = selectedEvent && selectedEvent.eventDate < todayStr;
-  const alreadyClaimed = selectedEvent && claimedEventIds.has(selectedEvent.eventId);
 
   return (
     <AppLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Event Calendar</h1>
-          <p className="text-muted-foreground text-sm mt-1">Browse events and claim hours for past activities</p>
+          <p className="text-muted-foreground text-sm mt-1">Browse upcoming and past volunteer opportunities</p>
         </div>
 
         <div className="flex items-center gap-4">
@@ -97,7 +72,7 @@ export default function CalendarPage() {
           </div>
           <div className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-full bg-gray-400 inline-block" />
-            <span className="text-sm text-muted-foreground">Past (claim available)</span>
+            <span className="text-sm text-muted-foreground">Past</span>
           </div>
         </div>
 
@@ -173,8 +148,18 @@ export default function CalendarPage() {
             <>
               <DialogHeader>
                 <DialogTitle>{selectedEvent.title}</DialogTitle>
+                <DialogDescription>
+                  Event details, registration status, and next steps for reporting service hours.
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-2">
+                {selectedEvent.imageUrl && (
+                  <AuthenticatedImage
+                    objectPath={selectedEvent.imageUrl}
+                    alt={selectedEvent.title}
+                    className="w-full h-44 object-cover rounded-lg"
+                  />
+                )}
                 <div className="flex gap-2 flex-wrap">
                   <Badge className={selectedEvent.eventDate < todayStr ? "bg-gray-200 text-gray-700 border-0" : "bg-green-100 text-green-800 border-0"}>
                     {selectedEvent.eventDate < todayStr ? "Past Event" : "Upcoming"}
@@ -190,17 +175,21 @@ export default function CalendarPage() {
                 </div>
                 <p className="text-sm">{selectedEvent.description}</p>
                 {isPast && (
-                  alreadyClaimed ? (
-                    <p className="text-sm text-muted-foreground bg-muted rounded-lg px-4 py-2">You have already claimed hours for this event.</p>
+                  selectedEvent.myRegistrationStatus &&
+                  selectedEvent.myRegistrationStatus !== "no_show" ? (
+                    <div className="rounded-lg bg-muted px-4 py-3 text-sm">
+                      <p className="font-medium">Did you volunteer at this event?</p>
+                      <p className="text-muted-foreground mt-1">
+                        Submit the actual hours you worked from the Post-Event Hours section on your dashboard.
+                      </p>
+                      <Button asChild size="sm" className="mt-3">
+                        <Link href="/dashboard">Go to My Schedule</Link>
+                      </Button>
+                    </div>
                   ) : (
-                    <Button
-                      data-testid="button-claim-hours"
-                      onClick={handleClaim}
-                      disabled={claimMutation.isPending}
-                      className="w-full"
-                    >
-                      {claimMutation.isPending ? "Claiming..." : "Claim Hours"}
-                    </Button>
+                    <p className="text-sm text-muted-foreground bg-muted rounded-lg px-4 py-2">
+                      Hours can only be submitted for events you registered for.
+                    </p>
                   )
                 )}
                 {!isPast && selectedEvent.registrationCount >= selectedEvent.maxCapacity && (

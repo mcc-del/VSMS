@@ -14,7 +14,6 @@ export interface EventUpdateInput {
   eventDate?: string;
   startTime?: string;
   endTime?: string;
-  hoursValue?: number;
   maxCapacity?: number;
   supervisorId?: string;
   /** @nullable */

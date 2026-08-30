@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, externalSubmissionsTable, volunteerSubmissionsTable, eventsTable, usersTable } from "@workspace/db";
-import { eq, and, inArray, sum } from "drizzle-orm";
+import { eq, and, inArray, sum, sql } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitExternalActivityBody } from "@workspace/api-zod";
 
@@ -57,10 +57,12 @@ router.post(
     const userId = req.auth!.userId;
     const { activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail, description } = parsed.data;
 
-    // Enforce 25% cap: external approved hours ≤ 25% of total approved calendar hours
-    // Calculate approved calendar hours
+    // Enforce 25% cap: external approved hours ≤ 25% of approved internal hours.
+    // Legacy approved submissions without an actual-hours value retain their prior planned credit.
     const [calendarApproved] = await db
-      .select({ total: sum(eventsTable.hoursValue) })
+      .select({
+        total: sql<string>`sum(coalesce(${volunteerSubmissionsTable.hoursWorked}, ${eventsTable.hoursValue}))`,
+      })
       .from(volunteerSubmissionsTable)
       .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
       .where(

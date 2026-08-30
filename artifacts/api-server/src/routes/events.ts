@@ -3,15 +3,23 @@ import {
   db,
   eventsTable,
   usersTable,
-  volunteerSubmissionsTable,
   eventRegistrationsTable,
 } from "@workspace/db";
-import { eq, count, sql, and, lt } from "drizzle-orm";
+import { eq, count, sql, and } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 import { sendRegistrationConfirmation } from "../lib/email";
 
 const router = Router();
+
+function calculateDurationHours(startTime: string, endTime: string): number | null {
+  const [startHour, startMinute] = startTime.slice(0, 5).split(":").map(Number);
+  const [endHour, endMinute] = endTime.slice(0, 5).split(":").map(Number);
+  if ([startHour, startMinute, endHour, endMinute].some(Number.isNaN)) return null;
+  const minutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
+  if (minutes <= 0) return null;
+  return Math.round((minutes / 60) * 100) / 100;
+}
 
 function formatEvent(
   e: {
@@ -41,7 +49,7 @@ function formatEvent(
     eventDate: e.eventDate,
     startTime: e.startTime,
     endTime: e.endTime,
-    hoursValue: Number(e.hoursValue),
+    hoursValue: calculateDurationHours(e.startTime, e.endTime) ?? Number(e.hoursValue),
     maxCapacity: e.maxCapacity,
     imageUrl: e.imageUrl ?? null,
     supervisorId: e.supervisorId,
@@ -54,26 +62,8 @@ function formatEvent(
   };
 }
 
-// Helper: flag no-show registrations for past events
-async function flagNoShows() {
-  const nowStr = new Date().toISOString().replace("T", " ").split(".")[0];
-  // Find events that have ended (event_date + end_time < now)
-  await db.execute(
-    sql`
-      UPDATE event_registrations er
-      SET status = 'no_show'
-      FROM events e
-      WHERE er.event_id = e.event_id
-        AND er.status = 'registered'
-        AND (e.event_date || ' ' || e.end_time)::timestamp < NOW()
-    `,
-  );
-}
-
 // GET /api/v1/events
 router.get("/v1/events", authenticate, async (req, res) => {
-  await flagNoShows();
-
   const userId = req.auth?.userId;
 
   const events = await db
@@ -172,7 +162,9 @@ router.get(
         startTime: r.startTime ?? null,
         endTime: r.endTime ?? null,
         location: r.location ?? null,
-        hoursValue: r.hoursValue ? Number(r.hoursValue) : null,
+        hoursValue: r.startTime && r.endTime
+          ? calculateDurationHours(r.startTime, r.endTime)
+          : r.hoursValue ? Number(r.hoursValue) : null,
         imageUrl: r.imageUrl ?? null,
         supervisorName: r.supervisorFirstName
           ? `${r.supervisorFirstName} ${r.supervisorLastName}`
@@ -320,7 +312,7 @@ router.post(
       startTime: event.startTime,
       endTime: event.endTime,
       location: event.location,
-      hoursValue: Number(event.hoursValue),
+      hoursValue: calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue),
       imageUrl: event.imageUrl ?? null,
       supervisorName: supervisor
         ? `${supervisor.firstName} ${supervisor.lastName}`
@@ -422,35 +414,10 @@ router.post(
       .set({ status: "attended" })
       .where(eq(eventRegistrationsTable.registrationId, registration.registrationId));
 
-    // Check for existing submission (prevent duplicates)
-    const [existingSub] = await db
-      .select()
-      .from(volunteerSubmissionsTable)
-      .where(
-        and(
-          eq(volunteerSubmissionsTable.userId, userId),
-          eq(volunteerSubmissionsTable.eventId, eventId),
-        ),
-      )
-      .limit(1);
-
-    let submissionId: string;
-
-    if (!existingSub) {
-      const [submission] = await db
-        .insert(volunteerSubmissionsTable)
-        .values({ userId, eventId, status: "pending" })
-        .returning();
-      submissionId = submission.submissionId;
-    } else {
-      submissionId = existingSub.submissionId;
-    }
-
     res.json({
       status: "attended",
       message:
-        "Check-in successful! Your internal hours have been generated and routed to your supervisor for pending review.",
-      submissionId,
+        "Check-in successful. After the event ends, submit the actual hours you worked from your dashboard.",
     });
   },
 );
@@ -469,6 +436,17 @@ router.patch(
       return;
     }
 
+    const [current] = await db
+      .select()
+      .from(eventsTable)
+      .where(eq(eventsTable.eventId, eventId))
+      .limit(1);
+
+    if (!current) {
+      res.status(404).json({ error: "Event not found" });
+      return;
+    }
+
     const updates: Record<string, unknown> = {};
     const d = parsed.data as Record<string, unknown>;
     if (d.title !== undefined) updates.title = d.title;
@@ -477,10 +455,18 @@ router.patch(
     if (d.eventDate !== undefined) updates.eventDate = d.eventDate;
     if (d.startTime !== undefined) updates.startTime = d.startTime;
     if (d.endTime !== undefined) updates.endTime = d.endTime;
-    if (d.hoursValue !== undefined) updates.hoursValue = String(d.hoursValue);
     if (d.maxCapacity !== undefined) updates.maxCapacity = d.maxCapacity;
     if (d.supervisorId !== undefined) updates.supervisorId = d.supervisorId;
     if ("imageUrl" in d) updates.imageUrl = d.imageUrl ?? null;
+
+    const nextStartTime = String(d.startTime ?? current.startTime);
+    const nextEndTime = String(d.endTime ?? current.endTime);
+    const durationHours = calculateDurationHours(nextStartTime, nextEndTime);
+    if (durationHours === null) {
+      res.status(400).json({ error: "End time must be later than start time." });
+      return;
+    }
+    updates.hoursValue = String(durationHours);
 
     if (Object.keys(updates).length === 0) {
       res.status(400).json({ error: "No fields to update" });
@@ -540,8 +526,14 @@ router.post(
       return;
     }
 
-    const { title, description, location, eventDate, startTime, endTime, hoursValue, maxCapacity, supervisorId, imageUrl } =
+    const { title, description, location, eventDate, startTime, endTime, maxCapacity, supervisorId, imageUrl } =
       parsed.data as any;
+
+    const durationHours = calculateDurationHours(startTime, endTime);
+    if (durationHours === null) {
+      res.status(400).json({ error: "End time must be later than start time." });
+      return;
+    }
 
     const [event] = await db
       .insert(eventsTable)
@@ -552,7 +544,7 @@ router.post(
         eventDate,
         startTime: startTime ?? "09:00:00",
         endTime: endTime ?? "17:00:00",
-        hoursValue: String(hoursValue),
+        hoursValue: String(durationHours),
         maxCapacity: maxCapacity ?? 50,
         supervisorId,
         imageUrl: imageUrl ?? null,

@@ -9,5 +9,4 @@
 export interface CheckInResponse {
   status: string;
   message: string;
-  submissionId: string;
 }

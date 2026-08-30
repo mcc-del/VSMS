@@ -1,10 +1,19 @@
 import { Router } from "express";
 import { db, volunteerSubmissionsTable, eventsTable, usersTable, eventRegistrationsTable } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
-import { ClaimHoursBody, ReviewSubmissionBody, OverrideSubmissionBody } from "@workspace/api-zod";
+import { SubmitInternalHoursBody, ReviewSubmissionBody, OverrideSubmissionBody } from "@workspace/api-zod";
 
 const router = Router();
+
+function calculateDurationHours(startTime: string, endTime: string): number | null {
+  const [startHour, startMinute] = startTime.slice(0, 5).split(":").map(Number);
+  const [endHour, endMinute] = endTime.slice(0, 5).split(":").map(Number);
+  if ([startHour, startMinute, endHour, endMinute].some(Number.isNaN)) return null;
+  const minutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
+  if (minutes <= 0) return null;
+  return Math.round((minutes / 60) * 100) / 100;
+}
 
 function formatSubmission(s: {
   submissionId: string;
@@ -16,8 +25,17 @@ function formatSubmission(s: {
   reviewedAt: Date | null;
   eventTitle: string | null;
   eventDate: string | null;
-  hoursValue: string | null;
+  hoursWorked: string | null;
+  plannedHours: string | null;
+  eventStartTime: string | null;
+  eventEndTime: string | null;
 }) {
+  const plannedHours =
+    s.eventStartTime && s.eventEndTime
+      ? calculateDurationHours(s.eventStartTime, s.eventEndTime)
+      : s.plannedHours
+        ? Number(s.plannedHours)
+        : null;
   return {
     submissionId: s.submissionId,
     userId: s.userId,
@@ -28,7 +46,12 @@ function formatSubmission(s: {
     reviewedAt: s.reviewedAt?.toISOString() ?? null,
     eventTitle: s.eventTitle,
     eventDate: s.eventDate,
-    hoursValue: s.hoursValue ? Number(s.hoursValue) : null,
+    hoursWorked: s.hoursWorked
+      ? Number(s.hoursWorked)
+      : s.status === "approved" && s.plannedHours
+        ? Number(s.plannedHours)
+        : null,
+    plannedHours,
   };
 }
 
@@ -45,7 +68,10 @@ router.get("/v1/submissions", authenticate, requireRole("participant"), async (r
       reviewedAt: volunteerSubmissionsTable.reviewedAt,
       eventTitle: eventsTable.title,
       eventDate: eventsTable.eventDate,
-      hoursValue: eventsTable.hoursValue,
+      hoursWorked: volunteerSubmissionsTable.hoursWorked,
+      plannedHours: eventsTable.hoursValue,
+      eventStartTime: eventsTable.startTime,
+      eventEndTime: eventsTable.endTime,
     })
     .from(volunteerSubmissionsTable)
     .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
@@ -55,18 +81,18 @@ router.get("/v1/submissions", authenticate, requireRole("participant"), async (r
   res.json(rows.map(formatSubmission));
 });
 
-// POST /api/v1/submissions — claim hours
+// POST /api/v1/submissions — submit actual hours worked
 router.post("/v1/submissions", authenticate, requireRole("participant"), async (req, res) => {
-  const parsed = ClaimHoursBody.safeParse(req.body);
+  const parsed = SubmitInternalHoursBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input" });
     return;
   }
 
-  const { eventId } = parsed.data;
+  const { eventId, hoursWorked } = parsed.data;
   const userId = req.auth!.userId;
 
-  // Check event exists and is in the past
+  // Check event exists and has ended
   const [event] = await db
     .select()
     .from(eventsTable)
@@ -78,13 +104,18 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     return;
   }
 
-  const today = new Date().toISOString().split("T")[0];
-  if (event.eventDate >= today) {
-    res.status(400).json({ error: "You can only claim hours for past events" });
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+  const nowTime = now.toTimeString().slice(0, 5);
+  const eventHasEnded =
+    event.eventDate < today ||
+    (event.eventDate === today && nowTime > event.endTime.slice(0, 5));
+  if (!eventHasEnded) {
+    res.status(400).json({ error: "You can submit actual hours only after the event has ended." });
     return;
   }
 
-  // Require an attended registration — no-show or unregistered participants cannot claim hours
+  // Require a valid registration — no-show or unregistered participants cannot submit hours.
   const [registration] = await db
     .select()
     .from(eventRegistrationsTable)
@@ -97,17 +128,12 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     .limit(1);
 
   if (!registration) {
-    res.status(400).json({ error: "You are not registered for this event and cannot claim hours." });
+    res.status(400).json({ error: "You are not registered for this event and cannot submit hours." });
     return;
   }
 
   if (registration.status === "no_show") {
-    res.status(400).json({ error: "You were marked as a no-show for this event and cannot claim hours." });
-    return;
-  }
-
-  if (registration.status !== "attended") {
-    res.status(400).json({ error: "Hours can only be claimed after checking in to the event." });
+    res.status(400).json({ error: "You were marked as a no-show for this event and cannot submit hours." });
     return;
   }
 
@@ -123,15 +149,27 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     )
     .limit(1);
 
-  if (existing.length > 0) {
-    res.status(409).json({ error: "You have already claimed hours for this event" });
+  if (existing.length > 0 && existing[0].hoursWorked !== null) {
+    res.status(409).json({ error: "You have already submitted hours for this event." });
     return;
   }
 
-  const [submission] = await db
-    .insert(volunteerSubmissionsTable)
-    .values({ userId, eventId, status: "pending" })
-    .returning();
+  const [submission] = existing.length > 0
+    ? await db
+        .update(volunteerSubmissionsTable)
+        .set({
+          hoursWorked: String(hoursWorked),
+          status: "pending",
+          supervisorComments: null,
+          submittedAt: new Date(),
+          reviewedAt: null,
+        })
+        .where(eq(volunteerSubmissionsTable.submissionId, existing[0].submissionId))
+        .returning()
+    : await db
+        .insert(volunteerSubmissionsTable)
+        .values({ userId, eventId, hoursWorked: String(hoursWorked), status: "pending" })
+        .returning();
 
   res.status(201).json({
     submissionId: submission.submissionId,
@@ -143,7 +181,8 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     reviewedAt: null,
     eventTitle: event.title,
     eventDate: event.eventDate,
-    hoursValue: Number(event.hoursValue),
+    hoursWorked: Number(submission.hoursWorked),
+    plannedHours: calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue),
   });
 });
 
@@ -164,7 +203,10 @@ router.get(
         reviewedAt: volunteerSubmissionsTable.reviewedAt,
         eventTitle: eventsTable.title,
         eventDate: eventsTable.eventDate,
-        hoursValue: eventsTable.hoursValue,
+        hoursWorked: volunteerSubmissionsTable.hoursWorked,
+        plannedHours: eventsTable.hoursValue,
+        eventStartTime: eventsTable.startTime,
+        eventEndTime: eventsTable.endTime,
         participantFirstName: usersTable.firstName,
         participantLastName: usersTable.lastName,
         participantEmail: usersTable.email,
@@ -172,7 +214,15 @@ router.get(
       .from(volunteerSubmissionsTable)
       .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
       .leftJoin(usersTable, eq(volunteerSubmissionsTable.userId, usersTable.userId))
-      .where(eq(volunteerSubmissionsTable.status, "pending"))
+      .where(
+        and(
+          eq(volunteerSubmissionsTable.status, "pending"),
+          isNotNull(volunteerSubmissionsTable.hoursWorked),
+          req.auth!.role === "supervisor"
+            ? eq(eventsTable.supervisorId, req.auth!.userId)
+            : undefined,
+        ),
+      )
       .orderBy(volunteerSubmissionsTable.submittedAt);
 
     res.json(
@@ -215,13 +265,22 @@ router.put(
     }
 
     const [submission] = await db
-      .select()
+      .select({
+        submissionId: volunteerSubmissionsTable.submissionId,
+        supervisorId: eventsTable.supervisorId,
+      })
       .from(volunteerSubmissionsTable)
+      .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
       .where(eq(volunteerSubmissionsTable.submissionId, submissionId))
       .limit(1);
 
     if (!submission) {
       res.status(404).json({ error: "Submission not found" });
+      return;
+    }
+
+    if (req.auth!.role === "supervisor" && submission.supervisorId !== req.auth!.userId) {
+      res.status(403).json({ error: "You can only review submissions for your assigned events." });
       return;
     }
 
@@ -255,7 +314,10 @@ router.get(
         reviewedAt: volunteerSubmissionsTable.reviewedAt,
         eventTitle: eventsTable.title,
         eventDate: eventsTable.eventDate,
-        hoursValue: eventsTable.hoursValue,
+        hoursWorked: volunteerSubmissionsTable.hoursWorked,
+        plannedHours: eventsTable.hoursValue,
+        eventStartTime: eventsTable.startTime,
+        eventEndTime: eventsTable.endTime,
         participantFirstName: usersTable.firstName,
         participantLastName: usersTable.lastName,
         participantEmail: usersTable.email,
@@ -263,7 +325,14 @@ router.get(
       .from(volunteerSubmissionsTable)
       .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
       .leftJoin(usersTable, eq(volunteerSubmissionsTable.userId, usersTable.userId))
-      .where(inArray(volunteerSubmissionsTable.status, ["approved", "rejected"]))
+      .where(
+        and(
+          inArray(volunteerSubmissionsTable.status, ["approved", "rejected"]),
+          req.auth!.role === "supervisor"
+            ? eq(eventsTable.supervisorId, req.auth!.userId)
+            : undefined,
+        ),
+      )
       .orderBy(volunteerSubmissionsTable.reviewedAt);
 
     res.json(
