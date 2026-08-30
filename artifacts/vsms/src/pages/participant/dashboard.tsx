@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, CheckCircle, XCircle, AlertCircle, MapPin, CheckCheck, Trophy } from "lucide-react";
+import { Clock, XCircle, AlertCircle, MapPin, CheckCheck, Trophy } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -89,42 +89,35 @@ export default function ParticipantDashboard() {
         </div>
 
         {dashLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[0,1,2,3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[0,1,2].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Card className="col-span-2 md:col-span-1">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-green-600" /> Approved Hours
+                  <Clock className="w-4 h-4 text-primary" /> Approved Hours
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p data-testid="text-approved-hours" className="text-4xl font-bold text-foreground">
                   {dashboard?.totalApprovedHours?.toFixed(1) ?? "0.0"}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">total hours earned</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  total hours earned &middot; {dashboard?.approvedCount ?? 0} approved
+                </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-yellow-500" /> Pending
+                  <AlertCircle className="w-4 h-4 text-yellow-500" /> Awaiting Approval
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p data-testid="text-pending-count" className="text-3xl font-bold">{dashboard?.pendingCount ?? 0}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" /> Approved
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{dashboard?.approvedCount ?? 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">submissions in review</p>
               </CardContent>
             </Card>
             <Card>
@@ -135,6 +128,7 @@ export default function ParticipantDashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-3xl font-bold">{dashboard?.rejectedCount ?? 0}</p>
+                <p className="text-xs text-muted-foreground mt-1">need attention</p>
               </CardContent>
             </Card>
           </div>

@@ -44,9 +44,9 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-primary-foreground font-bold text-xl mb-4">V</div>
+          <img src="/medinacares-logo.png" alt="MedinaCares" className="w-20 h-20 object-contain mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Join as a volunteer and start logging hours</p>
+          <p className="text-muted-foreground mt-1 text-sm">Join the MedinaCares Volunteer Service Awards and start logging hours</p>
         </div>
 
         <div className="bg-card border rounded-xl p-6 shadow-sm">

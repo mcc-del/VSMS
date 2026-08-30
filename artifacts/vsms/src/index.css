@@ -45,10 +45,9 @@
 }
 
 :root {
-  /* Green: 142 71% 45% (#22c55e) */
-  /* Main Palette: Navy / Slate */
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
+  /* MedinaCares palette: blue primary, coral accent */
+  --background: 206 40% 97%;
+  --foreground: 202 30% 24%;
   
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
@@ -58,26 +57,26 @@
   --popover-foreground: 222 47% 11%;
   --popover-border: 214 32% 91%;
   
-  --primary: 222 47% 11%; /* Navy */
-  --primary-foreground: 210 40% 98%;
-  
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
-  
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  
-  --accent: 142 71% 45%; /* Green accent */
+  --primary: 207 54% 48%; /* MedinaCares blue */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 206 40% 94%;
+  --secondary-foreground: 202 33% 22%;
+
+  --muted: 206 40% 94%;
+  --muted-foreground: 202 12% 45%;
+
+  --accent: 6 70% 59%; /* MedinaCares coral */
   --accent-foreground: 0 0% 100%;
-  
+
   --destructive: 0 84% 60%;
   --destructive-foreground: 210 40% 98%;
+
+  --border: 206 30% 88%;
+  --input: 206 30% 88%;
+  --ring: 207 54% 48%;
   
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 222 47% 11%;
-  
-  --app-font-sans: 'Inter', sans-serif;
+  --app-font-sans: 'Public Sans', 'Inter', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
   
@@ -96,24 +95,24 @@
   --popover-foreground: 210 40% 98%;
   --popover-border: 215 28% 17%;
   
-  --primary: 210 40% 98%;
-  --primary-foreground: 222 47% 11%;
-  
-  --secondary: 217 33% 17%;
+  --primary: 207 62% 62%;
+  --primary-foreground: 202 47% 12%;
+
+  --secondary: 205 25% 18%;
   --secondary-foreground: 210 40% 98%;
-  
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
-  
-  --accent: 142 71% 45%;
+
+  --muted: 205 25% 18%;
+  --muted-foreground: 205 16% 65%;
+
+  --accent: 8 74% 64%;
   --accent-foreground: 0 0% 100%;
-  
+
   --destructive: 0 62% 30%;
   --destructive-foreground: 210 40% 98%;
-  
-  --border: 215 28% 17%;
-  --input: 215 28% 17%;
-  --ring: 213 27% 84%;
+
+  --border: 205 24% 20%;
+  --input: 205 24% 20%;
+  --ring: 207 62% 62%;
 }
 
 @layer base {

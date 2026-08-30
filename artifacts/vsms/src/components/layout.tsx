@@ -29,10 +29,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex bg-background w-full">
       <aside className="w-64 border-r bg-card flex flex-col hidden md:flex shrink-0">
-        <div className="h-16 flex items-center px-6 border-b shrink-0">
-          <div className="font-bold text-lg flex items-center gap-2">
-            <span className="w-8 h-8 rounded bg-primary text-primary-foreground flex items-center justify-center">V</span>
-            VSMS
+        <div className="h-16 flex items-center px-5 border-b shrink-0 gap-2.5">
+          <img src="/medinacares-logo.png" alt="MedinaCares" className="w-9 h-9 object-contain shrink-0" />
+          <div className="leading-tight">
+            <p className="font-bold text-sm">MedinaCares</p>
+            <p className="text-[11px] text-muted-foreground">Service Awards</p>
           </div>
         </div>
         <nav className="flex-1 py-4 flex flex-col gap-1 px-3 overflow-y-auto">
