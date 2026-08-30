@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useGetParticipantDashboard,
   useListMySubmissions,
@@ -64,6 +64,17 @@ export default function ParticipantDashboard() {
   const [hoursRegistration, setHoursRegistration] = useState<EventRegistration | null>(null);
   const [hoursWorked, setHoursWorked] = useState("");
   const [confirmHours, setConfirmHours] = useState(false);
+
+  // When arriving here right after signing up, scroll to My Schedule.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("mc_scroll_schedule")) {
+      sessionStorage.removeItem("mc_scroll_schedule");
+      setTimeout(() => {
+        document.getElementById("my-schedule")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
+    }
+  }, []);
 
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5);
@@ -288,7 +299,7 @@ export default function ParticipantDashboard() {
         })()}
 
         {/* My Schedule */}
-        <Card>
+        <Card id="my-schedule" className="scroll-mt-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <CalendarDays className="w-4 h-4 text-primary" /> My Schedule

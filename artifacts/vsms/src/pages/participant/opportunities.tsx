@@ -24,8 +24,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MapPin, Clock, Users, Calendar, Search, User, Mail, Award } from "lucide-react";
+import { MapPin, Clock, Users, Calendar, Search, User, Mail, Award, CalendarPlus, Copy } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { AuthenticatedImage } from "@/components/authenticated-image";
 
@@ -56,6 +57,7 @@ export default function OpportunitiesPage() {
   const { data: myRegistrations } = useListMyRegistrations();
   const registerMutation = useRegisterForEvent();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const [search, setSearch] = useState("");
@@ -88,10 +90,13 @@ export default function OpportunitiesPage() {
         onSuccess: () => {
           toast({
             title: "You have signed up successfully!",
-            description: "This event now appears under “My Schedule” on your dashboard.",
+            description: "Taking you to “My Schedule” on your dashboard…",
           });
           queryClient.invalidateQueries({ queryKey: getListMyRegistrationsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
+          // Flag the dashboard to scroll to the schedule, then navigate there.
+          try { sessionStorage.setItem("mc_scroll_schedule", "1"); } catch { /* ignore */ }
+          setLocation("/dashboard");
         },
         onError: (err: any) => {
           toast({
@@ -102,6 +107,47 @@ export default function OpportunitiesPage() {
         },
       },
     );
+  }
+
+  async function copy(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: `${label} copied` });
+    } catch {
+      toast({ title: "Couldn't copy", variant: "destructive" });
+    }
+  }
+
+  function downloadICS(event: Event) {
+    const esc = (s: string) => (s ?? "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+    const dt = (dateStr: string, timeStr?: string | null) => {
+      const [y, m, d] = dateStr.split("-");
+      const [hh = "00", mm = "00"] = (timeStr ?? "00:00").split(":");
+      return `${y}${m}${d}T${hh.padStart(2, "0")}${mm.padStart(2, "0")}00`;
+    };
+    const lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//MedinaCares//Volunteer Service Awards//EN",
+      "BEGIN:VEVENT",
+      `UID:${event.eventId}@medinacares`,
+      `DTSTART:${dt(event.eventDate, event.startTime)}`,
+      `DTEND:${dt(event.eventDate, event.endTime)}`,
+      `SUMMARY:${esc(event.title)}`,
+      event.location ? `LOCATION:${esc(event.location)}` : "",
+      `DESCRIPTION:${esc(event.description ?? "")}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].filter(Boolean);
+    const blob = new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${event.title.replace(/[^\w]+/g, "_").slice(0, 40) || "event"}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   function renderEvent(event: Event, isUpcoming: boolean) {
@@ -131,21 +177,36 @@ export default function OpportunitiesPage() {
             </div>
 
             <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted-foreground mt-2">
-              <span className="flex items-center gap-1">
+              <button
+                type="button"
+                title="Click to copy the date"
+                onClick={() => copy(`${getDayOfWeek(event.eventDate)}, ${formatDateFull(event.eventDate)}`, "Date")}
+                className="flex items-center gap-1 hover:text-foreground"
+              >
                 <Calendar className="w-3.5 h-3.5" />
                 {getDayOfWeek(event.eventDate)}, {formatDateFull(event.eventDate)}
-              </span>
+              </button>
               {event.startTime && event.endTime && (
-                <span className="flex items-center gap-1">
+                <button
+                  type="button"
+                  title="Click to copy the time"
+                  onClick={() => copy(`${formatTime(event.startTime)} – ${formatTime(event.endTime)}`, "Time")}
+                  className="flex items-center gap-1 hover:text-foreground"
+                >
                   <Clock className="w-3.5 h-3.5" />
                   {formatTime(event.startTime)} – {formatTime(event.endTime)}
-                </span>
+                </button>
               )}
               {event.location && (
-                <span className="flex items-center gap-1">
+                <button
+                  type="button"
+                  title="Click to copy the location"
+                  onClick={() => copy(event.location, "Location")}
+                  className="flex items-center gap-1 hover:text-foreground"
+                >
                   <MapPin className="w-3.5 h-3.5" />
                   {event.location}
-                </span>
+                </button>
               )}
               <span className="flex items-center gap-1">
                 <Users className="w-3.5 h-3.5" />
@@ -153,11 +214,38 @@ export default function OpportunitiesPage() {
               </span>
             </div>
 
+            {(event.supervisorName || event.supervisorEmail) && (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground mt-1.5">
+                {event.supervisorName && (
+                  <span className="flex items-center gap-1">
+                    <User className="w-3.5 h-3.5" />
+                    {event.supervisorName}
+                  </span>
+                )}
+                {event.supervisorEmail && (
+                  <span className="flex items-center gap-1">
+                    <Mail className="w-3.5 h-3.5" />
+                    <a href={`mailto:${event.supervisorEmail}`} className="text-primary hover:underline">
+                      {event.supervisorEmail}
+                    </a>
+                    <button
+                      type="button"
+                      title="Copy supervisor email"
+                      onClick={() => copy(event.supervisorEmail!, "Supervisor email")}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
+
             <p className="mt-3 text-sm text-foreground/80 leading-relaxed">
               {event.description}
             </p>
 
-            <div className="mt-4">
+            <div className="mt-4 flex items-center gap-2 flex-wrap">
               {!isUpcoming ? (
                 <Badge className="bg-muted text-muted-foreground border-0">Event has passed</Badge>
               ) : myStatus ? (
@@ -176,6 +264,17 @@ export default function OpportunitiesPage() {
                   disabled={registerMutation.isPending}
                 >
                   Sign Up
+                </Button>
+              )}
+              {isUpcoming && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid={`button-add-calendar-${event.eventId}`}
+                  onClick={() => downloadICS(event)}
+                  className="gap-1"
+                >
+                  <CalendarPlus className="w-4 h-4" /> Add to calendar
                 </Button>
               )}
             </div>
