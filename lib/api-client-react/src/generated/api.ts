@@ -33,6 +33,7 @@ import type {
   ExternalSubmissionDetail,
   ExternalSubmissionInput,
   HealthStatus,
+  LeaderboardResponse,
   LoginInput,
   ManualHoursCredit,
   ManualHoursInput,
@@ -41,6 +42,7 @@ import type {
   ParticipantDashboard,
   RegisterInput,
   ReviewInput,
+  SchoolStanding,
   Submission,
   SubmissionDetail,
   SubmissionInput,
@@ -2199,6 +2201,160 @@ export const useOverrideSubmission = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getOverrideSubmissionMutationOptions(options));
     }
+
+export const getGetLeaderboardUrl = () => {
+
+
+
+
+  return `/api/v1/leaderboard`
+}
+
+/**
+ * @summary Within-school participant leaderboard by approved hours
+ */
+export const getLeaderboard = async ( options?: RequestInit): Promise<LeaderboardResponse> => {
+
+  return customFetch<LeaderboardResponse>(getGetLeaderboardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLeaderboardQueryKey = () => {
+    return [
+    `/api/v1/leaderboard`
+    ] as const;
+    }
+
+
+export const getGetLeaderboardQueryOptions = <TData = Awaited<ReturnType<typeof getLeaderboard>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLeaderboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLeaderboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLeaderboard>>> = ({ signal }) => getLeaderboard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLeaderboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLeaderboardQueryResult = NonNullable<Awaited<ReturnType<typeof getLeaderboard>>>
+export type GetLeaderboardQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Within-school participant leaderboard by approved hours
+ */
+
+export function useGetLeaderboard<TData = Awaited<ReturnType<typeof getLeaderboard>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLeaderboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLeaderboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSchoolStandingsUrl = () => {
+
+
+
+
+  return `/api/v1/leaderboard/schools`
+}
+
+/**
+ * @summary Aggregate approved hours per school
+ */
+export const getSchoolStandings = async ( options?: RequestInit): Promise<SchoolStanding[]> => {
+
+  return customFetch<SchoolStanding[]>(getGetSchoolStandingsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSchoolStandingsQueryKey = () => {
+    return [
+    `/api/v1/leaderboard/schools`
+    ] as const;
+    }
+
+
+export const getGetSchoolStandingsQueryOptions = <TData = Awaited<ReturnType<typeof getSchoolStandings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSchoolStandings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSchoolStandingsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSchoolStandings>>> = ({ signal }) => getSchoolStandings({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSchoolStandings>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSchoolStandingsQueryResult = NonNullable<Awaited<ReturnType<typeof getSchoolStandings>>>
+export type GetSchoolStandingsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Aggregate approved hours per school
+ */
+
+export function useGetSchoolStandings<TData = Awaited<ReturnType<typeof getSchoolStandings>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSchoolStandings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSchoolStandingsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetParentChildrenUrl = () => {
 

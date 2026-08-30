@@ -35,7 +35,9 @@ export const RegisterBody = zod.object({
   "email": zod.string().email(),
   "password": zod.string().min(registerBodyPasswordMin),
   "accountType": zod.enum(['student', 'parent']).optional(),
-  "parentEmail": zod.string().email().optional()
+  "parentEmail": zod.string().email().optional(),
+  "school": zod.string().optional(),
+  "grade": zod.string().optional()
 })
 
 
@@ -560,6 +562,36 @@ export const OverrideSubmissionResponse = zod.object({
   "status": zod.string(),
   "message": zod.string()
 })
+
+
+/**
+ * @summary Within-school participant leaderboard by approved hours
+ */
+export const GetLeaderboardResponse = zod.object({
+  "school": zod.string().nullable(),
+  "myRank": zod.number().nullish(),
+  "myHours": zod.number(),
+  "entries": zod.array(zod.object({
+  "rank": zod.number(),
+  "displayName": zod.string(),
+  "grade": zod.string().nullish(),
+  "totalApprovedHours": zod.number(),
+  "medal": zod.string().nullish(),
+  "isMe": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Aggregate approved hours per school
+ */
+export const GetSchoolStandingsResponseItem = zod.object({
+  "school": zod.string(),
+  "totalHours": zod.number(),
+  "avgHours": zod.number(),
+  "participantCount": zod.number()
+})
+export const GetSchoolStandingsResponse = zod.array(GetSchoolStandingsResponseItem)
 
 
 /**

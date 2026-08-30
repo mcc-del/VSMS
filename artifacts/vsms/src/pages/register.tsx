@@ -7,7 +7,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { SCHOOLS, GRADES } from "@/lib/schools";
 
 const schema = z
   .object({
@@ -17,10 +19,16 @@ const schema = z
     email: z.string().email("Enter a valid email"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     parentEmail: z.string().email("Enter a valid parent email").or(z.literal("")).optional(),
+    school: z.string().optional(),
+    grade: z.string().optional(),
   })
   .refine((v) => v.accountType !== "student" || (v.parentEmail && v.parentEmail.length > 0), {
     message: "A parent email is required",
     path: ["parentEmail"],
+  })
+  .refine((v) => v.accountType !== "student" || (v.school && v.school.length > 0), {
+    message: "Please select your school",
+    path: ["school"],
   });
 
 export default function RegisterPage() {
@@ -30,7 +38,7 @@ export default function RegisterPage() {
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { accountType: "student" as const, firstName: "", lastName: "", email: "", password: "", parentEmail: "" },
+    defaultValues: { accountType: "student" as const, firstName: "", lastName: "", email: "", password: "", parentEmail: "", school: "", grade: "" },
   });
 
   const accountType = form.watch("accountType");
@@ -44,7 +52,9 @@ export default function RegisterPage() {
           email: values.email,
           password: values.password,
           accountType: values.accountType,
-          ...(values.accountType === "student" ? { parentEmail: values.parentEmail } : {}),
+          ...(values.accountType === "student"
+            ? { parentEmail: values.parentEmail, school: values.school, grade: values.grade }
+            : {}),
         },
       },
       {
@@ -155,6 +165,46 @@ export default function RegisterPage() {
                     </FormItem>
                   )}
                 />
+              )}
+              {accountType === "student" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="school"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>School</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-school"><SelectValue placeholder="Select" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {SCHOOLS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="grade"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Grade</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-grade"><SelectValue placeholder="Select" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {GRADES.map((g) => <SelectItem key={g} value={g}>Grade {g}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
               <FormField
                 control={form.control}

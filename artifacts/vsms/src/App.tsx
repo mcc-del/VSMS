@@ -19,6 +19,7 @@ import AdminNewEvent from "@/pages/admin/new-event";
 import AdminEventsPage from "@/pages/admin/events";
 import ExternalSubmissionPage from "@/pages/participant/external-submission";
 import ParentDashboard from "@/pages/parent/dashboard";
+import LeaderboardPage from "@/pages/participant/leaderboard";
 import { useAuth } from "@/hooks/use-auth";
 
 const queryClient = new QueryClient({
@@ -53,6 +54,7 @@ function Router() {
       <ProtectedRoute path="/calendar" component={CalendarPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/external" component={ExternalSubmissionPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/history" component={HistoryPage} allowedRoles={["participant"]} />
+      <ProtectedRoute path="/leaderboard" component={LeaderboardPage} allowedRoles={["participant"]} />
 
       <ProtectedRoute path="/parent" component={ParentDashboard} allowedRoles={["parent"]} />
 

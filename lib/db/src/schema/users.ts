@@ -13,6 +13,9 @@ export const usersTable = pgTable("users", {
   role: userRoleEnum("role").notNull().default("participant"),
   // For students: their parent's email, used to link a parent account.
   parentEmail: varchar("parent_email", { length: 255 }),
+  // For students: school and grade, used for the leaderboard and school standings.
+  school: varchar("school", { length: 120 }),
+  grade: varchar("grade", { length: 20 }),
   // For parents: when they last viewed their children's activity (for "new" badges).
   parentLastSeenAt: timestamp("parent_last_seen_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

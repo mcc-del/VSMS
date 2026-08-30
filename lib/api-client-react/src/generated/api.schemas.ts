@@ -5,6 +5,33 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export interface LeaderboardEntry {
+  rank: number;
+  displayName: string;
+  /** @nullable */
+  grade?: string | null;
+  totalApprovedHours: number;
+  /** @nullable */
+  medal?: string | null;
+  isMe: boolean;
+}
+
+export interface LeaderboardResponse {
+  /** @nullable */
+  school: string | null;
+  /** @nullable */
+  myRank?: number | null;
+  myHours: number;
+  entries: LeaderboardEntry[];
+}
+
+export interface SchoolStanding {
+  school: string;
+  totalHours: number;
+  avgHours: number;
+  participantCount: number;
+}
+
 export interface ParentChildRegistration {
   registrationId: string;
   eventId: string;
@@ -93,6 +120,8 @@ export interface RegisterInput {
   password: string;
   accountType?: RegisterInputAccountType;
   parentEmail?: string;
+  school?: string;
+  grade?: string;
 }
 
 export interface LoginInput {

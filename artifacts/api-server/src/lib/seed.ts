@@ -22,6 +22,8 @@ const TEST_ACCOUNTS = [
     lastName: "Participant",
     role: "participant" as const,
     parentEmail: "parent@test.com",
+    school: "Medina Academy",
+    grade: "10",
   },
   {
     email: "parent@test.com",
@@ -30,6 +32,8 @@ const TEST_ACCOUNTS = [
     lastName: "Parent",
     role: "parent" as const,
     parentEmail: null,
+    school: null,
+    grade: null,
   },
   {
     email: "supervisor@test.com",
@@ -38,6 +42,8 @@ const TEST_ACCOUNTS = [
     lastName: "Supervisor",
     role: "supervisor" as const,
     parentEmail: null,
+    school: null,
+    grade: null,
   },
   {
     email: "admin@test.com",
@@ -46,6 +52,8 @@ const TEST_ACCOUNTS = [
     lastName: "Admin",
     role: "admin" as const,
     parentEmail: null,
+    school: null,
+    grade: null,
   },
 ];
 
@@ -62,6 +70,8 @@ export async function seedTestAccounts(): Promise<void> {
           lastName: acct.lastName,
           role: acct.role,
           parentEmail: acct.parentEmail,
+          school: acct.school,
+          grade: acct.grade,
         })
         .onConflictDoUpdate({
           target: usersTable.email,
@@ -70,6 +80,8 @@ export async function seedTestAccounts(): Promise<void> {
           set: {
             role: acct.role,
             parentEmail: acct.parentEmail,
+            school: acct.school,
+            grade: acct.grade,
             passwordHash: sql`excluded.password_hash`,
           },
         });

@@ -15,13 +15,18 @@ router.post("/v1/auth/register", async (req, res) => {
     return;
   }
 
-  const { firstName, lastName, email, password, accountType, parentEmail } = parsed.data;
+  const { firstName, lastName, email, password, accountType, parentEmail, school, grade } = parsed.data;
 
   const isParent = accountType === "parent";
 
   // Students must provide a parent email so a parent account can be linked.
   if (!isParent && (!parentEmail || parentEmail.trim() === "")) {
     res.status(400).json({ error: "A parent email is required to sign up as a student." });
+    return;
+  }
+  // Students must provide a school so they appear on the leaderboard/standings.
+  if (!isParent && (!school || school.trim() === "")) {
+    res.status(400).json({ error: "Please select your school." });
     return;
   }
 
@@ -46,6 +51,8 @@ router.post("/v1/auth/register", async (req, res) => {
       passwordHash,
       role: isParent ? "parent" : "participant",
       parentEmail: isParent ? null : parentEmail!.toLowerCase(),
+      school: isParent ? null : school!.trim(),
+      grade: isParent ? null : (grade?.trim() || null),
     })
     .returning();
 

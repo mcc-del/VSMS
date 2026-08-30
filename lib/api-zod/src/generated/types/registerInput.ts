@@ -23,4 +23,6 @@ export interface RegisterInput {
   password: string;
   accountType?: RegisterInputAccountType;
   parentEmail?: string;
+  school?: string;
+  grade?: string;
 }
