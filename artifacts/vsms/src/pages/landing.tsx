@@ -97,11 +97,28 @@ const css = `
 
 .mc-landing footer { flex: none; text-align: center; padding: 16px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.02em; color: var(--ink-soft); }
 
-@media (max-width: 720px) {
-  .mc-landing { position: absolute; height: auto; min-height: 100vh; overflow: auto; }
-  .mc-landing .hero { grid-template-columns: 1fr; gap: 26px; padding-top: 20px; padding-bottom: 20px; }
-  .mc-landing .ladder-card { order: -1; }
-  .mc-landing nav .btn-ghost { display: inline-flex; }
+@media (max-width: 820px) {
+  .mc-landing { position: absolute; height: auto; min-height: 100dvh; overflow-x: hidden; overflow-y: auto; }
+  .mc-landing .screen { min-height: 100dvh; }
+  .mc-landing nav { padding: 12px 18px; }
+  .mc-landing .logo-img { height: 58px; }
+  .mc-landing .hero { grid-template-columns: 1fr; gap: 22px; padding: 6px 20px 32px; align-items: start; }
+  .mc-landing .hero h1 { font-size: clamp(30px, 8.5vw, 44px); }
+  .mc-landing .hero h1 br { display: none; }
+  .mc-landing .hero-sub { font-size: 16px; margin-top: 12px; }
+}
+@media (max-width: 480px) {
+  .mc-landing nav { padding: 10px 16px; }
+  .mc-landing .logo-img { height: 48px; }
+  .mc-landing .hero { padding: 4px 16px 28px; gap: 18px; }
+  .mc-landing .hero h1 { font-size: 29px; }
+  .mc-landing .eyebrow { font-size: 13px; }
+  .mc-landing .hero-cta { width: 100%; }
+  .mc-landing .hero-cta .btn { width: 100%; justify-content: center; }
+  .mc-landing .steps-inline { gap: 12px 16px; margin-top: 16px; }
+  .mc-landing .ladder-card { padding: 18px; }
+  .mc-landing .rhrs { font-size: 22px; }
+  .mc-landing footer { padding: 14px 16px; line-height: 1.5; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mc-landing .rung { opacity: 1; transform: none; animation: none; }
