@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MapPin, Clock, Users, Calendar, Search, User, Award } from "lucide-react";
+import { MapPin, Clock, Users, Calendar, Search, User, Mail, Award } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -281,12 +281,26 @@ export default function OpportunitiesPage() {
                       <Award className="w-3.5 h-3.5" />
                       {confirmEvent.hoursValue}h service credit
                     </p>
-                    {confirmEvent.supervisorName && (
-                      <p className="flex items-center gap-1.5 text-muted-foreground">
+                    {(confirmEvent.supervisorName || confirmEvent.supervisorEmail) && (
+                      <div className="space-y-1">
+                        <p className="flex items-center gap-1.5 text-muted-foreground">
                         <User className="w-3.5 h-3.5" />
-                        Supervisor: {confirmEvent.supervisorName}
-                      </p>
+                          Supervisor: {confirmEvent.supervisorName ?? "Assigned supervisor"}
+                        </p>
+                        {confirmEvent.supervisorEmail && (
+                          <a
+                            href={`mailto:${confirmEvent.supervisorEmail}`}
+                            className="flex items-center gap-1.5 text-primary hover:underline"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            {confirmEvent.supervisorEmail}
+                          </a>
+                        )}
+                      </div>
                     )}
+                    <p className="text-xs text-muted-foreground pt-1 border-t">
+                      You can cancel this sign-up before the event if your plans change.
+                    </p>
                   </div>
                 )}
               </div>

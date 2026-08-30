@@ -780,6 +780,8 @@ components:
           type: string
         supervisorName:
           type: ["string", "null"]
+        supervisorEmail:
+          type: ["string", "null"]
         registrationCount:
           type: integer
         myRegistrationStatus:
@@ -863,6 +865,10 @@ components:
         hoursValue:
           type: ["number", "null"]
         imageUrl:
+          type: ["string", "null"]
+        supervisorName:
+          type: ["string", "null"]
+        supervisorEmail:
           type: ["string", "null"]
 
     CheckInResponse:

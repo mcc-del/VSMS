@@ -21,6 +21,8 @@ export interface Event {
   supervisorId: string;
   /** @nullable */
   supervisorName?: string | null;
+  /** @nullable */
+  supervisorEmail?: string | null;
   registrationCount: number;
   /** @nullable */
   myRegistrationStatus?: string | null;

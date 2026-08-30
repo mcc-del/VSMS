@@ -28,6 +28,7 @@ function formatEvent(
     supervisorId: string;
     supervisorFirstName: string | null;
     supervisorLastName: string | null;
+    supervisorEmail: string | null;
   },
   registrationCount: number,
   myRegistrationStatus: string | null,
@@ -47,6 +48,7 @@ function formatEvent(
     supervisorName: e.supervisorFirstName
       ? `${e.supervisorFirstName} ${e.supervisorLastName}`
       : null,
+    supervisorEmail: e.supervisorEmail ?? null,
     registrationCount,
     myRegistrationStatus,
   };
@@ -89,6 +91,7 @@ router.get("/v1/events", authenticate, async (req, res) => {
       supervisorId: eventsTable.supervisorId,
       supervisorFirstName: usersTable.firstName,
       supervisorLastName: usersTable.lastName,
+      supervisorEmail: usersTable.email,
     })
     .from(eventsTable)
     .leftJoin(usersTable, eq(eventsTable.supervisorId, usersTable.userId))
@@ -147,9 +150,13 @@ router.get(
         location: eventsTable.location,
         hoursValue: eventsTable.hoursValue,
         imageUrl: eventsTable.imageUrl,
+        supervisorFirstName: usersTable.firstName,
+        supervisorLastName: usersTable.lastName,
+        supervisorEmail: usersTable.email,
       })
       .from(eventRegistrationsTable)
       .leftJoin(eventsTable, eq(eventRegistrationsTable.eventId, eventsTable.eventId))
+      .leftJoin(usersTable, eq(eventsTable.supervisorId, usersTable.userId))
       .where(eq(eventRegistrationsTable.userId, userId))
       .orderBy(eventsTable.eventDate);
 
@@ -167,6 +174,10 @@ router.get(
         location: r.location ?? null,
         hoursValue: r.hoursValue ? Number(r.hoursValue) : null,
         imageUrl: r.imageUrl ?? null,
+        supervisorName: r.supervisorFirstName
+          ? `${r.supervisorFirstName} ${r.supervisorLastName}`
+          : null,
+        supervisorEmail: r.supervisorEmail ?? null,
       })),
     );
   },
@@ -192,6 +203,7 @@ router.get("/v1/events/:eventId", authenticate, async (req, res) => {
       supervisorId: eventsTable.supervisorId,
       supervisorFirstName: usersTable.firstName,
       supervisorLastName: usersTable.lastName,
+      supervisorEmail: usersTable.email,
     })
     .from(eventsTable)
     .leftJoin(usersTable, eq(eventsTable.supervisorId, usersTable.userId))
@@ -287,6 +299,16 @@ router.post(
       .values({ eventId, userId, status: "registered" })
       .returning();
 
+    const [supervisor] = await db
+      .select({
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+        email: usersTable.email,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.userId, event.supervisorId))
+      .limit(1);
+
     res.status(201).json({
       registrationId: registration.registrationId,
       eventId: registration.eventId,
@@ -300,6 +322,10 @@ router.post(
       location: event.location,
       hoursValue: Number(event.hoursValue),
       imageUrl: event.imageUrl ?? null,
+      supervisorName: supervisor
+        ? `${supervisor.firstName} ${supervisor.lastName}`
+        : null,
+      supervisorEmail: supervisor?.email ?? null,
     });
 
     // Fire-and-forget confirmation email (does not block the HTTP response)
@@ -478,7 +504,11 @@ router.patch(
       .where(eq(eventRegistrationsTable.eventId, eventId));
 
     const [supervisor] = await db
-      .select()
+      .select({
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+        email: usersTable.email,
+      })
       .from(usersTable)
       .where(eq(usersTable.userId, updated.supervisorId))
       .limit(1);
@@ -489,6 +519,7 @@ router.patch(
           ...updated,
           supervisorFirstName: supervisor?.firstName ?? null,
           supervisorLastName: supervisor?.lastName ?? null,
+          supervisorEmail: supervisor?.email ?? null,
         },
         Number(cnt),
         null,
@@ -529,7 +560,11 @@ router.post(
       .returning();
 
     const [supervisor] = await db
-      .select()
+      .select({
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+        email: usersTable.email,
+      })
       .from(usersTable)
       .where(eq(usersTable.userId, supervisorId))
       .limit(1);
@@ -540,6 +575,7 @@ router.post(
           ...event,
           supervisorFirstName: supervisor?.firstName ?? null,
           supervisorLastName: supervisor?.lastName ?? null,
+          supervisorEmail: supervisor?.email ?? null,
         },
         0,
         null,

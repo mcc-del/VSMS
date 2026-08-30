@@ -26,4 +26,8 @@ export interface EventRegistration {
   hoursValue?: number | null;
   /** @nullable */
   imageUrl?: string | null;
+  /** @nullable */
+  supervisorName?: string | null;
+  /** @nullable */
+  supervisorEmail?: string | null;
 }

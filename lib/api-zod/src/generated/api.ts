@@ -82,6 +82,7 @@ export const ListEventsResponseItem = zod.object({
   "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
+  "supervisorEmail": zod.string().nullish(),
   "registrationCount": zod.number(),
   "myRegistrationStatus": zod.string().nullish()
 })
@@ -124,7 +125,9 @@ export const ListMyRegistrationsResponseItem = zod.object({
   "endTime": zod.string().nullish(),
   "location": zod.string().nullish(),
   "hoursValue": zod.number().nullish(),
-  "imageUrl": zod.string().nullish()
+  "imageUrl": zod.string().nullish(),
+  "supervisorName": zod.string().nullish(),
+  "supervisorEmail": zod.string().nullish()
 })
 export const ListMyRegistrationsResponse = zod.array(ListMyRegistrationsResponseItem)
 
@@ -149,6 +152,7 @@ export const GetEventResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
+  "supervisorEmail": zod.string().nullish(),
   "registrationCount": zod.number(),
   "myRegistrationStatus": zod.string().nullish()
 })
@@ -191,6 +195,7 @@ export const UpdateEventResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
+  "supervisorEmail": zod.string().nullish(),
   "registrationCount": zod.number(),
   "myRegistrationStatus": zod.string().nullish()
 })

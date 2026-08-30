@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, XCircle, AlertCircle, MapPin, CheckCheck, Trophy } from "lucide-react";
+import { Clock, XCircle, AlertCircle, MapPin, CheckCheck, Trophy, CalendarDays } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,7 +34,7 @@ function formatTime(t: string) {
 export default function ParticipantDashboard() {
   const { data: dashboard, isLoading: dashLoading } = useGetParticipantDashboard();
   const { data: submissions, isLoading: subLoading } = useListMySubmissions();
-  const { data: registrations } = useListMyRegistrations();
+  const { data: registrations, isLoading: registrationsLoading } = useListMyRegistrations();
   const checkIn = useCheckInToEvent();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -48,6 +48,19 @@ export default function ParticipantDashboard() {
   const todayRegistrations = (registrations ?? []).filter(
     (r) => r.eventDate === today && r.status === "registered",
   );
+  const upcomingSchedule = (registrations ?? [])
+    .filter((r) => r.eventDate && r.eventDate >= today && r.status !== "no_show")
+    .sort((a, b) => (a.eventDate ?? "").localeCompare(b.eventDate ?? ""));
+  const submissionByEvent = new Map((submissions ?? []).map((submission) => [submission.eventId, submission]));
+
+  function getScheduleStatus(registration: (typeof upcomingSchedule)[number]) {
+    const submission = submissionByEvent.get(registration.eventId);
+    if (submission?.status === "approved") return { label: "Approved", className: "bg-green-100 text-green-800" };
+    if (submission?.status === "rejected") return { label: "Needs attention", className: "bg-red-100 text-red-800" };
+    if (submission?.status === "pending") return { label: "Awaiting approval", className: "bg-yellow-100 text-yellow-800" };
+    if (registration.status === "attended") return { label: "Checked in", className: "bg-blue-100 text-blue-800" };
+    return { label: "Registered", className: "bg-primary/10 text-primary" };
+  }
 
   function handleCheckIn(eventId: string, title: string) {
     checkIn.mutate(
@@ -183,6 +196,78 @@ export default function ParticipantDashboard() {
             </Card>
           );
         })()}
+
+        {/* My Schedule */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-primary" /> My Schedule
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Upcoming opportunities you have committed to
+            </p>
+          </CardHeader>
+          <CardContent>
+            {registrationsLoading ? (
+              <div className="space-y-3">
+                {[0, 1].map((i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+              </div>
+            ) : upcomingSchedule.length === 0 ? (
+              <div className="rounded-lg border border-dashed py-8 px-4 text-center">
+                <CalendarDays className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm font-medium">Your schedule is open</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Sign up for an opportunity to see it here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {upcomingSchedule.map((registration) => {
+                  const scheduleStatus = getScheduleStatus(registration);
+                  return (
+                    <div
+                      key={registration.registrationId}
+                      data-testid={`schedule-event-${registration.eventId}`}
+                      className="rounded-lg border p-3 sm:p-4"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold truncate">{registration.eventTitle ?? "Volunteer event"}</p>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground mt-2">
+                            {registration.eventDate && (
+                              <span className="flex items-center gap-1">
+                                <CalendarDays className="w-3.5 h-3.5" />
+                                {new Date(`${registration.eventDate}T00:00:00`).toLocaleDateString("en-US", {
+                                  weekday: "short",
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </span>
+                            )}
+                            {registration.startTime && registration.endTime && (
+                              <span>{formatTime(registration.startTime)} – {formatTime(registration.endTime)}</span>
+                            )}
+                            {registration.location && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5" /> {registration.location}
+                              </span>
+                            )}
+                            {registration.hoursValue !== null && registration.hoursValue !== undefined && (
+                              <span>{registration.hoursValue}h planned</span>
+                            )}
+                          </div>
+                        </div>
+                        <Badge className={`${scheduleStatus.className} border-0 shrink-0 self-start`}>
+                          {scheduleStatus.label}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Today's Check-In Panel */}
         {todayRegistrations.length > 0 && (

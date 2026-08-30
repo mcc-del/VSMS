@@ -79,6 +79,8 @@ export interface Event {
   supervisorId: string;
   /** @nullable */
   supervisorName?: string | null;
+  /** @nullable */
+  supervisorEmail?: string | null;
   registrationCount: number;
   /** @nullable */
   myRegistrationStatus?: string | null;
@@ -133,6 +135,10 @@ export interface EventRegistration {
   hoursValue?: number | null;
   /** @nullable */
   imageUrl?: string | null;
+  /** @nullable */
+  supervisorName?: string | null;
+  /** @nullable */
+  supervisorEmail?: string | null;
 }
 
 export interface CheckInResponse {
