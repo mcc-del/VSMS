@@ -532,6 +532,71 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /v1/admin/users/{userId}/hours:
+    get:
+      operationId: listManualHours
+      tags: [admin]
+      summary: List manual hour credits for a participant (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ManualHoursCredit"
+    post:
+      operationId: addManualHours
+      tags: [admin]
+      summary: Add a manual hour credit for a participant (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualHoursInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualHoursCredit"
+        "400":
+          description: Validation error
+
+  /v1/admin/hours/{creditId}:
+    delete:
+      operationId: deleteManualHours
+      tags: [admin]
+      summary: Delete a manual hour credit (admin only)
+      parameters:
+        - name: creditId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
   /v1/admin/submissions/{submissionId}/override:
     put:
       operationId: overrideSubmission
@@ -651,6 +716,39 @@ paths:
 
 components:
   schemas:
+    ManualHoursInput:
+      type: object
+      required: [hours, description, dateAwarded]
+      properties:
+        hours:
+          type: number
+          minimum: 0.5
+          maximum: 500
+        description:
+          type: string
+          minLength: 2
+          maxLength: 300
+        dateAwarded:
+          type: string
+    ManualHoursCredit:
+      type: object
+      required: [manualHoursId, userId, hours, description, dateAwarded, createdAt]
+      properties:
+        manualHoursId:
+          type: string
+        userId:
+          type: string
+        hours:
+          type: number
+        description:
+          type: string
+        dateAwarded:
+          type: string
+        awardedByName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
     HealthStatus:
       type: object
       properties:

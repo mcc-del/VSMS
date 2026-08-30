@@ -5,6 +5,31 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export interface ManualHoursInput {
+  /**
+     * @minimum 0.5
+     * @maximum 500
+     */
+  hours: number;
+  /**
+     * @minLength 2
+     * @maxLength 300
+     */
+  description: string;
+  dateAwarded: string;
+}
+
+export interface ManualHoursCredit {
+  manualHoursId: string;
+  userId: string;
+  hours: number;
+  description: string;
+  dateAwarded: string;
+  /** @nullable */
+  awardedByName?: string | null;
+  createdAt: string;
+}
+
 export interface HealthStatus {
   status: string;
 }

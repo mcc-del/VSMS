@@ -482,6 +482,60 @@ export const DeleteUserResponse = zod.object({
 
 
 /**
+ * @summary List manual hour credits for a participant (admin only)
+ */
+export const ListManualHoursParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const ListManualHoursResponseItem = zod.object({
+  "manualHoursId": zod.string(),
+  "userId": zod.string(),
+  "hours": zod.number(),
+  "description": zod.string(),
+  "dateAwarded": zod.string(),
+  "awardedByName": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListManualHoursResponse = zod.array(ListManualHoursResponseItem)
+
+
+/**
+ * @summary Add a manual hour credit for a participant (admin only)
+ */
+export const AddManualHoursParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const addManualHoursBodyHoursMin = 0.5;
+export const addManualHoursBodyHoursMax = 500;
+
+export const addManualHoursBodyDescriptionMin = 2;
+export const addManualHoursBodyDescriptionMax = 300;
+
+
+
+export const AddManualHoursBody = zod.object({
+  "hours": zod.number().min(addManualHoursBodyHoursMin).max(addManualHoursBodyHoursMax),
+  "description": zod.string().min(addManualHoursBodyDescriptionMin).max(addManualHoursBodyDescriptionMax),
+  "dateAwarded": zod.string()
+})
+
+
+/**
+ * @summary Delete a manual hour credit (admin only)
+ */
+export const DeleteManualHoursParams = zod.object({
+  "creditId": zod.coerce.string()
+})
+
+export const DeleteManualHoursResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
  * @summary Override a submission status (admin only)
  */
 export const OverrideSubmissionParams = zod.object({

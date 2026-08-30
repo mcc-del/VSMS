@@ -34,6 +34,8 @@ import type {
   ExternalSubmissionInput,
   HealthStatus,
   LoginInput,
+  ManualHoursCredit,
+  ManualHoursInput,
   OverrideInput,
   ParticipantDashboard,
   RegisterInput,
@@ -1904,6 +1906,225 @@ export const useDeleteUser = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteUserMutationOptions(options));
+    }
+
+export const getListManualHoursUrl = (userId: string,) => {
+
+
+
+
+  return `/api/v1/admin/users/${userId}/hours`
+}
+
+/**
+ * @summary List manual hour credits for a participant (admin only)
+ */
+export const listManualHours = async (userId: string, options?: RequestInit): Promise<ManualHoursCredit[]> => {
+
+  return customFetch<ManualHoursCredit[]>(getListManualHoursUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListManualHoursQueryKey = (userId: string,) => {
+    return [
+    `/api/v1/admin/users/${userId}/hours`
+    ] as const;
+    }
+
+
+export const getListManualHoursQueryOptions = <TData = Awaited<ReturnType<typeof listManualHours>>, TError = ErrorType<unknown>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualHours>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListManualHoursQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listManualHours>>> = ({ signal }) => listManualHours(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(userId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listManualHours>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListManualHoursQueryResult = NonNullable<Awaited<ReturnType<typeof listManualHours>>>
+export type ListManualHoursQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List manual hour credits for a participant (admin only)
+ */
+
+export function useListManualHours<TData = Awaited<ReturnType<typeof listManualHours>>, TError = ErrorType<unknown>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listManualHours>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListManualHoursQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getAddManualHoursUrl = (userId: string,) => {
+
+
+
+
+  return `/api/v1/admin/users/${userId}/hours`
+}
+
+/**
+ * @summary Add a manual hour credit for a participant (admin only)
+ */
+export const addManualHours = async (userId: string,
+    manualHoursInput: ManualHoursInput, options?: RequestInit): Promise<ManualHoursCredit> => {
+
+  return customFetch<ManualHoursCredit>(getAddManualHoursUrl(userId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      manualHoursInput,)
+  }
+);}
+
+
+
+
+export const getAddManualHoursMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addManualHours>>, TError,{userId: string;data: BodyType<ManualHoursInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addManualHours>>, TError,{userId: string;data: BodyType<ManualHoursInput>}, TContext> => {
+
+const mutationKey = ['addManualHours'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addManualHours>>, {userId: string;data: BodyType<ManualHoursInput>}> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  addManualHours(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddManualHoursMutationResult = NonNullable<Awaited<ReturnType<typeof addManualHours>>>
+    export type AddManualHoursMutationBody = BodyType<ManualHoursInput>
+    export type AddManualHoursMutationError = ErrorType<void>
+
+    /**
+ * @summary Add a manual hour credit for a participant (admin only)
+ */
+export const useAddManualHours = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addManualHours>>, TError,{userId: string;data: BodyType<ManualHoursInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addManualHours>>,
+        TError,
+        {userId: string;data: BodyType<ManualHoursInput>},
+        TContext
+      > => {
+      return useMutation(getAddManualHoursMutationOptions(options));
+    }
+
+export const getDeleteManualHoursUrl = (creditId: string,) => {
+
+
+
+
+  return `/api/v1/admin/hours/${creditId}`
+}
+
+/**
+ * @summary Delete a manual hour credit (admin only)
+ */
+export const deleteManualHours = async (creditId: string, options?: RequestInit): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getDeleteManualHoursUrl(creditId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteManualHoursMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteManualHours>>, TError,{creditId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteManualHours>>, TError,{creditId: string}, TContext> => {
+
+const mutationKey = ['deleteManualHours'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteManualHours>>, {creditId: string}> = (props) => {
+          const {creditId} = props ?? {};
+
+          return  deleteManualHours(creditId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteManualHoursMutationResult = NonNullable<Awaited<ReturnType<typeof deleteManualHours>>>
+
+    export type DeleteManualHoursMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a manual hour credit (admin only)
+ */
+export const useDeleteManualHours = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteManualHours>>, TError,{creditId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteManualHours>>,
+        TError,
+        {creditId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteManualHoursMutationOptions(options));
     }
 
 export const getOverrideSubmissionUrl = (submissionId: string,) => {

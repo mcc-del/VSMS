@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, eventsTable, volunteerSubmissionsTable } from "@workspace/db";
+import { db, usersTable, eventsTable, volunteerSubmissionsTable, manualHoursTable } from "@workspace/db";
 import { eq, and, sum, count } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 
@@ -37,6 +37,13 @@ router.get(
         rejectedCount++;
       }
     }
+
+    // Include admin-granted manual hour credits (auto-approved).
+    const [manual] = await db
+      .select({ total: sum(manualHoursTable.hours) })
+      .from(manualHoursTable)
+      .where(eq(manualHoursTable.userId, userId));
+    totalApprovedHours += Number(manual?.total ?? 0);
 
     res.json({ totalApprovedHours, pendingCount, approvedCount, rejectedCount });
   },

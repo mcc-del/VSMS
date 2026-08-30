@@ -20,6 +20,8 @@ export * from './externalSubmissionDetail';
 export * from './externalSubmissionInput';
 export * from './healthStatus';
 export * from './loginInput';
+export * from './manualHoursCredit';
+export * from './manualHoursInput';
 export * from './overrideInput';
 export * from './participantDashboard';
 export * from './registerInput';

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListUsers, useCreateUser, useDeleteUser, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useListUsers, useCreateUser, useDeleteUser, useAddManualHours, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Clock } from "lucide-react";
 
 const schema = z.object({
   firstName: z.string().min(2).max(50),
@@ -23,6 +23,14 @@ const schema = z.object({
   password: z.string().min(8, "Min 8 characters"),
   role: z.enum(["participant", "supervisor", "admin"]),
 });
+
+const hoursSchema = z.object({
+  hours: z.coerce.number().min(0.5, "Min 0.5 hours").max(500, "Max 500 hours"),
+  description: z.string().min(2, "Required").max(300),
+  dateAwarded: z.string().min(1, "Required"),
+});
+
+const todayStr = new Date().toISOString().split("T")[0];
 
 function RoleBadge({ role }: { role: string }) {
   const colors: Record<string, string> = {
@@ -37,14 +45,43 @@ export default function AdminUsers() {
   const { data: users, isLoading } = useListUsers();
   const createUser = useCreateUser();
   const deleteUser = useDeleteUser();
+  const addHours = useAddManualHours();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showCreate, setShowCreate] = useState(false);
+  const [hoursUser, setHoursUser] = useState<{ userId: string; name: string } | null>(null);
 
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "participant" as const },
   });
+
+  const hoursForm = useForm({
+    resolver: zodResolver(hoursSchema),
+    defaultValues: { hours: 1, description: "", dateAwarded: todayStr },
+  });
+
+  function openAddHours(userId: string, name: string) {
+    setHoursUser({ userId, name });
+    hoursForm.reset({ hours: 1, description: "", dateAwarded: todayStr });
+  }
+
+  function onSubmitHours(values: z.infer<typeof hoursSchema>) {
+    if (!hoursUser) return;
+    addHours.mutate(
+      { userId: hoursUser.userId, data: values },
+      {
+        onSuccess: () => {
+          toast({ title: "Hours added", description: `${values.hours}h credited to ${hoursUser.name}.` });
+          setHoursUser(null);
+          hoursForm.reset();
+        },
+        onError: (err: any) => {
+          toast({ title: "Error", description: err?.data?.error ?? "Failed to add hours", variant: "destructive" });
+        },
+      },
+    );
+  }
 
   function onSubmit(values: z.infer<typeof schema>) {
     createUser.mutate(
@@ -120,15 +157,28 @@ export default function AdminUsers() {
                       <td className="py-3"><RoleBadge role={u.role} /></td>
                       <td className="py-3 text-muted-foreground">{new Date(u.createdAt).toLocaleDateString()}</td>
                       <td className="py-3">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          data-testid={`button-delete-user-${u.userId}`}
-                          onClick={() => handleDelete(u.userId, `${u.firstName} ${u.lastName}`)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          {u.role === "participant" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              data-testid={`button-add-hours-${u.userId}`}
+                              onClick={() => openAddHours(u.userId, `${u.firstName} ${u.lastName}`)}
+                              className="text-muted-foreground hover:text-primary gap-1"
+                            >
+                              <Clock className="w-4 h-4" /> Add hours
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            data-testid={`button-delete-user-${u.userId}`}
+                            onClick={() => handleDelete(u.userId, `${u.firstName} ${u.lastName}`)}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -194,6 +244,47 @@ export default function AdminUsers() {
               )} />
               <Button type="submit" className="w-full" disabled={createUser.isPending}>
                 {createUser.isPending ? "Creating..." : "Create User"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={hoursUser !== null} onOpenChange={(open) => !open && setHoursUser(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add hours{hoursUser ? ` for ${hoursUser.name}` : ""}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground -mt-1">
+            These hours are approved immediately and count toward the participant's total and award milestones.
+          </p>
+          <Form {...hoursForm}>
+            <form onSubmit={hoursForm.handleSubmit(onSubmitHours)} className="space-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={hoursForm.control} name="hours" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hours</FormLabel>
+                    <FormControl><Input type="number" step="0.5" min="0.5" max="500" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={hoursForm.control} name="dateAwarded" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date</FormLabel>
+                    <FormControl><Input type="date" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={hoursForm.control} name="description" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl><Input placeholder="e.g. Community cleanup (off-platform)" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <Button type="submit" className="w-full" disabled={addHours.isPending}>
+                {addHours.isPending ? "Adding..." : "Add hours"}
               </Button>
             </form>
           </Form>
