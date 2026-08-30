@@ -21,6 +21,15 @@ const TEST_ACCOUNTS = [
     firstName: "Pat",
     lastName: "Participant",
     role: "participant" as const,
+    parentEmail: "parent@test.com",
+  },
+  {
+    email: "parent@test.com",
+    password: "Parent123!",
+    firstName: "Riley",
+    lastName: "Parent",
+    role: "parent" as const,
+    parentEmail: null,
   },
   {
     email: "supervisor@test.com",
@@ -28,6 +37,7 @@ const TEST_ACCOUNTS = [
     firstName: "Sam",
     lastName: "Supervisor",
     role: "supervisor" as const,
+    parentEmail: null,
   },
   {
     email: "admin@test.com",
@@ -35,6 +45,7 @@ const TEST_ACCOUNTS = [
     firstName: "Alex",
     lastName: "Admin",
     role: "admin" as const,
+    parentEmail: null,
   },
 ];
 
@@ -50,12 +61,17 @@ export async function seedTestAccounts(): Promise<void> {
           firstName: acct.firstName,
           lastName: acct.lastName,
           role: acct.role,
+          parentEmail: acct.parentEmail,
         })
         .onConflictDoUpdate({
           target: usersTable.email,
-          // Re-assert role and refresh the password hash so a known-good
-          // credential always works, even if the row pre-existed.
-          set: { role: acct.role, passwordHash: sql`excluded.password_hash` },
+          // Re-assert role, parent link, and refresh the password hash so a
+          // known-good credential always works, even if the row pre-existed.
+          set: {
+            role: acct.role,
+            parentEmail: acct.parentEmail,
+            passwordHash: sql`excluded.password_hash`,
+          },
         });
     }
     logger.info(

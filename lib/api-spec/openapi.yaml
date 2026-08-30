@@ -622,6 +622,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /v1/parent/children:
+    get:
+      operationId: getParentChildren
+      tags: [parent]
+      summary: List a parent's linked children with schedule and progress
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParentChild"
+
   /v1/dashboard/participant:
     get:
       operationId: getParticipantDashboard
@@ -716,6 +731,47 @@ paths:
 
 components:
   schemas:
+    ParentChildRegistration:
+      type: object
+      required: [registrationId, eventId, status, isNew]
+      properties:
+        registrationId:
+          type: string
+        eventId:
+          type: string
+        eventTitle:
+          type: ["string", "null"]
+        eventDate:
+          type: ["string", "null"]
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        status:
+          type: string
+        isNew:
+          type: boolean
+    ParentChild:
+      type: object
+      required: [userId, firstName, lastName, email, totalApprovedHours, upcomingRegistrations]
+      properties:
+        userId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        totalApprovedHours:
+          type: number
+        upcomingRegistrations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParentChildRegistration"
+
     ManualHoursInput:
       type: object
       required: [hours, description, dateAwarded]
@@ -794,6 +850,12 @@ components:
         password:
           type: string
           minLength: 8
+        accountType:
+          type: string
+          enum: [student, parent]
+        parentEmail:
+          type: string
+          format: email
 
     LoginInput:
       type: object

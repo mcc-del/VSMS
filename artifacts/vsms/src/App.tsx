@@ -18,6 +18,7 @@ import AdminUsers from "@/pages/admin/users";
 import AdminNewEvent from "@/pages/admin/new-event";
 import AdminEventsPage from "@/pages/admin/events";
 import ExternalSubmissionPage from "@/pages/participant/external-submission";
+import ParentDashboard from "@/pages/parent/dashboard";
 import { useAuth } from "@/hooks/use-auth";
 
 const queryClient = new QueryClient({
@@ -36,6 +37,7 @@ function RootRedirect() {
   if (!token) return <LandingPage />;
   if (role === "admin") return <Redirect to="/admin/dashboard" />;
   if (role === "supervisor") return <Redirect to="/supervisor/pending" />;
+  if (role === "parent") return <Redirect to="/parent" />;
   return <Redirect to="/dashboard" />;
 }
 
@@ -51,6 +53,8 @@ function Router() {
       <ProtectedRoute path="/calendar" component={CalendarPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/external" component={ExternalSubmissionPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/history" component={HistoryPage} allowedRoles={["participant"]} />
+
+      <ProtectedRoute path="/parent" component={ParentDashboard} allowedRoles={["parent"]} />
 
       <ProtectedRoute path="/supervisor/pending" component={SupervisorPending} allowedRoles={["supervisor", "admin"]} />
       <ProtectedRoute path="/supervisor/history" component={SupervisorHistory} allowedRoles={["supervisor", "admin"]} />

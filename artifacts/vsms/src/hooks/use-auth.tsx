@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 
-export type Role = "participant" | "supervisor" | "admin" | null;
+export type Role = "participant" | "supervisor" | "admin" | "parent" | null;
 
 interface AuthState {
   token: string | null;
@@ -40,6 +40,7 @@ export function useAuth() {
 
       if (role === "admin") setLocation("/admin/dashboard");
       else if (role === "supervisor") setLocation("/supervisor/pending");
+      else if (role === "parent") setLocation("/parent");
       else setLocation("/dashboard");
     },
     [setLocation],

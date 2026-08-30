@@ -20,6 +20,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "External Activity", href: "/external", icon: ExternalLink },
       { label: "History", href: "/history", icon: Clock },
     ] : []),
+    ...(role === "parent" ? [
+      { label: "Dashboard", href: "/parent", icon: LayoutDashboard },
+    ] : []),
     ...(role === "supervisor" ? [
       { label: "Pending Reviews", href: "/supervisor/pending", icon: CheckSquare },
       { label: "Reviewed History", href: "/supervisor/history", icon: FileText },

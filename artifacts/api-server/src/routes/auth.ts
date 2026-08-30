@@ -15,7 +15,15 @@ router.post("/v1/auth/register", async (req, res) => {
     return;
   }
 
-  const { firstName, lastName, email, password } = parsed.data;
+  const { firstName, lastName, email, password, accountType, parentEmail } = parsed.data;
+
+  const isParent = accountType === "parent";
+
+  // Students must provide a parent email so a parent account can be linked.
+  if (!isParent && (!parentEmail || parentEmail.trim() === "")) {
+    res.status(400).json({ error: "A parent email is required to sign up as a student." });
+    return;
+  }
 
   const existing = await db
     .select()
@@ -36,7 +44,8 @@ router.post("/v1/auth/register", async (req, res) => {
       lastName,
       email: email.toLowerCase(),
       passwordHash,
-      role: "participant",
+      role: isParent ? "parent" : "participant",
+      parentEmail: isParent ? null : parentEmail!.toLowerCase(),
     })
     .returning();
 

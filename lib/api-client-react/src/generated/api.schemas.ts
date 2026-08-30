@@ -5,6 +5,32 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export interface ParentChildRegistration {
+  registrationId: string;
+  eventId: string;
+  /** @nullable */
+  eventTitle?: string | null;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
+  /** @nullable */
+  location?: string | null;
+  status: string;
+  isNew: boolean;
+}
+
+export interface ParentChild {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  totalApprovedHours: number;
+  upcomingRegistrations: ParentChildRegistration[];
+}
+
 export interface ManualHoursInput {
   /**
      * @minimum 0.5
@@ -43,6 +69,14 @@ export interface SuccessResponse {
   message: string;
 }
 
+export type RegisterInputAccountType = typeof RegisterInputAccountType[keyof typeof RegisterInputAccountType];
+
+
+export const RegisterInputAccountType = {
+  student: 'student',
+  parent: 'parent',
+} as const;
+
 export interface RegisterInput {
   /**
      * @minLength 2
@@ -57,6 +91,8 @@ export interface RegisterInput {
   email: string;
   /** @minLength 8 */
   password: string;
+  accountType?: RegisterInputAccountType;
+  parentEmail?: string;
 }
 
 export interface LoginInput {

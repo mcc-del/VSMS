@@ -4,17 +4,24 @@ import { z } from "zod";
 import { Link } from "wouter";
 import { useRegister } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-const schema = z.object({
-  firstName: z.string().min(2).max(50),
-  lastName: z.string().min(2).max(50),
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
+const schema = z
+  .object({
+    accountType: z.enum(["student", "parent"]),
+    firstName: z.string().min(2).max(50),
+    lastName: z.string().min(2).max(50),
+    email: z.string().email("Enter a valid email"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    parentEmail: z.string().email("Enter a valid parent email").or(z.literal("")).optional(),
+  })
+  .refine((v) => v.accountType !== "student" || (v.parentEmail && v.parentEmail.length > 0), {
+    message: "A parent email is required",
+    path: ["parentEmail"],
+  });
 
 export default function RegisterPage() {
   const { login } = useAuth();
@@ -23,12 +30,23 @@ export default function RegisterPage() {
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { firstName: "", lastName: "", email: "", password: "" },
+    defaultValues: { accountType: "student" as const, firstName: "", lastName: "", email: "", password: "", parentEmail: "" },
   });
+
+  const accountType = form.watch("accountType");
 
   function onSubmit(values: z.infer<typeof schema>) {
     registerMutation.mutate(
-      { data: values },
+      {
+        data: {
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          password: values.password,
+          accountType: values.accountType,
+          ...(values.accountType === "student" ? { parentEmail: values.parentEmail } : {}),
+        },
+      },
       {
         onSuccess: (data) => {
           login(data.token, data.role, data.firstName, data.userId ?? "");
@@ -52,6 +70,33 @@ export default function RegisterPage() {
         <div className="bg-card border rounded-xl p-6 shadow-sm">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="accountType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>I am a…</FormLabel>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["student", "parent"] as const).map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          data-testid={`toggle-${t}`}
+                          onClick={() => field.onChange(t)}
+                          className={`rounded-md border px-3 py-2 text-sm font-medium capitalize transition-colors ${
+                            field.value === t
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-input text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
@@ -93,6 +138,24 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
+              {accountType === "student" && (
+                <FormField
+                  control={form.control}
+                  name="parentEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parent's email</FormLabel>
+                      <FormControl>
+                        <Input data-testid="input-parent-email" type="email" placeholder="parent@example.com" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Your parent can sign up with this email to see your schedule and drive you to events.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="password"

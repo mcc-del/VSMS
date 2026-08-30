@@ -5,6 +5,7 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+import type { RegisterInputAccountType } from './registerInputAccountType';
 
 export interface RegisterInput {
   /**
@@ -20,4 +21,6 @@ export interface RegisterInput {
   email: string;
   /** @minLength 8 */
   password: string;
+  accountType?: RegisterInputAccountType;
+  parentEmail?: string;
 }

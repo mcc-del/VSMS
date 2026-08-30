@@ -37,6 +37,7 @@ import type {
   ManualHoursCredit,
   ManualHoursInput,
   OverrideInput,
+  ParentChild,
   ParticipantDashboard,
   RegisterInput,
   ReviewInput,
@@ -2198,6 +2199,83 @@ export const useOverrideSubmission = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getOverrideSubmissionMutationOptions(options));
     }
+
+export const getGetParentChildrenUrl = () => {
+
+
+
+
+  return `/api/v1/parent/children`
+}
+
+/**
+ * @summary List a parent's linked children with schedule and progress
+ */
+export const getParentChildren = async ( options?: RequestInit): Promise<ParentChild[]> => {
+
+  return customFetch<ParentChild[]>(getGetParentChildrenUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetParentChildrenQueryKey = () => {
+    return [
+    `/api/v1/parent/children`
+    ] as const;
+    }
+
+
+export const getGetParentChildrenQueryOptions = <TData = Awaited<ReturnType<typeof getParentChildren>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getParentChildren>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetParentChildrenQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getParentChildren>>> = ({ signal }) => getParentChildren({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getParentChildren>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetParentChildrenQueryResult = NonNullable<Awaited<ReturnType<typeof getParentChildren>>>
+export type GetParentChildrenQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List a parent's linked children with schedule and progress
+ */
+
+export function useGetParentChildren<TData = Awaited<ReturnType<typeof getParentChildren>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getParentChildren>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetParentChildrenQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetParticipantDashboardUrl = () => {
 

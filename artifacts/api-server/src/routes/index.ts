@@ -7,6 +7,7 @@ import submissionsRouter from "./submissions";
 import externalSubmissionsRouter from "./external-submissions";
 import adminRouter from "./admin";
 import dashboardRouter from "./dashboard";
+import parentRouter from "./parent";
 import storageRouter from "./storage";
 
 const router: IRouter = Router();
@@ -19,6 +20,7 @@ router.use(submissionsRouter);
 router.use(externalSubmissionsRouter);
 router.use(adminRouter);
 router.use(dashboardRouter);
+router.use(parentRouter);
 router.use(storageRouter);
 
 export default router;

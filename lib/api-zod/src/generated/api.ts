@@ -33,7 +33,9 @@ export const RegisterBody = zod.object({
   "firstName": zod.string().min(registerBodyFirstNameMin).max(registerBodyFirstNameMax),
   "lastName": zod.string().min(registerBodyLastNameMin).max(registerBodyLastNameMax),
   "email": zod.string().email(),
-  "password": zod.string().min(registerBodyPasswordMin)
+  "password": zod.string().min(registerBodyPasswordMin),
+  "accountType": zod.enum(['student', 'parent']).optional(),
+  "parentEmail": zod.string().email().optional()
 })
 
 
@@ -558,6 +560,30 @@ export const OverrideSubmissionResponse = zod.object({
   "status": zod.string(),
   "message": zod.string()
 })
+
+
+/**
+ * @summary List a parent's linked children with schedule and progress
+ */
+export const GetParentChildrenResponseItem = zod.object({
+  "userId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string(),
+  "totalApprovedHours": zod.number(),
+  "upcomingRegistrations": zod.array(zod.object({
+  "registrationId": zod.string(),
+  "eventId": zod.string(),
+  "eventTitle": zod.string().nullish(),
+  "eventDate": zod.string().nullish(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "status": zod.string(),
+  "isNew": zod.boolean()
+}))
+})
+export const GetParentChildrenResponse = zod.array(GetParentChildrenResponseItem)
 
 
 /**
