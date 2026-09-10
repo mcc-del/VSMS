@@ -68,6 +68,53 @@ router.post(
       }
     }
 
+    // Date sanity: must be a real date, not in the future, not stale (>1yr old).
+    const todayStr = new Date().toISOString().split("T")[0];
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const oneYearAgoStr = oneYearAgo.toISOString().split("T")[0];
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(volunteerDate) || Number.isNaN(Date.parse(volunteerDate))) {
+      res.status(400).json({ error: "Please enter a valid volunteer date." });
+      return;
+    }
+    if (volunteerDate > todayStr) {
+      res.status(400).json({ error: "The volunteer date can't be in the future — log hours only after you've volunteered." });
+      return;
+    }
+    if (volunteerDate < oneYearAgoStr) {
+      res.status(400).json({ error: "That date is more than a year ago and can no longer be submitted." });
+      return;
+    }
+
+    // The external supervisor must be someone other than the student.
+    const [self] = await db
+      .select({ email: usersTable.email })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+    if (self && extSupervisorEmail.trim().toLowerCase() === self.email.toLowerCase()) {
+      res.status(400).json({ error: "The supervisor email must belong to someone other than you." });
+      return;
+    }
+
+    // Prevent duplicate submissions of the same activity/org/date.
+    const [dupe] = await db
+      .select({ status: externalSubmissionsTable.status })
+      .from(externalSubmissionsTable)
+      .where(
+        and(
+          eq(externalSubmissionsTable.userId, userId),
+          eq(externalSubmissionsTable.activityName, activityName.trim()),
+          eq(externalSubmissionsTable.organizationName, organizationName.trim()),
+          eq(externalSubmissionsTable.volunteerDate, volunteerDate),
+        ),
+      )
+      .limit(1);
+    if (dupe && dupe.status !== "rejected") {
+      res.status(409).json({ error: "You've already submitted this activity for this date." });
+      return;
+    }
+
     // Enforce 25% cap: external approved hours ≤ 25% of approved internal hours.
     // Legacy approved submissions without an actual-hours value retain their prior planned credit.
     const [calendarApproved] = await db
@@ -126,13 +173,13 @@ router.post(
       .insert(externalSubmissionsTable)
       .values({
         userId,
-        activityName,
-        organizationName,
+        activityName: activityName.trim(),
+        organizationName: organizationName.trim(),
         volunteerDate,
         hoursWorked: String(hoursWorked),
-        extSupervisorName,
-        extSupervisorEmail,
-        description: description ?? null,
+        extSupervisorName: extSupervisorName.trim(),
+        extSupervisorEmail: extSupervisorEmail.trim().toLowerCase(),
+        description: description?.trim() || null,
         isNonprofit: isNonprofit ?? false,
         ein: isNonprofit ? (ein ?? "").replace(/[^0-9]/g, "") : null,
         status: isDeferred ? "deferred_overflow" : "pending",

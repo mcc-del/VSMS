@@ -43,6 +43,9 @@ const schema = z.object({
 }).refine(
   (v) => !v.isNonprofit || ((v.ein ?? "").replace(/[^0-9]/g, "").length === 9),
   { message: "Enter the 9-digit EIN (e.g. 12-3456789)", path: ["ein"] },
+).refine(
+  (v) => !v.volunteerDate || v.volunteerDate <= new Date().toISOString().split("T")[0],
+  { message: "The date can't be in the future — log hours after you've volunteered.", path: ["volunteerDate"] },
 );
 
 function StatusBadge({ status }: { status: string }) {
@@ -269,7 +272,7 @@ export default function ExternalSubmissionPage() {
                       <FormItem>
                         <FormLabel>Date of activity *</FormLabel>
                         <FormControl>
-                          <Input data-testid="input-volunteer-date" type="date" {...field} />
+                          <Input data-testid="input-volunteer-date" type="date" max={new Date().toISOString().split("T")[0]} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
