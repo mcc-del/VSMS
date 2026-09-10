@@ -250,6 +250,10 @@ export default function SupervisorPending() {
                     <>
                       <p><span className="font-medium">Activity:</span> {reviewing.data.activityName}</p>
                       <p><span className="font-medium">Organization:</span> {reviewing.data.organizationName}</p>
+                      <p>
+                        <span className="font-medium">Registered 501(c)(3):</span>{" "}
+                        {reviewing.data.isNonprofit ? `Yes — EIN ${reviewing.data.ein ?? "—"}` : "No / not provided"}
+                      </p>
                       <p><span className="font-medium">Date:</span> {reviewing.data.volunteerDate}</p>
                       <p><span className="font-medium">Hours:</span> {reviewing.data.hoursWorked}h</p>
                       <p><span className="font-medium">Ext. Supervisor:</span> {reviewing.data.extSupervisorName} ({reviewing.data.extSupervisorEmail})</p>
