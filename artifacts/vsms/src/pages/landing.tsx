@@ -8,121 +8,98 @@ const css = `
   --ink: #2c414c;
   --ink-soft: #62757f;
   --line: #dde7ee;
-  --brand: #5c9fd6;
-  --brand-bright: #4589c4;
+  --blue: #5c9fd6;
+  --blue-deep: #4589c4;
+  --coral: #e05a4c;
+  --teal: #5bb3a4;
   --gold: #e3ab2f;
   --gold-bright: #f4c34f;
-  --bronze: #e05a4c;
-  --silver: #5bb3a4;
+  --brand-ink: #23414f;
   --focus: #4589c4;
   --shadow: 14px 14px 0 rgba(44, 65, 76, 0.06);
   --sf: "Public Sans", ui-sans-serif, system-ui, sans-serif;
   --display: "Bricolage Grotesque", var(--sf);
   --mono: "Space Mono", ui-monospace, monospace;
-
-  position: fixed;
-  inset: 0;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden;
   background: var(--ground);
   color: var(--ink);
   font-family: var(--sf);
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  min-height: 100vh;
 }
 @media (prefers-color-scheme: dark) {
   .mc-landing {
     --ground: #0e1a22; --surface: #15242e; --surface-2: #1a2c37;
     --ink: #e9f2f7; --ink-soft: #9db2be; --line: #243844;
-    --brand: #6fb0e6; --brand-bright: #8bc1ef;
-    --gold: #f4c34f; --gold-bright: #f8d073; --bronze: #ef6d61; --silver: #7fccbd;
+    --blue: #6fb0e6; --blue-deep: #8bc1ef; --coral: #ef6d61; --teal: #7fccbd;
+    --gold: #f4c34f; --gold-bright: #f8d073; --brand-ink: #0c1d26;
     --shadow: 14px 14px 0 rgba(0, 0, 0, 0.28);
   }
 }
-
 .mc-landing * { box-sizing: border-box; }
-.mc-landing .screen { height: 100%; display: flex; flex-direction: column; }
-.mc-landing h1 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.02em; line-height: 1.04; }
+.mc-landing h1, .mc-landing h2, .mc-landing h3 { font-family: var(--display); margin: 0; letter-spacing: -0.02em; line-height: 1.05; text-wrap: balance; }
 .mc-landing p { margin: 0; }
 .mc-landing a { color: inherit; text-decoration: none; }
+.mc-landing .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+.mc-landing .eyebrow { font-family: var(--mono); font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--blue-deep); font-weight: 700; }
 
-.mc-landing .eyebrow { font-family: var(--mono); font-size: 15px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brand-bright); font-weight: 700; }
+.mc-landing nav { display: flex; align-items: center; justify-content: space-between; max-width: 1080px; margin: 0 auto; padding: 16px 24px; }
+.mc-landing .logo-img { height: 72px; width: auto; display: block; }
+.mc-landing .btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--sf); font-weight: 700; font-size: 15px; padding: 12px 22px; border-radius: 999px; border: 2px solid transparent; cursor: pointer; transition: transform .12s, background .15s, border-color .15s; }
+.mc-landing .btn-primary { background: var(--blue-deep); color: #fff; }
+.mc-landing .btn-primary:hover { background: var(--blue); transform: translateY(-2px); }
+.mc-landing .btn-ghost { border-color: var(--line); color: var(--ink); }
+.mc-landing .btn-ghost:hover { border-color: var(--blue); color: var(--blue-deep); }
+.mc-landing .btn-lg { padding: 16px 30px; font-size: 17px; }
 
-.mc-landing nav { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 14px clamp(20px, 4vw, 44px); max-width: 1120px; margin: 0 auto; width: 100%; }
-.mc-landing .logo-img { height: 92px; width: auto; display: block; }
-.mc-landing .nav-actions { display: flex; align-items: center; gap: 10px; }
+.mc-landing .hero { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; padding: 40px 0 64px; }
+.mc-landing .hero h1 { font-size: clamp(38px, 6vw, 62px); font-weight: 800; margin-top: 14px; }
+.mc-landing .hero h1 .gold { color: var(--gold); }
+.mc-landing .hero-sub { font-size: clamp(17px, 2vw, 20px); color: var(--ink-soft); margin-top: 20px; max-width: 30em; }
+.mc-landing .hero-cta { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
 
-.mc-landing .btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--sf); font-weight: 700; font-size: 15px; padding: 12px 22px; border-radius: 999px; border: 2px solid transparent; cursor: pointer; transition: transform .12s ease, background .15s ease, border-color .15s; }
-.mc-landing .btn-primary { background: var(--brand); color: #fff; }
-.mc-landing .btn-primary:hover { background: var(--brand-bright); transform: translateY(-2px); }
-.mc-landing .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
-.mc-landing .btn-ghost:hover { border-color: var(--brand); color: var(--brand-bright); }
-.mc-landing .btn-lg { padding: 15px 30px; font-size: 16px; }
-.mc-landing .btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
-
-.mc-landing .hero { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: clamp(32px, 5vw, 60px); align-items: center; max-width: 1120px; margin: 0 auto; width: 100%; padding: 0 clamp(20px, 4vw, 44px); }
-.mc-landing .hero h1 { font-size: clamp(38px, 5.6vw, 62px); font-weight: 800; }
-.mc-landing .hero h1 .grad { background: linear-gradient(100deg, var(--gold), var(--gold-bright)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.mc-landing .hero-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--ink-soft); margin-top: 13px; max-width: 30em; }
-.mc-landing .hero-cta { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
-.mc-landing .steps-inline { display: flex; gap: 22px; margin-top: 18px; flex-wrap: wrap; }
-.mc-landing .si { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 700; color: var(--ink-soft); }
-.mc-landing .si b { font-family: var(--mono); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; color: #fff; }
-.mc-landing .si:nth-child(1) b { background: var(--bronze); }
-.mc-landing .si:nth-child(2) b { background: var(--silver); }
-.mc-landing .si:nth-child(3) b { background: var(--gold); }
-
-.mc-landing .card { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); }
-.mc-landing .ladder-card { padding: 22px; }
-.mc-landing .lc-head { display: flex; flex-direction: column; gap: 3px; margin-bottom: 13px; }
+.mc-landing .card { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 26px; }
 .mc-landing .lc-label { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; color: var(--ink-soft); font-weight: 700; }
-.mc-landing .lc-sub { font-size: 14px; color: var(--ink-soft); font-weight: 600; }
-.mc-landing .ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
-.mc-landing .rung { display: flex; align-items: center; gap: 14px; padding: 11px 16px; border: 2px solid var(--line); border-radius: 15px; background: var(--surface-2); opacity: 0; transform: translateY(12px); animation: mc-rise .55s cubic-bezier(.22,.61,.36,1) forwards; }
-.mc-landing .rung:nth-child(1) { animation-delay: .06s; }
-.mc-landing .rung:nth-child(2) { animation-delay: .16s; }
-.mc-landing .rung:nth-child(3) { animation-delay: .26s; }
-@keyframes mc-rise { to { opacity: 1; transform: none; } }
+.mc-landing .lc-sub { font-size: 14px; color: var(--ink-soft); margin: 4px 0 16px; }
+.mc-landing .ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.mc-landing .rung { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border: 2px solid var(--line); border-radius: 15px; background: var(--surface-2); }
 .mc-landing .rung.gold { border-color: color-mix(in srgb, var(--gold) 55%, var(--line)); background: color-mix(in srgb, var(--gold) 12%, var(--surface)); }
-.mc-landing .rmedal { flex: none; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-family: var(--mono); font-weight: 700; font-size: 16px; color: #fff; }
-.mc-landing .rung.bronze .rmedal { background: var(--bronze); }
-.mc-landing .rung.silver .rmedal { background: var(--silver); }
-.mc-landing .rung.gold .rmedal { background: linear-gradient(140deg, var(--gold-bright), var(--gold)); color: #3a2a06; box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 22%, transparent); }
-.mc-landing .rinfo { display: flex; flex-direction: column; }
-.mc-landing .rinfo b { font-family: var(--display); font-size: 17px; font-weight: 700; }
-.mc-landing .rinfo span { font-size: 12.5px; color: var(--ink-soft); }
-.mc-landing .rhrs { margin-left: auto; font-family: var(--mono); font-weight: 700; font-size: 24px; color: var(--ink); font-variant-numeric: tabular-nums; }
-.mc-landing .rhrs i { font-style: normal; font-size: 15px; color: var(--ink-soft); margin-left: 1px; }
+.mc-landing .rmedal { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: var(--mono); font-weight: 700; color: #fff; }
+.mc-landing .rmedal.b { background: var(--coral); } .mc-landing .rmedal.s { background: var(--teal); }
+.mc-landing .rmedal.g { background: linear-gradient(140deg, var(--gold-bright), var(--gold)); color: #3a2a06; }
+.mc-landing .rinfo b { font-family: var(--display); font-size: 17px; } .mc-landing .rinfo span { display: block; font-size: 12.5px; color: var(--ink-soft); }
+.mc-landing .rhrs { margin-left: auto; font-family: var(--mono); font-weight: 700; font-size: 22px; }
 
-.mc-landing footer { flex: none; text-align: center; padding: 16px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.02em; color: var(--ink-soft); }
+.mc-landing section { padding: 56px 0; }
+.mc-landing .sec-head { max-width: 34em; margin-bottom: 36px; }
+.mc-landing .sec-head h2 { font-size: clamp(28px, 4vw, 38px); font-weight: 800; margin-top: 10px; }
+.mc-landing .sec-head p { color: var(--ink-soft); margin-top: 12px; font-size: 17px; }
+.mc-landing .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.mc-landing .step { padding: 24px; background: var(--surface); border: 2px solid var(--line); border-radius: 18px; }
+.mc-landing .step-n { font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--blue-deep); border: 1.5px solid var(--blue); width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 16px; }
+.mc-landing .step h3 { font-size: 20px; margin-bottom: 6px; }
+.mc-landing .step p { color: var(--ink-soft); font-size: 15px; }
 
-@media (max-width: 820px) {
-  .mc-landing { position: absolute; height: auto; min-height: 100dvh; overflow-x: hidden; overflow-y: auto; }
-  .mc-landing .screen { min-height: 100dvh; }
-  .mc-landing nav { padding: 12px 18px; }
-  .mc-landing .logo-img { height: 58px; }
-  .mc-landing .hero { grid-template-columns: 1fr; gap: 22px; padding: 6px 20px 32px; align-items: start; }
-  .mc-landing .hero h1 { font-size: clamp(30px, 8.5vw, 44px); }
-  .mc-landing .hero h1 br { display: none; }
-  .mc-landing .hero-sub { font-size: 16px; margin-top: 12px; }
-}
-@media (max-width: 480px) {
-  .mc-landing nav { padding: 10px 16px; }
-  .mc-landing .logo-img { height: 48px; }
-  .mc-landing .hero { padding: 4px 16px 28px; gap: 18px; }
-  .mc-landing .hero h1 { font-size: 29px; }
-  .mc-landing .eyebrow { font-size: 13px; }
-  .mc-landing .hero-cta { width: 100%; }
-  .mc-landing .hero-cta .btn { width: 100%; justify-content: center; }
-  .mc-landing .steps-inline { gap: 12px 16px; margin-top: 16px; }
-  .mc-landing .ladder-card { padding: 18px; }
-  .mc-landing .rhrs { font-size: 22px; }
-  .mc-landing footer { padding: 14px 16px; line-height: 1.5; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .mc-landing .rung { opacity: 1; transform: none; animation: none; }
-  .mc-landing .btn:hover { transform: none; }
+.mc-landing .band { background: var(--brand-ink); border-radius: 26px; padding: 44px 40px; color: #eaf4fb; }
+.mc-landing .band .eyebrow { color: var(--gold-bright); }
+.mc-landing .band h2 { color: #fff; font-size: clamp(26px, 3.6vw, 34px); font-weight: 800; margin-top: 8px; }
+.mc-landing .tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 28px; }
+.mc-landing .tier { background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.14); border-radius: 16px; padding: 22px; }
+.mc-landing .tier .hrs { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--gold-bright); margin: 4px 0; }
+.mc-landing .tier h3 { color: #fff; font-size: 18px; } .mc-landing .tier p { color: rgba(234,244,251,0.72); font-size: 14px; }
+
+.mc-landing .trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.mc-landing .trust-item h3 { font-size: 16px; } .mc-landing .trust-item p { font-size: 14px; color: var(--ink-soft); margin-top: 3px; }
+.mc-landing .check { width: 26px; height: 26px; border-radius: 8px; background: color-mix(in srgb, var(--blue) 16%, transparent); color: var(--blue-deep); display: grid; place-items: center; font-weight: 800; margin-bottom: 10px; }
+
+.mc-landing .cta-final { text-align: center; padding: 72px 0 40px; }
+.mc-landing .cta-final h2 { font-size: clamp(30px, 4.5vw, 44px); font-weight: 800; }
+.mc-landing .cta-final p { color: var(--ink-soft); font-size: 18px; margin: 14px auto 28px; max-width: 26em; }
+.mc-landing footer { border-top: 2px solid var(--line); padding: 28px 0 48px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); }
+
+@media (max-width: 860px) {
+  .mc-landing .hero { grid-template-columns: 1fr; gap: 36px; }
+  .mc-landing .steps, .mc-landing .tiers, .mc-landing .trust { grid-template-columns: 1fr; }
+  .mc-landing .logo-img { height: 56px; }
 }
 `;
 
@@ -130,56 +107,85 @@ export default function LandingPage() {
   return (
     <div className="mc-landing">
       <style dangerouslySetInnerHTML={{ __html: css }} />
-      <div className="screen">
-        <nav>
-          <img className="logo-img" src="/medinacares-logo.png" alt="MedinaCares" />
-          <div className="nav-actions">
-            <Link href="/login" className="btn btn-ghost">Log in</Link>
-          </div>
-        </nav>
 
-        <main className="hero">
-          <div>
-            <span className="eyebrow">Volunteer Service Awards &middot; 2026&ndash;2027</span>
-            <h1>Turn caring into hours,<br />all the way to <span className="grad">Gold.</span></h1>
-            <p className="hero-sub">Log the volunteer work you do &mdash; at school or out in the community &mdash; get it verified by a supervisor, and watch your total climb toward Bronze, Silver, and Gold.</p>
-            <div className="hero-cta">
-              <Link href="/register" className="btn btn-primary btn-lg">Create your account</Link>
-            </div>
-            <div className="steps-inline">
-              <span className="si"><b>1</b> Log hours</span>
-              <span className="si"><b>2</b> Get verified</span>
-              <span className="si"><b>3</b> Earn your medal</span>
-            </div>
-          </div>
+      <nav>
+        <img className="logo-img" src="/medinacares-logo.png" alt="MedinaCares" />
+        <Link href="/login" className="btn btn-ghost">Log in</Link>
+      </nav>
 
-          <div className="card ladder-card" aria-hidden="true">
-            <div className="lc-head">
-              <span className="lc-label">The awards</span>
-              <span className="lc-sub">Reach the hours, earn the medal.</span>
-            </div>
-            <ol className="ladder">
-              <li className="rung gold">
-                <span className="rmedal">G</span>
-                <span className="rinfo"><b>Gold</b><span>Highest service honor</span></span>
-                <span className="rhrs">80<i>h</i></span>
-              </li>
-              <li className="rung silver">
-                <span className="rmedal">S</span>
-                <span className="rinfo"><b>Silver</b><span>Serious commitment</span></span>
-                <span className="rhrs">75<i>h</i></span>
-              </li>
-              <li className="rung bronze">
-                <span className="rmedal">B</span>
-                <span className="rinfo"><b>Bronze</b><span>Your first milestone</span></span>
-                <span className="rhrs">40<i>h</i></span>
-              </li>
-            </ol>
+      <header className="wrap hero">
+        <div>
+          <span className="eyebrow">Volunteer Service Awards &middot; 2026&ndash;2027</span>
+          <h1>Turn caring into hours,<br />all the way to <span className="gold">Gold.</span></h1>
+          <p className="hero-sub">
+            Log the volunteer work you do &mdash; at school or in the community &mdash; get it
+            verified by a supervisor, and climb toward Bronze, Silver, and Gold. Recognized at our
+            annual awards ceremony.
+          </p>
+          <div className="hero-cta">
+            <Link href="/register" className="btn btn-primary btn-lg">Create your account</Link>
+            <Link href="/login" className="btn btn-ghost btn-lg">I already have one</Link>
           </div>
-        </main>
+        </div>
 
-        <footer>MedinaCares &middot; Medina Academy volunteer service &mdash; opening to more schools soon</footer>
-      </div>
+        <div className="card" aria-hidden="true">
+          <div className="lc-label">The awards</div>
+          <div className="lc-sub">Reach the hours, earn the medal.</div>
+          <ol className="ladder">
+            <li className="rung gold"><span className="rmedal g">G</span><span className="rinfo"><b>Gold</b><span>Highest service honor</span></span><span className="rhrs">80h</span></li>
+            <li className="rung"><span className="rmedal s">S</span><span className="rinfo"><b>Silver</b><span>Serious commitment</span></span><span className="rhrs">75h</span></li>
+            <li className="rung"><span className="rmedal b">B</span><span className="rinfo"><b>Bronze</b><span>Your first milestone</span></span><span className="rhrs">40h</span></li>
+          </ol>
+        </div>
+      </header>
+
+      <section className="wrap">
+        <div className="sec-head">
+          <span className="eyebrow">How it works</span>
+          <h2>Three steps, zero paperwork.</h2>
+          <p>Everything happens in one place — from the hours you log to the medal you earn.</p>
+        </div>
+        <div className="steps">
+          <div className="step"><div className="step-n">1</div><h3>Log your hours</h3><p>Sign up for school events or report volunteering you did with other organizations.</p></div>
+          <div className="step"><div className="step-n">2</div><h3>Get them verified</h3><p>A supervisor reviews and approves — real verification, no lost paper forms.</p></div>
+          <div className="step"><div className="step-n">3</div><h3>Earn your medal</h3><p>Watch your total climb and unlock Bronze, Silver, and Gold, celebrated at the ceremony.</p></div>
+        </div>
+      </section>
+
+      <section className="wrap">
+        <div className="band">
+          <span className="eyebrow">The milestones</span>
+          <h2>Something to aim for.</h2>
+          <div className="tiers">
+            <div className="tier"><h3>Bronze</h3><div className="hrs">40 hrs</div><p>Your first big milestone — the habit is real.</p></div>
+            <div className="tier"><h3>Silver</h3><div className="hrs">75 hrs</div><p>Serious commitment to service.</p></div>
+            <div className="tier"><h3>Gold</h3><div className="hrs">80 hrs</div><p>The highest honor — recognized leadership.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="wrap">
+        <div className="sec-head">
+          <span className="eyebrow">Why it counts</span>
+          <h2>Built to make hours count — accurately.</h2>
+        </div>
+        <div className="trust">
+          <div className="trust-item"><div className="check">✓</div><h3>Supervisor-verified</h3><p>Every hour is reviewed and approved, so your record truly means something.</p></div>
+          <div className="trust-item"><div className="check">✓</div><h3>Outside hours count too</h3><p>Report volunteering with registered non-profits beyond school — accredited by Medina.</p></div>
+          <div className="trust-item"><div className="check">✓</div><h3>Everything in one place</h3><p>Schedule, hours, leaderboard, and progress — on any device.</p></div>
+        </div>
+      </section>
+
+      <section className="wrap cta-final">
+        <span className="eyebrow">Start today</span>
+        <h2>Ready to start logging?</h2>
+        <p>Create your account in under a minute and put your first hours on the board.</p>
+        <Link href="/register" className="btn btn-primary btn-lg">Create your free account</Link>
+      </section>
+
+      <footer>
+        <div className="wrap">MedinaCares · Medina Academy Volunteer Service Awards · opening to more schools soon</div>
+      </footer>
     </div>
   );
 }

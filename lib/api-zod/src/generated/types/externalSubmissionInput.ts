@@ -30,4 +30,6 @@ export interface ExternalSubmissionInput {
   extSupervisorName: string;
   extSupervisorEmail: string;
   description?: string;
+  isNonprofit?: boolean;
+  ein?: string;
 }

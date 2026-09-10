@@ -21,6 +21,8 @@ function formatExternal(r: typeof externalSubmissionsTable.$inferSelect) {
     supervisorComments: r.supervisorComments ?? null,
     submittedAt: r.submittedAt.toISOString(),
     reviewedAt: r.reviewedAt?.toISOString() ?? null,
+    isNonprofit: r.isNonprofit,
+    ein: r.ein ?? null,
   };
 }
 
@@ -55,7 +57,16 @@ router.post(
     }
 
     const userId = req.auth!.userId;
-    const { activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail, description } = parsed.data;
+    const { activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail, description, isNonprofit, ein } = parsed.data;
+
+    // If the org is a registered non-profit, a valid EIN (##-#######) is required.
+    if (isNonprofit) {
+      const cleaned = (ein ?? "").replace(/[^0-9]/g, "");
+      if (cleaned.length !== 9) {
+        res.status(400).json({ error: "A valid 9-digit EIN is required for a registered non-profit." });
+        return;
+      }
+    }
 
     // Enforce 25% cap: external approved hours ≤ 25% of approved internal hours.
     // Legacy approved submissions without an actual-hours value retain their prior planned credit.
@@ -122,6 +133,8 @@ router.post(
         extSupervisorName,
         extSupervisorEmail,
         description: description ?? null,
+        isNonprofit: isNonprofit ?? false,
+        ein: isNonprofit ? (ein ?? "").replace(/[^0-9]/g, "") : null,
         status: isDeferred ? "deferred_overflow" : "pending",
       })
       .returning();
@@ -152,6 +165,8 @@ router.get(
         extSupervisorName: externalSubmissionsTable.extSupervisorName,
         extSupervisorEmail: externalSubmissionsTable.extSupervisorEmail,
         description: externalSubmissionsTable.description,
+        isNonprofit: externalSubmissionsTable.isNonprofit,
+        ein: externalSubmissionsTable.ein,
         status: externalSubmissionsTable.status,
         supervisorComments: externalSubmissionsTable.supervisorComments,
         submittedAt: externalSubmissionsTable.submittedAt,
@@ -180,6 +195,8 @@ router.get(
         supervisorComments: r.supervisorComments ?? null,
         submittedAt: r.submittedAt.toISOString(),
         reviewedAt: r.reviewedAt?.toISOString() ?? null,
+        isNonprofit: r.isNonprofit,
+        ein: r.ein ?? null,
         participantFirstName: r.participantFirstName ?? null,
         participantLastName: r.participantLastName ?? null,
         participantEmail: r.participantEmail ?? null,
@@ -248,6 +265,8 @@ router.get(
         extSupervisorName: externalSubmissionsTable.extSupervisorName,
         extSupervisorEmail: externalSubmissionsTable.extSupervisorEmail,
         description: externalSubmissionsTable.description,
+        isNonprofit: externalSubmissionsTable.isNonprofit,
+        ein: externalSubmissionsTable.ein,
         status: externalSubmissionsTable.status,
         supervisorComments: externalSubmissionsTable.supervisorComments,
         submittedAt: externalSubmissionsTable.submittedAt,
@@ -276,6 +295,8 @@ router.get(
         supervisorComments: r.supervisorComments ?? null,
         submittedAt: r.submittedAt.toISOString(),
         reviewedAt: r.reviewedAt?.toISOString() ?? null,
+        isNonprofit: r.isNonprofit,
+        ein: r.ein ?? null,
         participantFirstName: r.participantFirstName ?? null,
         participantLastName: r.participantLastName ?? null,
         participantEmail: r.participantEmail ?? null,

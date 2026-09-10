@@ -361,6 +361,8 @@ export const ListMyExternalSubmissionsResponseItem = zod.object({
   "supervisorComments": zod.string().nullish(),
   "submittedAt": zod.string(),
   "reviewedAt": zod.string().nullish(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().nullish(),
   "message": zod.string().nullish().describe('Present when status is deferred_overflow; explains why the submission was deferred.')
 })
 export const ListMyExternalSubmissionsResponse = zod.array(ListMyExternalSubmissionsResponseItem)
@@ -390,7 +392,9 @@ export const SubmitExternalActivityBody = zod.object({
   "hoursWorked": zod.number().min(submitExternalActivityBodyHoursWorkedMin).max(submitExternalActivityBodyHoursWorkedMax),
   "extSupervisorName": zod.string().min(submitExternalActivityBodyExtSupervisorNameMin).max(submitExternalActivityBodyExtSupervisorNameMax),
   "extSupervisorEmail": zod.string().email(),
-  "description": zod.string().optional()
+  "description": zod.string().optional(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().optional()
 })
 
 
@@ -411,6 +415,8 @@ export const ListPendingExternalSubmissionsResponseItem = zod.object({
   "supervisorComments": zod.string().nullish(),
   "submittedAt": zod.string(),
   "reviewedAt": zod.string().nullish(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().nullish(),
   "participantFirstName": zod.string().nullish(),
   "participantLastName": zod.string().nullish(),
   "participantEmail": zod.string().nullish()
@@ -453,6 +459,8 @@ export const ListReviewedExternalSubmissionsResponseItem = zod.object({
   "supervisorComments": zod.string().nullish(),
   "submittedAt": zod.string(),
   "reviewedAt": zod.string().nullish(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().nullish(),
   "participantFirstName": zod.string().nullish(),
   "participantLastName": zod.string().nullish(),
   "participantEmail": zod.string().nullish()

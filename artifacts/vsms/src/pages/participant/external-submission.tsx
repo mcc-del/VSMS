@@ -32,13 +32,18 @@ const GUIDELINES = [
 const schema = z.object({
   activityName: z.string().min(2, "Required").max(200),
   organizationName: z.string().min(2, "Required").max(200),
+  isNonprofit: z.boolean(),
+  ein: z.string().optional(),
   volunteerDate: z.string().min(1, "Required"),
   hoursWorked: z.coerce.number().min(0.5, "Min 0.5 hours").max(24, "Max 24 hours"),
   extSupervisorName: z.string().min(2, "Required").max(100),
   extSupervisorEmail: z.string().email("Enter a valid email"),
   description: z.string().optional(),
   guidelines: z.array(z.string()).min(1, "Please check at least one guideline"),
-});
+}).refine(
+  (v) => !v.isNonprofit || ((v.ein ?? "").replace(/[^0-9]/g, "").length === 9),
+  { message: "Enter the 9-digit EIN (e.g. 12-3456789)", path: ["ein"] },
+);
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "approved") return <Badge className="bg-green-100 text-green-700 border-0">Approved</Badge>;
@@ -60,6 +65,8 @@ export default function ExternalSubmissionPage() {
     defaultValues: {
       activityName: "",
       organizationName: "",
+      isNonprofit: false,
+      ein: "",
       volunteerDate: "",
       hoursWorked: 2,
       extSupervisorName: "",
@@ -207,6 +214,52 @@ export default function ExternalSubmissionPage() {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="isNonprofit"
+                  render={({ field }) => (
+                    <FormItem className="rounded-lg border p-3">
+                      <div className="flex items-start gap-2.5">
+                        <FormControl>
+                          <Checkbox
+                            data-testid="checkbox-nonprofit"
+                            checked={field.value}
+                            onCheckedChange={(c) => field.onChange(Boolean(c))}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-tight">
+                          <FormLabel className="font-medium cursor-pointer">
+                            This organization is a registered 501(c)(3) non-profit
+                          </FormLabel>
+                          <FormDescription>
+                            Hours must be for a registered non-profit. Casual gatherings (e.g. a family picnic) don't qualify.
+                          </FormDescription>
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("isNonprofit") && (
+                  <FormField
+                    control={form.control}
+                    name="ein"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Non-profit EIN *</FormLabel>
+                        <FormControl>
+                          <Input data-testid="input-ein" placeholder="12-3456789" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          The IRS Employer Identification Number of the non-profit (9 digits).
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <FormField

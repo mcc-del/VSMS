@@ -1331,6 +1331,10 @@ components:
           format: email
         description:
           type: string
+        isNonprofit:
+          type: boolean
+        ein:
+          type: string
 
     ExternalSubmission:
       type: object
@@ -1361,6 +1365,10 @@ components:
         submittedAt:
           type: string
         reviewedAt:
+          type: ["string", "null"]
+        isNonprofit:
+          type: boolean
+        ein:
           type: ["string", "null"]
         message:
           type: ["string", "null"]
@@ -1395,6 +1403,10 @@ components:
         submittedAt:
           type: string
         reviewedAt:
+          type: ["string", "null"]
+        isNonprofit:
+          type: boolean
+        ein:
           type: ["string", "null"]
         participantFirstName:
           type: ["string", "null"]
