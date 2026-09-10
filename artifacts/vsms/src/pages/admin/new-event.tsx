@@ -1,4 +1,4 @@
-import { useCreateEvent, useListUsers, getListEventsQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useCreateEvent, useListUsers, useListOrganizations, getListEventsQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ const schema = z.object({
   endTime: z.string().min(1, "End time is required"),
   maxCapacity: z.coerce.number().int().positive("Must be a positive integer"),
   supervisorId: z.string().min(1, "Select a supervisor"),
+  organizationId: z.string().optional(),
   imageUrl: z.string().nullable(),
 }).superRefine((values, ctx) => {
   if (calculateEventDuration(values.startTime, values.endTime) === null) {
@@ -49,14 +50,17 @@ export default function AdminNewEvent() {
       endTime: "17:00",
       maxCapacity: 50,
       supervisorId: "",
+      organizationId: "",
       imageUrl: null,
     },
   });
+  const { data: organizations } = useListOrganizations();
   const plannedHours = calculateEventDuration(form.watch("startTime"), form.watch("endTime"));
 
   function onSubmit(values: z.infer<typeof schema>) {
     const payload: Record<string, unknown> = { ...values };
     if (!payload.imageUrl) delete payload.imageUrl;
+    if (!payload.organizationId) delete payload.organizationId;
 
     createEvent.mutate(
       { data: payload as any },
@@ -188,6 +192,27 @@ export default function AdminNewEvent() {
                             </SelectItem>
                           ))
                         )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="organizationId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Organization (optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-organization">
+                          <SelectValue placeholder="Select an organization" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {(organizations ?? []).map((o) => (
+                          <SelectItem key={o.organizationId} value={o.organizationId}>
+                            {o.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

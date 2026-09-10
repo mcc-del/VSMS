@@ -24,6 +24,8 @@ export * from './leaderboardResponse';
 export * from './loginInput';
 export * from './manualHoursCredit';
 export * from './manualHoursInput';
+export * from './organization';
+export * from './organizationInput';
 export * from './overrideInput';
 export * from './parentChild';
 export * from './parentChildRegistration';

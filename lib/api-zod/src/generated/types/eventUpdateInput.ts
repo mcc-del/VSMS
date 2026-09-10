@@ -18,4 +18,6 @@ export interface EventUpdateInput {
   supervisorId?: string;
   /** @nullable */
   imageUrl?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
 }

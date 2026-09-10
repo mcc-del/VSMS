@@ -622,6 +622,67 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /v1/organizations:
+    get:
+      operationId: listOrganizations
+      tags: [organizations]
+      summary: List organizations
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+
+  /v1/admin/organizations:
+    post:
+      operationId: createOrganization
+      tags: [admin]
+      summary: Create an organization (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "400":
+          description: Validation error
+
+  /v1/admin/organizations/{organizationId}:
+    put:
+      operationId: updateOrganization
+      tags: [admin]
+      summary: Update an organization (admin only)
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+
   /v1/leaderboard:
     get:
       operationId: getLeaderboard
@@ -759,6 +820,39 @@ paths:
 
 components:
   schemas:
+    Organization:
+      type: object
+      required: [organizationId, name, allowsElementary, allowsMiddle, allowsHigh]
+      properties:
+        organizationId:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        allowsElementary:
+          type: boolean
+        allowsMiddle:
+          type: boolean
+        allowsHigh:
+          type: boolean
+    OrganizationInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        description:
+          type: string
+        allowsElementary:
+          type: boolean
+        allowsMiddle:
+          type: boolean
+        allowsHigh:
+          type: boolean
+
     LeaderboardEntry:
       type: object
       required: [rank, displayName, totalApprovedHours, isMe]
@@ -1021,6 +1115,12 @@ components:
           type: integer
         myRegistrationStatus:
           type: ["string", "null"]
+        organizationId:
+          type: ["string", "null"]
+        organizationName:
+          type: ["string", "null"]
+        eligibleForMe:
+          type: boolean
 
     EventInput:
       type: object
@@ -1045,6 +1145,8 @@ components:
           type: string
         imageUrl:
           type: string
+        organizationId:
+          type: string
 
     EventUpdateInput:
       type: object
@@ -1067,6 +1169,8 @@ components:
         supervisorId:
           type: string
         imageUrl:
+          type: ["string", "null"]
+        organizationId:
           type: ["string", "null"]
 
     EventRegistration:

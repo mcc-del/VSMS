@@ -88,7 +88,10 @@ export const ListEventsResponseItem = zod.object({
   "supervisorName": zod.string().nullish(),
   "supervisorEmail": zod.string().nullish(),
   "registrationCount": zod.number(),
-  "myRegistrationStatus": zod.string().nullish()
+  "myRegistrationStatus": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "eligibleForMe": zod.boolean().optional()
 })
 export const ListEventsResponse = zod.array(ListEventsResponseItem)
 
@@ -109,7 +112,8 @@ export const CreateEventBody = zod.object({
   "endTime": zod.string(),
   "maxCapacity": zod.number(),
   "supervisorId": zod.string(),
-  "imageUrl": zod.string().optional()
+  "imageUrl": zod.string().optional(),
+  "organizationId": zod.string().optional()
 })
 
 
@@ -157,7 +161,10 @@ export const GetEventResponse = zod.object({
   "supervisorName": zod.string().nullish(),
   "supervisorEmail": zod.string().nullish(),
   "registrationCount": zod.number(),
-  "myRegistrationStatus": zod.string().nullish()
+  "myRegistrationStatus": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "eligibleForMe": zod.boolean().optional()
 })
 
 
@@ -181,7 +188,8 @@ export const UpdateEventBody = zod.object({
   "endTime": zod.string().optional(),
   "maxCapacity": zod.number().optional(),
   "supervisorId": zod.string().optional(),
-  "imageUrl": zod.string().nullish()
+  "imageUrl": zod.string().nullish(),
+  "organizationId": zod.string().nullish()
 })
 
 export const UpdateEventResponse = zod.object({
@@ -199,7 +207,10 @@ export const UpdateEventResponse = zod.object({
   "supervisorName": zod.string().nullish(),
   "supervisorEmail": zod.string().nullish(),
   "registrationCount": zod.number(),
-  "myRegistrationStatus": zod.string().nullish()
+  "myRegistrationStatus": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "eligibleForMe": zod.boolean().optional()
 })
 
 
@@ -561,6 +572,67 @@ export const OverrideSubmissionBody = zod.object({
 export const OverrideSubmissionResponse = zod.object({
   "status": zod.string(),
   "message": zod.string()
+})
+
+
+/**
+ * @summary List organizations
+ */
+export const ListOrganizationsResponseItem = zod.object({
+  "organizationId": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "allowsElementary": zod.boolean(),
+  "allowsMiddle": zod.boolean(),
+  "allowsHigh": zod.boolean()
+})
+export const ListOrganizationsResponse = zod.array(ListOrganizationsResponseItem)
+
+
+/**
+ * @summary Create an organization (admin only)
+ */
+export const createOrganizationBodyNameMin = 2;
+export const createOrganizationBodyNameMax = 150;
+
+
+
+export const CreateOrganizationBody = zod.object({
+  "name": zod.string().min(createOrganizationBodyNameMin).max(createOrganizationBodyNameMax),
+  "description": zod.string().optional(),
+  "allowsElementary": zod.boolean().optional(),
+  "allowsMiddle": zod.boolean().optional(),
+  "allowsHigh": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Update an organization (admin only)
+ */
+export const UpdateOrganizationParams = zod.object({
+  "organizationId": zod.coerce.string()
+})
+
+export const updateOrganizationBodyNameMin = 2;
+export const updateOrganizationBodyNameMax = 150;
+
+
+
+export const UpdateOrganizationBody = zod.object({
+  "name": zod.string().min(updateOrganizationBodyNameMin).max(updateOrganizationBodyNameMax),
+  "description": zod.string().optional(),
+  "allowsElementary": zod.boolean().optional(),
+  "allowsMiddle": zod.boolean().optional(),
+  "allowsHigh": zod.boolean().optional()
+})
+
+export const UpdateOrganizationResponse = zod.object({
+  "organizationId": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "allowsElementary": zod.boolean(),
+  "allowsMiddle": zod.boolean(),
+  "allowsHigh": zod.boolean()
 })
 
 

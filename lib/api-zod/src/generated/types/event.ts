@@ -26,4 +26,9 @@ export interface Event {
   registrationCount: number;
   /** @nullable */
   myRegistrationStatus?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
+  eligibleForMe?: boolean;
 }

@@ -5,6 +5,28 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export interface Organization {
+  organizationId: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  allowsElementary: boolean;
+  allowsMiddle: boolean;
+  allowsHigh: boolean;
+}
+
+export interface OrganizationInput {
+  /**
+     * @minLength 2
+     * @maxLength 150
+     */
+  name: string;
+  description?: string;
+  allowsElementary?: boolean;
+  allowsMiddle?: boolean;
+  allowsHigh?: boolean;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   displayName: string;
@@ -174,6 +196,11 @@ export interface Event {
   registrationCount: number;
   /** @nullable */
   myRegistrationStatus?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
+  eligibleForMe?: boolean;
 }
 
 export interface EventInput {
@@ -187,6 +214,7 @@ export interface EventInput {
   maxCapacity: number;
   supervisorId: string;
   imageUrl?: string;
+  organizationId?: string;
 }
 
 export interface EventUpdateInput {
@@ -201,6 +229,8 @@ export interface EventUpdateInput {
   supervisorId?: string;
   /** @nullable */
   imageUrl?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
 }
 
 export interface EventRegistration {

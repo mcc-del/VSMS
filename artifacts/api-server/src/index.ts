@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedTestAccounts } from "./lib/seed";
+import { seedTestAccounts, seedOrganizations } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -27,4 +27,5 @@ app.listen(port, (err) => {
   // Ensure the supervisor/admin test personas exist so all roles can be
   // exercised without manual database edits.
   void seedTestAccounts();
+  void seedOrganizations();
 });

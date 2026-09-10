@@ -17,4 +17,5 @@ export interface EventInput {
   maxCapacity: number;
   supervisorId: string;
   imageUrl?: string;
+  organizationId?: string;
 }

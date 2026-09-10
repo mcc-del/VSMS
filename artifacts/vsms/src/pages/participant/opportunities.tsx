@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MapPin, Clock, Users, Calendar, Search, User, Mail, Award, CalendarPlus, Copy } from "lucide-react";
+import { MapPin, Clock, Users, Calendar, Search, User, Mail, Award, CalendarPlus, Copy, Building2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -76,11 +76,11 @@ export default function OpportunitiesPage() {
     (e.location ?? "").toLowerCase().includes(q);
 
   const upcoming = [...(events ?? [])]
-    .filter((e) => e.eventDate >= today && matches(e))
+    .filter((e) => e.eventDate >= today && matches(e) && e.eligibleForMe !== false)
     .sort((a, b) => (a.eventDate < b.eventDate ? -1 : 1));
 
   const past = [...(events ?? [])]
-    .filter((e) => e.eventDate < today && matches(e))
+    .filter((e) => e.eventDate < today && matches(e) && e.eligibleForMe !== false)
     .sort((a, b) => (a.eventDate > b.eventDate ? -1 : 1));
 
   function handleSignUp(eventId: string) {
@@ -174,6 +174,12 @@ export default function OpportunitiesPage() {
                 <Award className="w-4 h-4" />
                 {event.hoursValue}h service credit
               </span>
+              {event.organizationName && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted text-muted-foreground text-xs px-2.5 py-1">
+                  <Building2 className="w-3.5 h-3.5" />
+                  {event.organizationName}
+                </span>
+              )}
             </div>
 
             <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted-foreground mt-2">

@@ -1,7 +1,35 @@
 import bcrypt from "bcryptjs";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, organizationsTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { logger } from "./logger";
+
+const DEFAULT_ORGS = [
+  { name: "Medina Academy", description: "Host school and accreditor of volunteer hours.", allowsElementary: true, allowsMiddle: true, allowsHigh: true },
+  { name: "Essentials First", description: "Leadership & volunteer opportunities for middle and high school students.", allowsElementary: false, allowsMiddle: true, allowsHigh: true },
+  { name: "Others", description: "General external volunteering opportunities.", allowsElementary: true, allowsMiddle: true, allowsHigh: true },
+];
+
+export async function seedOrganizations(): Promise<void> {
+  try {
+    for (const o of DEFAULT_ORGS) {
+      await db
+        .insert(organizationsTable)
+        .values(o)
+        .onConflictDoUpdate({
+          target: organizationsTable.name,
+          set: {
+            description: o.description,
+            allowsElementary: o.allowsElementary,
+            allowsMiddle: o.allowsMiddle,
+            allowsHigh: o.allowsHigh,
+          },
+        });
+    }
+    logger.info({ orgs: DEFAULT_ORGS.map((o) => o.name) }, "Seeded organizations");
+  } catch (err) {
+    logger.error({ err }, "Failed to seed organizations");
+  }
+}
 
 /**
  * Idempotently seed built-in test accounts for the supervisor and admin

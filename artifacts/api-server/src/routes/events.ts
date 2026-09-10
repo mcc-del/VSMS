@@ -4,11 +4,13 @@ import {
   eventsTable,
   usersTable,
   eventRegistrationsTable,
+  organizationsTable,
 } from "@workspace/db";
 import { eq, count, sql, and } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 import { sendRegistrationConfirmation } from "../lib/email";
+import { gradeToLevel, orgAllowsLevel, type SchoolLevel } from "../lib/levels";
 
 const router = Router();
 
@@ -37,9 +39,12 @@ function formatEvent(
     supervisorFirstName: string | null;
     supervisorLastName: string | null;
     supervisorEmail: string | null;
+    organizationId?: string | null;
+    organizationName?: string | null;
   },
   registrationCount: number,
   myRegistrationStatus: string | null,
+  eligibleForMe: boolean = true,
 ) {
   return {
     eventId: e.eventId,
@@ -57,6 +62,9 @@ function formatEvent(
       ? `${e.supervisorFirstName} ${e.supervisorLastName}`
       : null,
     supervisorEmail: e.supervisorEmail ?? null,
+    organizationId: e.organizationId ?? null,
+    organizationName: e.organizationName ?? null,
+    eligibleForMe,
     registrationCount,
     myRegistrationStatus,
   };
@@ -65,6 +73,20 @@ function formatEvent(
 // GET /api/v1/events
 router.get("/v1/events", authenticate, async (req, res) => {
   const userId = req.auth?.userId;
+
+  // Determine the viewer's school level (participants only) so we can flag
+  // which opportunities they're eligible for by org grade-band.
+  let viewerLevel: SchoolLevel | null = null;
+  let viewerIsParticipant = false;
+  if (userId) {
+    const [viewer] = await db
+      .select({ role: usersTable.role, grade: usersTable.grade })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+    viewerIsParticipant = viewer?.role === "participant";
+    if (viewerIsParticipant) viewerLevel = gradeToLevel(viewer?.grade);
+  }
 
   const events = await db
     .select({
@@ -82,9 +104,15 @@ router.get("/v1/events", authenticate, async (req, res) => {
       supervisorFirstName: usersTable.firstName,
       supervisorLastName: usersTable.lastName,
       supervisorEmail: usersTable.email,
+      organizationId: eventsTable.organizationId,
+      organizationName: organizationsTable.name,
+      allowsElementary: organizationsTable.allowsElementary,
+      allowsMiddle: organizationsTable.allowsMiddle,
+      allowsHigh: organizationsTable.allowsHigh,
     })
     .from(eventsTable)
     .leftJoin(usersTable, eq(eventsTable.supervisorId, usersTable.userId))
+    .leftJoin(organizationsTable, eq(eventsTable.organizationId, organizationsTable.organizationId))
     .orderBy(sql`${eventsTable.eventDate} DESC`);
 
   // Fetch registration counts
@@ -112,9 +140,16 @@ router.get("/v1/events", authenticate, async (req, res) => {
   }
 
   res.json(
-    events.map((e) =>
-      formatEvent(e, regCounts[e.eventId] ?? 0, myRegMap[e.eventId] ?? null),
-    ),
+    events.map((e) => {
+      const eligibleForMe =
+        !viewerIsParticipant || !e.organizationId
+          ? true
+          : orgAllowsLevel(
+              { allowsElementary: e.allowsElementary ?? true, allowsMiddle: e.allowsMiddle ?? true, allowsHigh: e.allowsHigh ?? true },
+              viewerLevel,
+            );
+      return formatEvent(e, regCounts[e.eventId] ?? 0, myRegMap[e.eventId] ?? null, eligibleForMe);
+    }),
   );
 });
 
@@ -196,9 +231,12 @@ router.get("/v1/events/:eventId", authenticate, async (req, res) => {
       supervisorFirstName: usersTable.firstName,
       supervisorLastName: usersTable.lastName,
       supervisorEmail: usersTable.email,
+      organizationId: eventsTable.organizationId,
+      organizationName: organizationsTable.name,
     })
     .from(eventsTable)
     .leftJoin(usersTable, eq(eventsTable.supervisorId, usersTable.userId))
+    .leftJoin(organizationsTable, eq(eventsTable.organizationId, organizationsTable.organizationId))
     .where(eq(eventsTable.eventId, eventId))
     .limit(1);
 
@@ -458,6 +496,7 @@ router.patch(
     if (d.maxCapacity !== undefined) updates.maxCapacity = d.maxCapacity;
     if (d.supervisorId !== undefined) updates.supervisorId = d.supervisorId;
     if ("imageUrl" in d) updates.imageUrl = d.imageUrl ?? null;
+    if ("organizationId" in d) updates.organizationId = d.organizationId ?? null;
 
     const nextStartTime = String(d.startTime ?? current.startTime);
     const nextEndTime = String(d.endTime ?? current.endTime);
@@ -526,7 +565,7 @@ router.post(
       return;
     }
 
-    const { title, description, location, eventDate, startTime, endTime, maxCapacity, supervisorId, imageUrl } =
+    const { title, description, location, eventDate, startTime, endTime, maxCapacity, supervisorId, imageUrl, organizationId } =
       parsed.data as any;
 
     const durationHours = calculateDurationHours(startTime, endTime);
@@ -548,6 +587,7 @@ router.post(
         maxCapacity: maxCapacity ?? 50,
         supervisorId,
         imageUrl: imageUrl ?? null,
+        organizationId: organizationId ?? null,
       })
       .returning();
 

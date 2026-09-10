@@ -2,9 +2,13 @@ import { pgTable, uuid, varchar, text, date, time, decimal, integer, timestamp }
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
+import { organizationsTable } from "./organizations";
 
 export const eventsTable = pgTable("events", {
   eventId: uuid("event_id").primaryKey().defaultRandom(),
+  organizationId: uuid("organization_id").references(() => organizationsTable.organizationId, {
+    onDelete: "set null",
+  }),
   title: varchar("title", { length: 150 }).notNull(),
   description: text("description").notNull(),
   location: varchar("location", { length: 255 }).notNull().default(""),
