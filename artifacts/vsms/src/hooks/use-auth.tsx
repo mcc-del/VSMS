@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export type Role = "participant" | "supervisor" | "admin" | "parent" | null;
 
@@ -12,6 +13,8 @@ interface AuthState {
 
 export function useAuth() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const handled401 = useRef(false);
   const [auth, setAuth] = useState<AuthState>(() => {
     return {
       token: localStorage.getItem("vsms_token"),
@@ -57,13 +60,28 @@ export function useAuth() {
         headers.set("Authorization", `Bearer ${token}`);
         init.headers = headers;
       }
-      return originalFetch(input, init);
+      const res = await originalFetch(input, init);
+      // If a logged-in request comes back unauthorized, the session expired.
+      // Sign out cleanly with a clear message instead of a cryptic failure.
+      if (token && res.status === 401 && !handled401.current) {
+        handled401.current = true;
+        toast({
+          title: "Session expired",
+          description: "Please sign in again to continue.",
+          variant: "destructive",
+        });
+        logout();
+        window.setTimeout(() => {
+          handled401.current = false;
+        }, 3000);
+      }
+      return res;
     };
 
     return () => {
       window.fetch = originalFetch;
     };
-  }, [auth.token]);
+  }, [auth.token, logout, toast]);
 
   useEffect(() => {
     if (!auth.token) return;
