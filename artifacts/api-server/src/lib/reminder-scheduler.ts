@@ -45,6 +45,10 @@ async function sendTwoDayReminders(): Promise<void> {
     let failed = 0;
 
     for (const row of rows) {
+      // Managed children have no email of their own — skip; their linked
+      // guardian is notified through the parent flow instead.
+      if (!row.userEmail) continue;
+
       const toName = [row.userFirstName, row.userLastName].filter(Boolean).join(" ") || row.userEmail;
 
       const delivered = await sendReminderEmail(row.userEmail, toName, {

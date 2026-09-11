@@ -56,7 +56,7 @@ router.post("/v1/auth/register", async (req, res) => {
     })
     .returning();
 
-  const token = signToken({ userId: user.userId, role: user.role, email: user.email });
+  const token = signToken({ userId: user.userId, role: user.role, email: user.email! });
 
   res.status(201).json({
     token,
@@ -81,7 +81,7 @@ router.post("/v1/auth/login", async (req, res) => {
     .where(eq(usersTable.email, email.toLowerCase()))
     .limit(1);
 
-  if (!user) {
+  if (!user || !user.passwordHash) {
     res.status(401).json({ error: "Invalid email or password" });
     return;
   }
@@ -92,7 +92,7 @@ router.post("/v1/auth/login", async (req, res) => {
     return;
   }
 
-  const token = signToken({ userId: user.userId, role: user.role, email: user.email });
+  const token = signToken({ userId: user.userId, role: user.role, email: user.email! });
 
   res.json({
     token,

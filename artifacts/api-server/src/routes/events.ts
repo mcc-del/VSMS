@@ -365,7 +365,7 @@ router.post(
       .where(eq(usersTable.userId, userId))
       .limit(1);
 
-    if (user) {
+    if (user && user.email) {
       const toName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
       sendRegistrationConfirmation(user.email, toName, {
         title: event.title,

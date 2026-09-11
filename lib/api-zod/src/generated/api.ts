@@ -681,7 +681,10 @@ export const GetParentChildrenResponseItem = zod.object({
   "userId": zod.string(),
   "firstName": zod.string(),
   "lastName": zod.string(),
-  "email": zod.string(),
+  "email": zod.string().nullish(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "isManaged": zod.boolean(),
   "totalApprovedHours": zod.number(),
   "upcomingRegistrations": zod.array(zod.object({
   "registrationId": zod.string(),
@@ -696,6 +699,71 @@ export const GetParentChildrenResponseItem = zod.object({
 }))
 })
 export const GetParentChildrenResponse = zod.array(GetParentChildrenResponseItem)
+
+
+/**
+ * @summary Add a managed child (no login of its own)
+ */
+export const addParentChildBodyFirstNameMax = 50;
+
+export const addParentChildBodyLastNameMax = 50;
+
+export const addParentChildBodyGradeMax = 20;
+
+export const addParentChildBodySchoolMax = 120;
+
+
+
+export const AddParentChildBody = zod.object({
+  "firstName": zod.string().min(1).max(addParentChildBodyFirstNameMax),
+  "lastName": zod.string().min(1).max(addParentChildBodyLastNameMax),
+  "grade": zod.string().min(1).max(addParentChildBodyGradeMax),
+  "school": zod.string().min(1).max(addParentChildBodySchoolMax),
+  "organizationId": zod.string().nullish()
+})
+
+
+/**
+ * @summary Edit a managed child's details
+ */
+export const UpdateParentChildParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const updateParentChildBodyFirstNameMax = 50;
+
+export const updateParentChildBodyLastNameMax = 50;
+
+export const updateParentChildBodyGradeMax = 20;
+
+export const updateParentChildBodySchoolMax = 120;
+
+
+
+export const UpdateParentChildBody = zod.object({
+  "firstName": zod.string().min(1).max(updateParentChildBodyFirstNameMax),
+  "lastName": zod.string().min(1).max(updateParentChildBodyLastNameMax),
+  "grade": zod.string().min(1).max(updateParentChildBodyGradeMax),
+  "school": zod.string().min(1).max(updateParentChildBodySchoolMax),
+  "organizationId": zod.string().nullish()
+})
+
+export const UpdateParentChildResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Sign a managed child up for an event
+ */
+export const RegisterChildForEventParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const RegisterChildForEventBody = zod.object({
+  "eventId": zod.string()
+})
 
 
 /**

@@ -92,7 +92,7 @@ router.post(
       .from(usersTable)
       .where(eq(usersTable.userId, userId))
       .limit(1);
-    if (self && extSupervisorEmail.trim().toLowerCase() === self.email.toLowerCase()) {
+    if (self && self.email && extSupervisorEmail.trim().toLowerCase() === self.email.toLowerCase()) {
       res.status(400).json({ error: "The supervisor email must belong to someone other than you." });
       return;
     }

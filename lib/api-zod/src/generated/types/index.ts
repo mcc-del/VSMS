@@ -10,6 +10,8 @@ export * from './adminCreateUserInput';
 export * from './adminDashboard';
 export * from './authResponse';
 export * from './checkInResponse';
+export * from './childInput';
+export * from './childRegisterInput';
 export * from './errorResponse';
 export * from './event';
 export * from './eventInput';

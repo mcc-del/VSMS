@@ -725,6 +725,109 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ParentChild"
+    post:
+      operationId: addParentChild
+      tags: [parent]
+      summary: Add a managed child (no login of its own)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParentChild"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/parent/children/{childId}:
+    patch:
+      operationId: updateParentChild
+      tags: [parent]
+      summary: Edit a managed child's details
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "403":
+          description: Child manages own profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Child not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/parent/children/{childId}/register:
+    post:
+      operationId: registerChildForEvent
+      tags: [parent]
+      summary: Sign a managed child up for an event
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildRegisterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParentChildRegistration"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/dashboard/participant:
     get:
@@ -920,7 +1023,7 @@ components:
           type: boolean
     ParentChild:
       type: object
-      required: [userId, firstName, lastName, email, totalApprovedHours, upcomingRegistrations]
+      required: [userId, firstName, lastName, isManaged, totalApprovedHours, upcomingRegistrations]
       properties:
         userId:
           type: string
@@ -929,13 +1032,48 @@ components:
         lastName:
           type: string
         email:
-          type: string
+          type: ["string", "null"]
+        grade:
+          type: ["string", "null"]
+        school:
+          type: ["string", "null"]
+        isManaged:
+          type: boolean
         totalApprovedHours:
           type: number
         upcomingRegistrations:
           type: array
           items:
             $ref: "#/components/schemas/ParentChildRegistration"
+
+    ChildInput:
+      type: object
+      required: [firstName, lastName, grade, school]
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        grade:
+          type: string
+          minLength: 1
+          maxLength: 20
+        school:
+          type: string
+          minLength: 1
+          maxLength: 120
+        organizationId:
+          type: ["string", "null"]
+    ChildRegisterInput:
+      type: object
+      required: [eventId]
+      properties:
+        eventId:
+          type: string
 
     ManualHoursInput:
       type: object

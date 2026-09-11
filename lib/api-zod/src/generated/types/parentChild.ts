@@ -11,7 +11,13 @@ export interface ParentChild {
   userId: string;
   firstName: string;
   lastName: string;
-  email: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  grade?: string | null;
+  /** @nullable */
+  school?: string | null;
+  isManaged: boolean;
   totalApprovedHours: number;
   upcomingRegistrations: ParentChildRegistration[];
 }

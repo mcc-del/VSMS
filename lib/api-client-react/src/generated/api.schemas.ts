@@ -75,9 +75,44 @@ export interface ParentChild {
   userId: string;
   firstName: string;
   lastName: string;
-  email: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  grade?: string | null;
+  /** @nullable */
+  school?: string | null;
+  isManaged: boolean;
   totalApprovedHours: number;
   upcomingRegistrations: ParentChildRegistration[];
+}
+
+export interface ChildInput {
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
+  firstName: string;
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
+  lastName: string;
+  /**
+     * @minLength 1
+     * @maxLength 20
+     */
+  grade: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  school: string;
+  /** @nullable */
+  organizationId?: string | null;
+}
+
+export interface ChildRegisterInput {
+  eventId: string;
 }
 
 export interface ManualHoursInput {

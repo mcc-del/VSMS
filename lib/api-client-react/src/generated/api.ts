@@ -24,6 +24,8 @@ import type {
   AdminDashboard,
   AuthResponse,
   CheckInResponse,
+  ChildInput,
+  ChildRegisterInput,
   ErrorResponse,
   Event,
   EventInput,
@@ -41,6 +43,7 @@ import type {
   OrganizationInput,
   OverrideInput,
   ParentChild,
+  ParentChildRegistration,
   ParticipantDashboard,
   RegisterInput,
   ReviewInput,
@@ -2654,6 +2657,221 @@ export function useGetParentChildren<TData = Awaited<ReturnType<typeof getParent
 
 
 
+
+export const getAddParentChildUrl = () => {
+
+
+
+
+  return `/api/v1/parent/children`
+}
+
+/**
+ * @summary Add a managed child (no login of its own)
+ */
+export const addParentChild = async (childInput: ChildInput, options?: RequestInit): Promise<ParentChild> => {
+
+  return customFetch<ParentChild>(getAddParentChildUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      childInput,)
+  }
+);}
+
+
+
+
+export const getAddParentChildMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addParentChild>>, TError,{data: BodyType<ChildInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addParentChild>>, TError,{data: BodyType<ChildInput>}, TContext> => {
+
+const mutationKey = ['addParentChild'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addParentChild>>, {data: BodyType<ChildInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  addParentChild(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddParentChildMutationResult = NonNullable<Awaited<ReturnType<typeof addParentChild>>>
+    export type AddParentChildMutationBody = BodyType<ChildInput>
+    export type AddParentChildMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Add a managed child (no login of its own)
+ */
+export const useAddParentChild = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addParentChild>>, TError,{data: BodyType<ChildInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addParentChild>>,
+        TError,
+        {data: BodyType<ChildInput>},
+        TContext
+      > => {
+      return useMutation(getAddParentChildMutationOptions(options));
+    }
+
+export const getUpdateParentChildUrl = (childId: string,) => {
+
+
+
+
+  return `/api/v1/parent/children/${childId}`
+}
+
+/**
+ * @summary Edit a managed child's details
+ */
+export const updateParentChild = async (childId: string,
+    childInput: ChildInput, options?: RequestInit): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getUpdateParentChildUrl(childId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      childInput,)
+  }
+);}
+
+
+
+
+export const getUpdateParentChildMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateParentChild>>, TError,{childId: string;data: BodyType<ChildInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateParentChild>>, TError,{childId: string;data: BodyType<ChildInput>}, TContext> => {
+
+const mutationKey = ['updateParentChild'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateParentChild>>, {childId: string;data: BodyType<ChildInput>}> = (props) => {
+          const {childId,data} = props ?? {};
+
+          return  updateParentChild(childId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateParentChildMutationResult = NonNullable<Awaited<ReturnType<typeof updateParentChild>>>
+    export type UpdateParentChildMutationBody = BodyType<ChildInput>
+    export type UpdateParentChildMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Edit a managed child's details
+ */
+export const useUpdateParentChild = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateParentChild>>, TError,{childId: string;data: BodyType<ChildInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateParentChild>>,
+        TError,
+        {childId: string;data: BodyType<ChildInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateParentChildMutationOptions(options));
+    }
+
+export const getRegisterChildForEventUrl = (childId: string,) => {
+
+
+
+
+  return `/api/v1/parent/children/${childId}/register`
+}
+
+/**
+ * @summary Sign a managed child up for an event
+ */
+export const registerChildForEvent = async (childId: string,
+    childRegisterInput: ChildRegisterInput, options?: RequestInit): Promise<ParentChildRegistration> => {
+
+  return customFetch<ParentChildRegistration>(getRegisterChildForEventUrl(childId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      childRegisterInput,)
+  }
+);}
+
+
+
+
+export const getRegisterChildForEventMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerChildForEvent>>, TError,{childId: string;data: BodyType<ChildRegisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerChildForEvent>>, TError,{childId: string;data: BodyType<ChildRegisterInput>}, TContext> => {
+
+const mutationKey = ['registerChildForEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerChildForEvent>>, {childId: string;data: BodyType<ChildRegisterInput>}> = (props) => {
+          const {childId,data} = props ?? {};
+
+          return  registerChildForEvent(childId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterChildForEventMutationResult = NonNullable<Awaited<ReturnType<typeof registerChildForEvent>>>
+    export type RegisterChildForEventMutationBody = BodyType<ChildRegisterInput>
+    export type RegisterChildForEventMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Sign a managed child up for an event
+ */
+export const useRegisterChildForEvent = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerChildForEvent>>, TError,{childId: string;data: BodyType<ChildRegisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerChildForEvent>>,
+        TError,
+        {childId: string;data: BodyType<ChildRegisterInput>},
+        TContext
+      > => {
+      return useMutation(getRegisterChildForEventMutationOptions(options));
+    }
 
 export const getGetParticipantDashboardUrl = () => {
 

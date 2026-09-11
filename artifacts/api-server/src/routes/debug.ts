@@ -35,7 +35,7 @@ router.get("/v1/debug/seed-check", async (_req, res) => {
       email: c.email,
       exists: Boolean(row),
       role: row?.role ?? null,
-      passwordMatches: row ? bcrypt.compareSync(c.password, row.passwordHash) : false,
+      passwordMatches: row && row.passwordHash ? bcrypt.compareSync(c.password, row.passwordHash) : false,
     };
   });
 
