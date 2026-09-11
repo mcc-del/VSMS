@@ -26,6 +26,9 @@ import type {
   CheckInResponse,
   ChildInput,
   ChildRegisterInput,
+  CoGuardianInviteInput,
+  CoGuardianInviteResult,
+  CoGuardiansResponse,
   ErrorResponse,
   Event,
   EventInput,
@@ -3319,6 +3322,154 @@ export const useRegisterChildForEvent = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getRegisterChildForEventMutationOptions(options));
+    }
+
+export const getListCoGuardiansUrl = () => {
+
+
+
+
+  return `/api/v1/parent/co-guardians`
+}
+
+/**
+ * @summary List linked co-guardians and pending invites
+ */
+export const listCoGuardians = async ( options?: RequestInit): Promise<CoGuardiansResponse> => {
+
+  return customFetch<CoGuardiansResponse>(getListCoGuardiansUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCoGuardiansQueryKey = () => {
+    return [
+    `/api/v1/parent/co-guardians`
+    ] as const;
+    }
+
+
+export const getListCoGuardiansQueryOptions = <TData = Awaited<ReturnType<typeof listCoGuardians>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCoGuardians>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCoGuardiansQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCoGuardians>>> = ({ signal }) => listCoGuardians({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCoGuardians>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCoGuardiansQueryResult = NonNullable<Awaited<ReturnType<typeof listCoGuardians>>>
+export type ListCoGuardiansQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List linked co-guardians and pending invites
+ */
+
+export function useListCoGuardians<TData = Awaited<ReturnType<typeof listCoGuardians>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCoGuardians>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCoGuardiansQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getInviteCoGuardianUrl = () => {
+
+
+
+
+  return `/api/v1/parent/co-guardians`
+}
+
+/**
+ * @summary Invite a co-guardian by email (links now if they have an account)
+ */
+export const inviteCoGuardian = async (coGuardianInviteInput: CoGuardianInviteInput, options?: RequestInit): Promise<CoGuardianInviteResult> => {
+
+  return customFetch<CoGuardianInviteResult>(getInviteCoGuardianUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      coGuardianInviteInput,)
+  }
+);}
+
+
+
+
+export const getInviteCoGuardianMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteCoGuardian>>, TError,{data: BodyType<CoGuardianInviteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof inviteCoGuardian>>, TError,{data: BodyType<CoGuardianInviteInput>}, TContext> => {
+
+const mutationKey = ['inviteCoGuardian'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inviteCoGuardian>>, {data: BodyType<CoGuardianInviteInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  inviteCoGuardian(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InviteCoGuardianMutationResult = NonNullable<Awaited<ReturnType<typeof inviteCoGuardian>>>
+    export type InviteCoGuardianMutationBody = BodyType<CoGuardianInviteInput>
+    export type InviteCoGuardianMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Invite a co-guardian by email (links now if they have an account)
+ */
+export const useInviteCoGuardian = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteCoGuardian>>, TError,{data: BodyType<CoGuardianInviteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof inviteCoGuardian>>,
+        TError,
+        {data: BodyType<CoGuardianInviteInput>},
+        TContext
+      > => {
+      return useMutation(getInviteCoGuardianMutationOptions(options));
     }
 
 export const getGetParticipantDashboardUrl = () => {

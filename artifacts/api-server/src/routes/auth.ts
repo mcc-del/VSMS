@@ -1,9 +1,10 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, guardianInvitesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authenticate, signToken } from "../middlewares/auth";
 import { RegisterBody, LoginBody } from "@workspace/api-zod";
+import { linkGuardianToInviterChildren } from "./parent";
 
 const router = Router();
 
@@ -55,6 +56,34 @@ router.post("/v1/auth/register", async (req, res) => {
       grade: isParent ? null : (grade?.trim() || null),
     })
     .returning();
+
+  // If this parent was invited as a co-guardian before signing up, consume any
+  // pending invites now and link them to the inviter's children.
+  if (isParent) {
+    try {
+      const invites = await db
+        .select()
+        .from(guardianInvitesTable)
+        .where(eq(guardianInvitesTable.email, user.email!.toLowerCase()));
+      for (const inv of invites) {
+        const [inviter] = await db
+          .select({ userId: usersTable.userId, email: usersTable.email })
+          .from(usersTable)
+          .where(eq(usersTable.userId, inv.inviterUserId))
+          .limit(1);
+        if (inviter?.email) {
+          await linkGuardianToInviterChildren(user.userId, inviter.userId, inviter.email.toLowerCase());
+        }
+      }
+      if (invites.length > 0) {
+        await db
+          .delete(guardianInvitesTable)
+          .where(eq(guardianInvitesTable.email, user.email!.toLowerCase()));
+      }
+    } catch {
+      // Non-fatal: registration still succeeds even if invite linking fails.
+    }
+  }
 
   const token = signToken({ userId: user.userId, role: user.role, email: user.email! });
 

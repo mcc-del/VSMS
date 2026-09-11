@@ -148,6 +148,44 @@ export interface ChildRegisterInput {
   eventId: string;
 }
 
+export type CoGuardianStatus = typeof CoGuardianStatus[keyof typeof CoGuardianStatus];
+
+
+export const CoGuardianStatus = {
+  linked: 'linked',
+  pending: 'pending',
+} as const;
+
+export interface CoGuardian {
+  userId?: string;
+  name?: string;
+  /** @nullable */
+  email: string | null;
+  status: CoGuardianStatus;
+}
+
+export interface CoGuardiansResponse {
+  linked: CoGuardian[];
+  pending: CoGuardian[];
+}
+
+export interface CoGuardianInviteInput {
+  email: string;
+}
+
+export type CoGuardianInviteResultStatus = typeof CoGuardianInviteResultStatus[keyof typeof CoGuardianInviteResultStatus];
+
+
+export const CoGuardianInviteResultStatus = {
+  linked: 'linked',
+  invited: 'invited',
+} as const;
+
+export interface CoGuardianInviteResult {
+  status: CoGuardianInviteResultStatus;
+  linkedChildren?: number;
+}
+
 export interface ManualHoursInput {
   /**
      * @minimum 0.5

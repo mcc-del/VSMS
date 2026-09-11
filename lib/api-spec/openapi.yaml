@@ -984,6 +984,48 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/parent/co-guardians:
+    get:
+      operationId: listCoGuardians
+      tags: [parent]
+      summary: List linked co-guardians and pending invites
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoGuardiansResponse"
+    post:
+      operationId: inviteCoGuardian
+      tags: [parent]
+      summary: Invite a co-guardian by email (links now if they have an account)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoGuardianInviteInput"
+      responses:
+        "200":
+          description: Linked to an existing account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoGuardianInviteResult"
+        "201":
+          description: Invite stored (they have no account yet)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoGuardianInviteResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/dashboard/participant:
     get:
       operationId: getParticipantDashboard
@@ -1266,6 +1308,46 @@ components:
       properties:
         eventId:
           type: string
+    CoGuardian:
+      type: object
+      required: [email, status]
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [linked, pending]
+    CoGuardiansResponse:
+      type: object
+      required: [linked, pending]
+      properties:
+        linked:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoGuardian"
+        pending:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoGuardian"
+    CoGuardianInviteInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+    CoGuardianInviteResult:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [linked, invited]
+        linkedChildren:
+          type: number
 
     ManualHoursInput:
       type: object

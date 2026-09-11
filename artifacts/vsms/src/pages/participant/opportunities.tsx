@@ -404,6 +404,11 @@ export default function OpportunitiesPage() {
                         )}
                       </div>
                     )}
+                    <div className="mt-1 rounded-md bg-amber-50 border border-amber-200 p-2.5 text-amber-900 dark:bg-amber-950/40 dark:border-amber-900/60 dark:text-amber-200">
+                      <span className="font-medium">Please check with your parent before you sign up</span>{" "}
+                      — someone will need to get you there and back. We'll let your linked parent
+                      know about this sign-up.
+                    </div>
                     <p className="text-xs text-muted-foreground pt-1 border-t">
                       You can cancel this sign-up before the event if your plans change.
                     </p>

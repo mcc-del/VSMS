@@ -7,6 +7,7 @@ import {
   volunteerSubmissionsTable,
   manualHoursTable,
   guardianshipsTable,
+  guardianInvitesTable,
 } from "@workspace/db";
 import { eq, and, inArray, gte, sum, sql, asc } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
@@ -71,6 +72,28 @@ async function resolveChildIds(parentUserId: string, parentEmail: string): Promi
   for (const l of links) ids.add(l.childUserId);
   for (const s of legacy) ids.add(s.userId);
   return [...ids];
+}
+
+// Link a guardian to every child the inviter manages. Idempotent (existing
+// links are left untouched). Exported so the register flow can consume a
+// pending co-guardian invite when the invited person signs up.
+export async function linkGuardianToInviterChildren(
+  guardianUserId: string,
+  inviterUserId: string,
+  inviterEmail: string,
+): Promise<number> {
+  const childIds = await resolveChildIds(inviterUserId, inviterEmail);
+  let linked = 0;
+  for (const childUserId of childIds) {
+    if (childUserId === guardianUserId) continue;
+    const inserted = await db
+      .insert(guardianshipsTable)
+      .values({ guardianUserId, childUserId, isPrimary: false })
+      .onConflictDoNothing()
+      .returning({ id: guardianshipsTable.guardianshipId });
+    if (inserted.length > 0) linked++;
+  }
+  return linked;
 }
 
 // GET /api/v1/parent/children — children linked to this parent, with each
@@ -369,5 +392,85 @@ router.post(
     });
   },
 );
+
+// GET /api/v1/parent/co-guardians — other guardians who share this parent's
+// children (linked) plus outstanding invites this parent has sent (pending).
+router.get("/v1/parent/co-guardians", authenticate, requireRole("parent"), async (req, res) => {
+  const parentEmail = req.auth!.email.toLowerCase();
+  const childIds = await resolveChildIds(req.auth!.userId, parentEmail);
+
+  const linked =
+    childIds.length === 0
+      ? []
+      : await db
+          .selectDistinct({
+            userId: usersTable.userId,
+            firstName: usersTable.firstName,
+            lastName: usersTable.lastName,
+            email: usersTable.email,
+          })
+          .from(guardianshipsTable)
+          .innerJoin(usersTable, eq(guardianshipsTable.guardianUserId, usersTable.userId))
+          .where(inArray(guardianshipsTable.childUserId, childIds));
+
+  const invites = await db
+    .select({ email: guardianInvitesTable.email })
+    .from(guardianInvitesTable)
+    .where(eq(guardianInvitesTable.inviterUserId, req.auth!.userId));
+
+  res.json({
+    linked: linked
+      .filter((g) => g.userId !== req.auth!.userId)
+      .map((g) => ({
+        userId: g.userId,
+        name: `${g.firstName} ${g.lastName}`.trim(),
+        email: g.email,
+        status: "linked" as const,
+      })),
+    pending: invites.map((i) => ({ email: i.email, status: "pending" as const })),
+  });
+});
+
+// POST /api/v1/parent/co-guardians — invite a second guardian by email. If they
+// already have a parent account, link them now; otherwise store a pending
+// invite that is consumed when they register.
+router.post("/v1/parent/co-guardians", authenticate, requireRole("parent"), async (req, res) => {
+  const raw = (req.body as { email?: unknown })?.email;
+  const email = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  if (!email || !email.includes("@")) {
+    res.status(400).json({ error: "Please enter a valid email address." });
+    return;
+  }
+  if (email === req.auth!.email.toLowerCase()) {
+    res.status(400).json({ error: "That's your own email." });
+    return;
+  }
+
+  const [existing] = await db
+    .select({ userId: usersTable.userId, role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+    .limit(1);
+
+  if (existing) {
+    if (existing.role !== "parent") {
+      res.status(400).json({ error: "That email belongs to a non-parent account." });
+      return;
+    }
+    const count = await linkGuardianToInviterChildren(
+      existing.userId,
+      req.auth!.userId,
+      req.auth!.email.toLowerCase(),
+    );
+    res.status(200).json({ status: "linked", linkedChildren: count });
+    return;
+  }
+
+  await db
+    .insert(guardianInvitesTable)
+    .values({ email, inviterUserId: req.auth!.userId })
+    .onConflictDoNothing();
+  res.status(201).json({ status: "invited" });
+});
 
 export default router;

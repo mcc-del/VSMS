@@ -875,6 +875,38 @@ export const RegisterChildForEventBody = zod.object({
 
 
 /**
+ * @summary List linked co-guardians and pending invites
+ */
+export const ListCoGuardiansResponse = zod.object({
+  "linked": zod.array(zod.object({
+  "userId": zod.string().optional(),
+  "name": zod.string().optional(),
+  "email": zod.string().nullable(),
+  "status": zod.enum(['linked', 'pending'])
+})),
+  "pending": zod.array(zod.object({
+  "userId": zod.string().optional(),
+  "name": zod.string().optional(),
+  "email": zod.string().nullable(),
+  "status": zod.enum(['linked', 'pending'])
+}))
+})
+
+
+/**
+ * @summary Invite a co-guardian by email (links now if they have an account)
+ */
+export const InviteCoGuardianBody = zod.object({
+  "email": zod.string()
+})
+
+export const InviteCoGuardianResponse = zod.object({
+  "status": zod.enum(['linked', 'invited']),
+  "linkedChildren": zod.number().optional()
+})
+
+
+/**
  * @summary Get participant dashboard summary
  */
 export const GetParticipantDashboardResponse = zod.object({

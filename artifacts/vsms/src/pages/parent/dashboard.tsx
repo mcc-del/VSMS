@@ -5,7 +5,10 @@ import {
   useAddParentChild,
   useUpdateParentChild,
   useListOrganizations,
+  useListCoGuardians,
+  useInviteCoGuardian,
   getGetParentChildrenQueryKey,
+  getListCoGuardiansQueryKey,
   type ParentChild,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
@@ -33,7 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { SchoolSelect } from "@/components/school-select";
 import { ALL_GRADES } from "@/lib/schools";
-import { Clock, MapPin, CalendarDays, Trophy, Users, Plus, Pencil } from "lucide-react";
+import { Clock, MapPin, CalendarDays, Trophy, Users, Plus, Pencil, UserPlus, Mail } from "lucide-react";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -89,6 +92,39 @@ export default function ParentDashboard() {
   const addChild = useAddParentChild();
   const updateChild = useUpdateParentChild();
   const saving = addChild.isPending || updateChild.isPending;
+
+  const { data: coGuardians } = useListCoGuardians();
+  const inviteCoGuardian = useInviteCoGuardian();
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+
+  const handleInvite = async () => {
+    const email = inviteEmail.trim();
+    if (!email.includes("@")) {
+      toast({ title: "Enter a valid email", variant: "destructive" });
+      return;
+    }
+    try {
+      const res = await inviteCoGuardian.mutateAsync({ data: { email } });
+      qc.invalidateQueries({ queryKey: getListCoGuardiansQueryKey() });
+      qc.invalidateQueries({ queryKey: getGetParentChildrenQueryKey() });
+      setInviteOpen(false);
+      setInviteEmail("");
+      toast({
+        title: res.status === "linked" ? "Co-guardian linked" : "Invite saved",
+        description:
+          res.status === "linked"
+            ? "They now share access to your children."
+            : "They'll be linked automatically when they sign up with this email.",
+      });
+    } catch {
+      toast({
+        title: "Could not invite",
+        description: "That email may belong to a non-parent account.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const openAdd = () => {
     setEditing(null);
@@ -288,7 +324,86 @@ export default function ParentDashboard() {
             );
           })
         )}
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <CardTitle className="text-base flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-primary" /> Co-guardians
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setInviteOpen(true)}
+                data-testid="button-invite-coguardian"
+              >
+                <Plus className="w-4 h-4 mr-1" /> Invite co-guardian
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Give a second parent or guardian the same access to your children.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {!coGuardians ||
+            (coGuardians.linked.length === 0 && coGuardians.pending.length === 0) ? (
+              <p className="text-sm text-muted-foreground">No co-guardians yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {coGuardians.linked.map((g) => (
+                  <div key={g.email ?? g.userId} className="flex items-center gap-2 text-sm">
+                    <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span>{g.name || g.email}</span>
+                    <Badge variant="secondary" className="font-normal">Linked</Badge>
+                  </div>
+                ))}
+                {coGuardians.pending.map((g) => (
+                  <div key={g.email} className="flex items-center gap-2 text-sm">
+                    <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span>{g.email}</span>
+                    <Badge variant="outline" className="font-normal">Invited</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite a co-guardian</DialogTitle>
+            <DialogDescription>
+              Enter their email. If they already have a parent account, they're linked right away.
+              Otherwise they'll be linked automatically when they sign up with this email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label htmlFor="coguardian-email">Email</Label>
+            <Input
+              id="coguardian-email"
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="parent@example.com"
+              data-testid="input-coguardian-email"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleInvite}
+              disabled={inviteCoGuardian.isPending}
+              data-testid="button-send-coguardian-invite"
+            >
+              {inviteCoGuardian.isPending ? "Sending…" : "Invite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
