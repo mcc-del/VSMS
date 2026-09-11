@@ -78,6 +78,11 @@ export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
 }
 
+export interface ManagedOrganizations {
+  all: boolean;
+  organizationIds: string[];
+}
+
 export interface LeaderboardPreferences {
   /** @nullable */
   displayAlias?: string | null;
@@ -271,11 +276,22 @@ export interface AuthResponse {
 
 export interface UserProfile {
   userId: string;
-  email: string;
+  /** @nullable */
+  email?: string | null;
   firstName: string;
   lastName: string;
   role: string;
   createdAt: string;
+  managedOrganizationIds?: string[];
+}
+
+export interface SetOrgAdminInput {
+  organizationIds: string[];
+}
+
+export interface SetOrgAdminResult {
+  role: string;
+  organizationIds: string[];
 }
 
 export interface AdminCreateUserInput {

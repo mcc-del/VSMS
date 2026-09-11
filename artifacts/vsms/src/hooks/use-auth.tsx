@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
-export type Role = "participant" | "supervisor" | "admin" | "parent" | null;
+export type Role = "participant" | "supervisor" | "admin" | "parent" | "org_admin" | null;
 
 interface AuthState {
   token: string | null;
@@ -42,6 +42,7 @@ export function useAuth() {
       setAuth({ token, role: role as Role, firstName, userId });
 
       if (role === "admin") setLocation("/admin/dashboard");
+      else if (role === "org_admin") setLocation("/supervisor/pending");
       else if (role === "supervisor") setLocation("/supervisor/pending");
       else if (role === "parent") setLocation("/parent");
       else setLocation("/dashboard");

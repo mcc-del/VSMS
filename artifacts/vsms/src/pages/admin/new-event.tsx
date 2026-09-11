@@ -1,4 +1,6 @@
-import { useCreateEvent, useListUsers, useListOrganizations, getListEventsQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useEffect } from "react";
+import { useCreateEvent, useListUsers, useListOrganizations, useGetManagedOrganizations, getListEventsQueryKey, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +35,14 @@ const schema = z.object({
 
 export default function AdminNewEvent() {
   const createEvent = useCreateEvent();
-  const { data: users } = useListUsers();
+  const { role, userId } = useAuth();
+  const isOrgAdmin = role === "org_admin";
+  // Only Super Admins may list users (to pick a supervisor); org admins
+  // supervise their own org's events themselves.
+  const { data: users } = useListUsers({
+    query: { enabled: !isOrgAdmin, queryKey: getListUsersQueryKey() },
+  });
+  const { data: managed } = useGetManagedOrganizations();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -56,6 +65,21 @@ export default function AdminNewEvent() {
   });
   const { data: organizations } = useListOrganizations();
   const plannedHours = calculateEventDuration(form.watch("startTime"), form.watch("endTime"));
+
+  // Org admins can only create events for the org(s) they manage, and they
+  // supervise those events themselves.
+  const selectableOrgs =
+    isOrgAdmin && managed && !managed.all
+      ? (organizations ?? []).filter((o) => managed.organizationIds.includes(o.organizationId))
+      : organizations ?? [];
+
+  useEffect(() => {
+    if (isOrgAdmin && userId) form.setValue("supervisorId", userId);
+    if (isOrgAdmin && selectableOrgs.length === 1) {
+      form.setValue("organizationId", selectableOrgs[0].organizationId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOrgAdmin, userId, selectableOrgs.length]);
 
   function onSubmit(values: z.infer<typeof schema>) {
     const payload: Record<string, unknown> = { ...values };
@@ -173,46 +197,48 @@ export default function AdminNewEvent() {
                   </FormItem>
                 )} />
 
-                <FormField control={form.control} name="supervisorId" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Assigned supervisor</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-supervisor">
-                          <SelectValue placeholder="Select a supervisor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {supervisors.length === 0 ? (
-                          <SelectItem value="none" disabled>No supervisors found — create one first</SelectItem>
-                        ) : (
-                          supervisors.map(s => (
-                            <SelectItem key={s.userId} value={s.userId}>
-                              {s.firstName} {s.lastName}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                {!isOrgAdmin && (
+                  <FormField control={form.control} name="supervisorId" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Assigned supervisor</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-supervisor">
+                            <SelectValue placeholder="Select a supervisor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {supervisors.length === 0 ? (
+                            <SelectItem value="none" disabled>No supervisors found — create one first</SelectItem>
+                          ) : (
+                            supervisors.map(s => (
+                              <SelectItem key={s.userId} value={s.userId}>
+                                {s.firstName} {s.lastName}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                )}
 
                 <FormField control={form.control} name="organizationId" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Who can see this</FormLabel>
                     <Select
                       onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
-                      value={field.value || "none"}
+                      value={field.value || (isOrgAdmin ? "" : "none")}
                     >
                       <FormControl>
                         <SelectTrigger data-testid="select-organization">
-                          <SelectValue placeholder="Open to all (community)" />
+                          <SelectValue placeholder={isOrgAdmin ? "Select your organization" : "Open to all (community)"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="none">Open to all (community)</SelectItem>
-                        {(organizations ?? []).map((o) => (
+                        {!isOrgAdmin && <SelectItem value="none">Open to all (community)</SelectItem>}
+                        {selectableOrgs.map((o) => (
                           <SelectItem key={o.organizationId} value={o.organizationId}>
                             {o.name} only
                           </SelectItem>
@@ -220,7 +246,9 @@ export default function AdminNewEvent() {
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      "Open to all" shows to every eligible student. Choosing an organization keeps it private to that org's students (e.g. Medina on-site events).
+                      {isOrgAdmin
+                        ? "Your event is private to your organization's students."
+                        : "\"Open to all\" shows to every eligible student. Choosing an organization keeps it private to that org's students (e.g. Medina on-site events)."}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

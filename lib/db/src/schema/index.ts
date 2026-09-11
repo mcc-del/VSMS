@@ -8,3 +8,4 @@ export * from "./organizations";
 export * from "./guardianships";
 export * from "./schools";
 export * from "./guardian-invites";
+export * from "./org-admins";

@@ -2,8 +2,20 @@ import { Router } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
+import { managedOrgIds } from "../lib/org-scope";
 
 const router = Router();
+
+// GET /api/v1/me/managed-organizations — org IDs the current admin manages.
+// `all: true` means a Super Admin (unrestricted).
+router.get("/v1/me/managed-organizations", authenticate, async (req, res) => {
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+  if (managed === null) {
+    res.json({ all: true, organizationIds: [] });
+    return;
+  }
+  res.json({ all: false, organizationIds: managed });
+});
 
 // GET /api/v1/me/leaderboard-preferences — the current participant's alias +
 // hide setting for the leaderboard.

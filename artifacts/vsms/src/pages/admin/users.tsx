@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListUsers, useCreateUser, useDeleteUser, useAddManualHours, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useListUsers, useCreateUser, useDeleteUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus, Trash2, Clock } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Trash2, Clock, Building2 } from "lucide-react";
 
 const schema = z.object({
   firstName: z.string().min(2).max(50),
@@ -35,21 +36,57 @@ const todayStr = new Date().toISOString().split("T")[0];
 function RoleBadge({ role }: { role: string }) {
   const colors: Record<string, string> = {
     admin: "bg-purple-100 text-purple-800 border-0",
+    org_admin: "bg-teal-100 text-teal-800 border-0",
     supervisor: "bg-blue-100 text-blue-800 border-0",
+    parent: "bg-amber-100 text-amber-800 border-0",
     participant: "bg-gray-100 text-gray-700 border-0",
   };
-  return <Badge className={colors[role] ?? ""}>{role}</Badge>;
+  const label = role === "org_admin" ? "org admin" : role;
+  return <Badge className={colors[role] ?? ""}>{label}</Badge>;
 }
 
 export default function AdminUsers() {
   const { data: users, isLoading } = useListUsers();
+  const { data: organizations } = useListOrganizations();
   const createUser = useCreateUser();
   const deleteUser = useDeleteUser();
   const addHours = useAddManualHours();
+  const setOrgAdmin = useSetOrgAdmin();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showCreate, setShowCreate] = useState(false);
   const [hoursUser, setHoursUser] = useState<{ userId: string; name: string } | null>(null);
+  const [orgAdminUser, setOrgAdminUser] = useState<{ userId: string; name: string } | null>(null);
+  const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]);
+
+  function openOrgAdmin(userId: string, name: string, current: string[]) {
+    setOrgAdminUser({ userId, name });
+    setSelectedOrgIds(current);
+  }
+
+  function toggleOrg(orgId: string) {
+    setSelectedOrgIds((prev) =>
+      prev.includes(orgId) ? prev.filter((id) => id !== orgId) : [...prev, orgId],
+    );
+  }
+
+  function saveOrgAdmin() {
+    if (!orgAdminUser) return;
+    setOrgAdmin.mutate(
+      { userId: orgAdminUser.userId, data: { organizationIds: selectedOrgIds } },
+      {
+        onSuccess: () => {
+          toast({
+            title: selectedOrgIds.length ? "Organization Admin updated" : "Reverted to participant",
+          });
+          queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+          setOrgAdminUser(null);
+        },
+        onError: (err: any) =>
+          toast({ title: "Error", description: err?.data?.error ?? "Failed", variant: "destructive" }),
+      },
+    );
+  }
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -169,6 +206,23 @@ export default function AdminUsers() {
                               <Clock className="w-4 h-4" /> Add hours
                             </Button>
                           )}
+                          {(u.role === "participant" || u.role === "org_admin" || u.role === "supervisor") && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              data-testid={`button-org-admin-${u.userId}`}
+                              onClick={() =>
+                                openOrgAdmin(
+                                  u.userId,
+                                  `${u.firstName} ${u.lastName}`,
+                                  u.managedOrganizationIds ?? [],
+                                )
+                              }
+                              className="text-muted-foreground hover:text-primary gap-1"
+                            >
+                              <Building2 className="w-4 h-4" /> Org admin
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -247,6 +301,38 @@ export default function AdminUsers() {
               </Button>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={orgAdminUser !== null} onOpenChange={(open) => !open && setOrgAdminUser(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Organization Admin{orgAdminUser ? ` — ${orgAdminUser.name}` : ""}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground -mt-1">
+            Choose which organizations this person administers. They'll be able to create events and
+            approve hours for those orgs only. Uncheck all to revert them to a participant.
+          </p>
+          <div className="space-y-2 pt-2 max-h-64 overflow-y-auto">
+            {(organizations ?? []).map((o) => (
+              <label key={o.organizationId} className="flex items-center gap-2.5 text-sm cursor-pointer">
+                <Checkbox
+                  checked={selectedOrgIds.includes(o.organizationId)}
+                  onCheckedChange={() => toggleOrg(o.organizationId)}
+                  data-testid={`checkbox-org-${o.organizationId}`}
+                />
+                {o.name}
+              </label>
+            ))}
+          </div>
+          <Button
+            className="w-full mt-2"
+            onClick={saveOrgAdmin}
+            disabled={setOrgAdmin.isPending}
+            data-testid="button-save-org-admin"
+          >
+            {setOrgAdmin.isPending ? "Saving…" : "Save"}
+          </Button>
         </DialogContent>
       </Dialog>
 

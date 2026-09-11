@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
-import { db, usersTable, organizationsTable, schoolsTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { db, usersTable, organizationsTable, schoolsTable, orgAdminsTable } from "@workspace/db";
+import { sql, eq } from "drizzle-orm";
 import { logger } from "./logger";
 
 // A curated starter list of Greater Seattle schools plus Medina. Admins can
@@ -131,6 +131,47 @@ const TEST_ACCOUNTS = [
     grade: null,
   },
 ];
+
+// Seed a demo Organization Admin (over Essentials First) so the org-scoped
+// admin role can be exercised. Idempotent.
+export async function seedOrgAdmins(): Promise<void> {
+  try {
+    const [ef] = await db
+      .select({ organizationId: organizationsTable.organizationId })
+      .from(organizationsTable)
+      .where(eq(organizationsTable.name, "Essentials First"))
+      .limit(1);
+    if (!ef) {
+      logger.warn("Essentials First org not found — skipping org-admin seed");
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash("OrgAdmin123!", 12);
+    const [user] = await db
+      .insert(usersTable)
+      .values({
+        email: "efadmin@test.com",
+        passwordHash,
+        firstName: "Erin",
+        lastName: "EFAdmin",
+        role: "org_admin",
+      })
+      .onConflictDoUpdate({
+        target: usersTable.email,
+        set: { role: "org_admin", passwordHash: sql`excluded.password_hash` },
+      })
+      .returning();
+
+    await db
+      .insert(orgAdminsTable)
+      .values({ userId: user.userId, organizationId: ef.organizationId })
+      .onConflictDoNothing();
+
+    logger.info("Seeded org admin efadmin@test.com (Essentials First)");
+  } catch (err) {
+    logger.error({ err }, "Failed to seed org admin");
+  }
+}
 
 export async function seedTestAccounts(): Promise<void> {
   try {

@@ -43,6 +43,7 @@ import type {
   LeaderboardResponse,
   ListAllSchoolsParams,
   LoginInput,
+  ManagedOrganizations,
   ManualHoursCredit,
   ManualHoursInput,
   Organization,
@@ -56,6 +57,8 @@ import type {
   School,
   SchoolMergeInput,
   SchoolRequestInput,
+  SetOrgAdminInput,
+  SetOrgAdminResult,
   Submission,
   SubmissionDetail,
   SubmissionInput,
@@ -1996,6 +1999,78 @@ export const useCreateUser = <TError = ErrorType<void>,
       return useMutation(getCreateUserMutationOptions(options));
     }
 
+export const getSetOrgAdminUrl = (userId: string,) => {
+
+
+
+
+  return `/api/v1/admin/users/${userId}/org-admin`
+}
+
+/**
+ * @summary Promote a user to Organization Admin over orgs, or demote (empty list)
+ */
+export const setOrgAdmin = async (userId: string,
+    setOrgAdminInput: SetOrgAdminInput, options?: RequestInit): Promise<SetOrgAdminResult> => {
+
+  return customFetch<SetOrgAdminResult>(getSetOrgAdminUrl(userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      setOrgAdminInput,)
+  }
+);}
+
+
+
+
+export const getSetOrgAdminMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setOrgAdmin>>, TError,{userId: string;data: BodyType<SetOrgAdminInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setOrgAdmin>>, TError,{userId: string;data: BodyType<SetOrgAdminInput>}, TContext> => {
+
+const mutationKey = ['setOrgAdmin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setOrgAdmin>>, {userId: string;data: BodyType<SetOrgAdminInput>}> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  setOrgAdmin(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetOrgAdminMutationResult = NonNullable<Awaited<ReturnType<typeof setOrgAdmin>>>
+    export type SetOrgAdminMutationBody = BodyType<SetOrgAdminInput>
+    export type SetOrgAdminMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Promote a user to Organization Admin over orgs, or demote (empty list)
+ */
+export const useSetOrgAdmin = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setOrgAdmin>>, TError,{userId: string;data: BodyType<SetOrgAdminInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setOrgAdmin>>,
+        TError,
+        {userId: string;data: BodyType<SetOrgAdminInput>},
+        TContext
+      > => {
+      return useMutation(getSetOrgAdminMutationOptions(options));
+    }
+
 export const getDeleteUserUrl = (userId: string,) => {
 
 
@@ -3086,6 +3161,83 @@ export function useGetLeaderboard<TData = Awaited<ReturnType<typeof getLeaderboa
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetLeaderboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetManagedOrganizationsUrl = () => {
+
+
+
+
+  return `/api/v1/me/managed-organizations`
+}
+
+/**
+ * @summary Org IDs the current admin manages (all=true for Super Admin)
+ */
+export const getManagedOrganizations = async ( options?: RequestInit): Promise<ManagedOrganizations> => {
+
+  return customFetch<ManagedOrganizations>(getGetManagedOrganizationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetManagedOrganizationsQueryKey = () => {
+    return [
+    `/api/v1/me/managed-organizations`
+    ] as const;
+    }
+
+
+export const getGetManagedOrganizationsQueryOptions = <TData = Awaited<ReturnType<typeof getManagedOrganizations>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getManagedOrganizations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetManagedOrganizationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getManagedOrganizations>>> = ({ signal }) => getManagedOrganizations({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getManagedOrganizations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetManagedOrganizationsQueryResult = NonNullable<Awaited<ReturnType<typeof getManagedOrganizations>>>
+export type GetManagedOrganizationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Org IDs the current admin manages (all=true for Super Admin)
+ */
+
+export function useGetManagedOrganizations<TData = Awaited<ReturnType<typeof getManagedOrganizations>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getManagedOrganizations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetManagedOrganizationsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

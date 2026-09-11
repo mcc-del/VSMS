@@ -28,6 +28,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Pending Reviews", href: "/supervisor/pending", icon: CheckSquare },
       { label: "Reviewed History", href: "/supervisor/history", icon: FileText },
     ] : []),
+    ...(role === "org_admin" ? [
+      { label: "Pending Reviews", href: "/supervisor/pending", icon: CheckSquare },
+      { label: "Reviewed History", href: "/supervisor/history", icon: FileText },
+      { label: "Events", href: "/admin/events", icon: Calendar },
+      { label: "New Event", href: "/admin/events/new", icon: FileText },
+    ] : []),
     ...(role === "admin" ? [
       { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
       { label: "Users", href: "/admin/users", icon: Users },

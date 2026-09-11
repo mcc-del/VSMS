@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedTestAccounts, seedOrganizations, seedSchools } from "./lib/seed";
+import { seedTestAccounts, seedOrganizations, seedSchools, seedOrgAdmins } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -25,8 +25,12 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
 
   // Ensure the supervisor/admin test personas exist so all roles can be
-  // exercised without manual database edits.
+  // exercised without manual database edits. Org admins are seeded after
+  // organizations exist (they reference an org).
   void seedTestAccounts();
-  void seedOrganizations();
   void seedSchools();
+  void (async () => {
+    await seedOrganizations();
+    await seedOrgAdmins();
+  })();
 });

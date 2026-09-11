@@ -63,11 +63,12 @@ export const LoginResponse = zod.object({
  */
 export const GetMeResponse = zod.object({
   "userId": zod.string(),
-  "email": zod.string(),
+  "email": zod.string().nullish(),
   "firstName": zod.string(),
   "lastName": zod.string(),
   "role": zod.string(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 
 
@@ -546,11 +547,12 @@ export const ListReviewedExternalSubmissionsResponse = zod.array(ListReviewedExt
  */
 export const ListUsersResponseItem = zod.object({
   "userId": zod.string(),
-  "email": zod.string(),
+  "email": zod.string().nullish(),
   "firstName": zod.string(),
   "lastName": zod.string(),
   "role": zod.string(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 export const ListUsersResponse = zod.array(ListUsersResponseItem)
 
@@ -568,6 +570,23 @@ export const CreateUserBody = zod.object({
   "email": zod.string(),
   "password": zod.string().min(createUserBodyPasswordMin),
   "role": zod.string()
+})
+
+
+/**
+ * @summary Promote a user to Organization Admin over orgs, or demote (empty list)
+ */
+export const SetOrgAdminParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const SetOrgAdminBody = zod.object({
+  "organizationIds": zod.array(zod.string())
+})
+
+export const SetOrgAdminResponse = zod.object({
+  "role": zod.string(),
+  "organizationIds": zod.array(zod.string())
 })
 
 
@@ -839,6 +858,15 @@ export const GetLeaderboardResponse = zod.object({
   "medal": zod.string().nullish(),
   "isMe": zod.boolean()
 }))
+})
+
+
+/**
+ * @summary Org IDs the current admin manages (all=true for Super Admin)
+ */
+export const GetManagedOrganizationsResponse = zod.object({
+  "all": zod.boolean(),
+  "organizationIds": zod.array(zod.string())
 })
 
 

@@ -3,6 +3,7 @@ import { db, volunteerSubmissionsTable, eventsTable, usersTable, eventRegistrati
 import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitInternalHoursBody, ReviewSubmissionBody, OverrideSubmissionBody } from "@workspace/api-zod";
+import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
 const router = Router();
 
@@ -190,8 +191,18 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
 router.get(
   "/v1/supervisor/submissions",
   authenticate,
-  requireRole("supervisor", "admin"),
+  requireRole("supervisor", "admin", "org_admin"),
   async (req, res) => {
+    // Organization Admins only see submissions for events in the org(s) they
+    // manage; a Super Admin sees all; a supervisor sees their assigned events.
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    const orgFilter =
+      managed !== null
+        ? managed.length > 0
+          ? inArray(eventsTable.organizationId, managed)
+          : eq(eventsTable.eventId, "00000000-0000-0000-0000-000000000000") // none
+        : undefined;
+
     const rows = await db
       .select({
         submissionId: volunteerSubmissionsTable.submissionId,
@@ -221,6 +232,7 @@ router.get(
           req.auth!.role === "supervisor"
             ? eq(eventsTable.supervisorId, req.auth!.userId)
             : undefined,
+          orgFilter,
         ),
       )
       .orderBy(volunteerSubmissionsTable.submittedAt);
@@ -240,7 +252,7 @@ router.get(
 router.put(
   "/v1/supervisor/submissions/:submissionId/review",
   authenticate,
-  requireRole("supervisor", "admin"),
+  requireRole("supervisor", "admin", "org_admin"),
   async (req, res) => {
     const { submissionId } = req.params as { submissionId: string };
 
@@ -268,6 +280,7 @@ router.put(
       .select({
         submissionId: volunteerSubmissionsTable.submissionId,
         supervisorId: eventsTable.supervisorId,
+        organizationId: eventsTable.organizationId,
       })
       .from(volunteerSubmissionsTable)
       .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
@@ -281,6 +294,13 @@ router.put(
 
     if (req.auth!.role === "supervisor" && submission.supervisorId !== req.auth!.userId) {
       res.status(403).json({ error: "You can only review submissions for your assigned events." });
+      return;
+    }
+
+    // Organization Admins may only review submissions for events in their org(s).
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null && !canManageOrg(managed, submission.organizationId)) {
+      res.status(403).json({ error: "You can only review submissions for your organization." });
       return;
     }
 

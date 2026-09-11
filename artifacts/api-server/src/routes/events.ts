@@ -11,6 +11,7 @@ import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 import { sendRegistrationConfirmation } from "../lib/email";
 import { gradeToLevel, orgAllowsLevel, type SchoolLevel } from "../lib/levels";
+import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
 const router = Router();
 
@@ -590,7 +591,7 @@ router.patch(
 router.post(
   "/v1/events",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const parsed = CreateEventBody.safeParse(req.body);
     if (!parsed.success) {
@@ -600,6 +601,15 @@ router.post(
 
     const { title, description, location, eventDate, startTime, endTime, maxCapacity, supervisorId, imageUrl, organizationId } =
       parsed.data as any;
+
+    // Organization Admins may only create events for the org(s) they manage.
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null) {
+      if (!organizationId || !canManageOrg(managed, organizationId)) {
+        res.status(403).json({ error: "You can only create events for your own organization." });
+        return;
+      }
+    }
 
     const durationHours = calculateDurationHours(startTime, endTime);
     if (durationHours === null) {

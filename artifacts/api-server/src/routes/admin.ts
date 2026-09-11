@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { db, usersTable, manualHoursTable } from "@workspace/db";
+import { db, usersTable, manualHoursTable, orgAdminsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
@@ -22,6 +22,17 @@ router.get("/v1/admin/users", authenticate, requireRole("admin"), async (req, re
     .from(usersTable)
     .orderBy(usersTable.createdAt);
 
+  // Map each org-admin to the organizations they manage.
+  const adminRows = await db
+    .select({ userId: orgAdminsTable.userId, organizationId: orgAdminsTable.organizationId })
+    .from(orgAdminsTable);
+  const managedByUser = new Map<string, string[]>();
+  for (const r of adminRows) {
+    const list = managedByUser.get(r.userId) ?? [];
+    list.push(r.organizationId);
+    managedByUser.set(r.userId, list);
+  }
+
   res.json(
     users.map((u) => ({
       userId: u.userId,
@@ -30,9 +41,55 @@ router.get("/v1/admin/users", authenticate, requireRole("admin"), async (req, re
       lastName: u.lastName,
       role: u.role,
       createdAt: u.createdAt.toISOString(),
+      managedOrganizationIds: managedByUser.get(u.userId) ?? [],
     })),
   );
 });
+
+// PATCH /api/v1/admin/users/:userId/org-admin — Super Admin promotes a user to
+// Organization Admin over the given orgs, or demotes them (empty list).
+router.patch(
+  "/v1/admin/users/:userId/org-admin",
+  authenticate,
+  requireRole("admin"),
+  async (req, res) => {
+    const { userId } = req.params as { userId: string };
+    const raw = (req.body as { organizationIds?: unknown })?.organizationIds;
+    const organizationIds = Array.isArray(raw)
+      ? raw.filter((x): x is string => typeof x === "string")
+      : [];
+
+    const [target] = await db
+      .select({ userId: usersTable.userId, role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+    if (!target) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    if (target.role === "admin") {
+      res.status(400).json({ error: "That user is a Super Admin." });
+      return;
+    }
+
+    // Replace this user's managed-org rows.
+    await db.delete(orgAdminsTable).where(eq(orgAdminsTable.userId, userId));
+
+    if (organizationIds.length === 0) {
+      // Demote back to a regular participant.
+      await db.update(usersTable).set({ role: "participant" }).where(eq(usersTable.userId, userId));
+      res.json({ role: "participant", organizationIds: [] });
+      return;
+    }
+
+    for (const organizationId of organizationIds) {
+      await db.insert(orgAdminsTable).values({ userId, organizationId }).onConflictDoNothing();
+    }
+    await db.update(usersTable).set({ role: "org_admin" }).where(eq(usersTable.userId, userId));
+    res.json({ role: "org_admin", organizationIds });
+  },
+);
 
 // POST /api/v1/admin/users
 router.post(

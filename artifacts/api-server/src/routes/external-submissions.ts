@@ -4,6 +4,7 @@ import { eq, and, inArray, sum, sql, ne } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitExternalActivityBody } from "@workspace/api-zod";
 import { isWithinAwardWindow, AWARD_WINDOW_MESSAGE } from "../lib/season";
+import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
 const router = Router();
 
@@ -356,8 +357,18 @@ router.delete(
 router.get(
   "/v1/supervisor/external-submissions",
   authenticate,
-  requireRole("supervisor", "admin"),
+  requireRole("supervisor", "admin", "org_admin"),
   async (req, res) => {
+    // Organization Admins only see external submissions from students in the
+    // org(s) they manage (external hours are scoped by the student's org).
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    const orgFilter =
+      managed !== null
+        ? managed.length > 0
+          ? inArray(usersTable.organizationId, managed)
+          : eq(externalSubmissionsTable.externalSubmissionId, "00000000-0000-0000-0000-000000000000")
+        : undefined;
+
     const rows = await db
       .select({
         externalSubmissionId: externalSubmissionsTable.externalSubmissionId,
@@ -382,7 +393,9 @@ router.get(
       })
       .from(externalSubmissionsTable)
       .leftJoin(usersTable, eq(externalSubmissionsTable.userId, usersTable.userId))
-      .where(inArray(externalSubmissionsTable.status, ["pending", "deferred_overflow"]))
+      .where(
+        and(inArray(externalSubmissionsTable.status, ["pending", "deferred_overflow"]), orgFilter),
+      )
       .orderBy(externalSubmissionsTable.submittedAt);
 
     res.json(
@@ -415,7 +428,7 @@ router.get(
 router.put(
   "/v1/supervisor/external-submissions/:externalSubmissionId/review",
   authenticate,
-  requireRole("supervisor", "admin"),
+  requireRole("supervisor", "admin", "org_admin"),
   async (req, res) => {
     const { externalSubmissionId } = req.params as { externalSubmissionId: string };
     const { status, comments } = req.body as { status: string; comments?: string | null };
@@ -431,13 +444,24 @@ router.put(
     }
 
     const [existing] = await db
-      .select()
+      .select({
+        externalSubmissionId: externalSubmissionsTable.externalSubmissionId,
+        studentOrgId: usersTable.organizationId,
+      })
       .from(externalSubmissionsTable)
+      .leftJoin(usersTable, eq(externalSubmissionsTable.userId, usersTable.userId))
       .where(eq(externalSubmissionsTable.externalSubmissionId, externalSubmissionId))
       .limit(1);
 
     if (!existing) {
       res.status(404).json({ error: "External submission not found." });
+      return;
+    }
+
+    // Organization Admins may only review submissions from their org's students.
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null && !canManageOrg(managed, existing.studentOrgId)) {
+      res.status(403).json({ error: "You can only review submissions from your organization." });
       return;
     }
 

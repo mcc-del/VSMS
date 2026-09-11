@@ -60,13 +60,13 @@ function Router() {
 
       <ProtectedRoute path="/parent" component={ParentDashboard} allowedRoles={["parent"]} />
 
-      <ProtectedRoute path="/supervisor/pending" component={SupervisorPending} allowedRoles={["supervisor", "admin"]} />
-      <ProtectedRoute path="/supervisor/history" component={SupervisorHistory} allowedRoles={["supervisor", "admin"]} />
+      <ProtectedRoute path="/supervisor/pending" component={SupervisorPending} allowedRoles={["supervisor", "admin", "org_admin"]} />
+      <ProtectedRoute path="/supervisor/history" component={SupervisorHistory} allowedRoles={["supervisor", "admin", "org_admin"]} />
 
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/users" component={AdminUsers} allowedRoles={["admin"]} />
-      <ProtectedRoute path="/admin/events/new" component={AdminNewEvent} allowedRoles={["admin"]} />
-      <ProtectedRoute path="/admin/events" component={AdminEventsPage} allowedRoles={["admin"]} />
+      <ProtectedRoute path="/admin/events/new" component={AdminNewEvent} allowedRoles={["admin", "org_admin"]} />
+      <ProtectedRoute path="/admin/events" component={AdminEventsPage} allowedRoles={["admin", "org_admin"]} />
       <ProtectedRoute path="/admin/organizations" component={AdminOrganizations} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/schools" component={AdminSchools} allowedRoles={["admin"]} />
 
