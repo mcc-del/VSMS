@@ -1,7 +1,12 @@
 import { Resend } from "resend";
 import { logger } from "./logger";
 
-const FROM_ADDRESS = "VSMS <noreply@vsms.org>";
+// The sender address. Until medinaacademy.org is verified in Resend, we send
+// from Resend's shared test sender (onboarding@resend.dev). Once the domain is
+// verified, set the EMAIL_FROM secret to e.g.
+// "MedinaCares <noreply@medinaacademy.org>" — no code change needed.
+const FROM_ADDRESS =
+  process.env["EMAIL_FROM"] || "MedinaCares <onboarding@resend.dev>";
 
 function getClient(): Resend | null {
   const apiKey = process.env["RESEND_API_KEY"];
