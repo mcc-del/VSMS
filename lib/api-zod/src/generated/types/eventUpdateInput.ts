@@ -10,11 +10,25 @@ export interface EventUpdateInput {
   /** @maxLength 150 */
   title?: string;
   description?: string;
+  /** @nullable */
+  slotLabel?: string | null;
   location?: string;
+  /** @nullable */
+  street?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  zip?: string | null;
   eventDate?: string;
   startTime?: string;
   endTime?: string;
   maxCapacity?: number;
+  /** @nullable */
+  minGrade?: number | null;
+  /** @nullable */
+  maxGrade?: number | null;
   supervisorId?: string;
   /** @nullable */
   imageUrl?: string | null;

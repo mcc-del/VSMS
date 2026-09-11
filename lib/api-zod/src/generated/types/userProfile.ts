@@ -13,6 +13,8 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   role: string;
+  /** @nullable */
+  phone?: string | null;
   createdAt: string;
   managedOrganizationIds?: string[];
 }

@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MapPin, Clock, Users, Calendar, Search, User, Mail, Award, CalendarPlus, Copy, Building2 } from "lucide-react";
+import { MapPin, Clock, Users, Calendar, Search, User, Mail, Phone, Award, CalendarPlus, Copy, Building2, GraduationCap } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -168,7 +168,20 @@ export default function OpportunitiesPage() {
           )}
           <CardContent className="flex-1 p-5">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg font-semibold">{event.title}</h2>
+              <h2 className="text-lg font-semibold">
+                {event.title}
+                {event.slotLabel && <span className="text-muted-foreground font-normal"> — {event.slotLabel}</span>}
+              </h2>
+              {(event.minGrade != null || event.maxGrade != null) && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted text-muted-foreground text-xs px-2.5 py-1">
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  {event.minGrade != null && event.maxGrade != null
+                    ? `Grades ${event.minGrade}–${event.maxGrade}`
+                    : event.minGrade != null
+                      ? `Grade ${event.minGrade}+`
+                      : `Up to grade ${event.maxGrade}`}
+                </span>
+              )}
               {/* Hours front-and-center */}
               <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary font-semibold text-sm px-3 py-1">
                 <Award className="w-4 h-4" />
@@ -207,11 +220,28 @@ export default function OpportunitiesPage() {
                 <button
                   type="button"
                   title="Click to copy the location"
-                  onClick={() => copy(event.location, "Location")}
-                  className="flex items-center gap-1 hover:text-foreground"
+                  onClick={() =>
+                    copy(
+                      [event.location, event.street, [event.city, event.state].filter(Boolean).join(", "), event.zip]
+                        .filter(Boolean)
+                        .join(", "),
+                      "Location",
+                    )
+                  }
+                  className="flex items-center gap-1 hover:text-foreground text-left"
                 >
-                  <MapPin className="w-3.5 h-3.5" />
-                  {event.location}
+                  <MapPin className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    {event.location}
+                    {(event.street || event.city) && (
+                      <span className="text-muted-foreground">
+                        {" — "}
+                        {[event.street, [event.city, event.state].filter(Boolean).join(", "), event.zip]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
+                    )}
+                  </span>
                 </button>
               )}
               <span className="flex items-center gap-1">
@@ -220,12 +250,20 @@ export default function OpportunitiesPage() {
               </span>
             </div>
 
-            {(event.supervisorName || event.supervisorEmail) && (
+            {(event.supervisorName || event.supervisorEmail || event.supervisorPhone) && (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground mt-1.5">
                 {event.supervisorName && (
                   <span className="flex items-center gap-1">
                     <User className="w-3.5 h-3.5" />
                     {event.supervisorName}
+                  </span>
+                )}
+                {event.supervisorPhone && (
+                  <span className="flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5" />
+                    <a href={`tel:${event.supervisorPhone}`} className="text-primary hover:underline">
+                      {event.supervisorPhone}
+                    </a>
                   </span>
                 )}
                 {event.supervisorEmail && (

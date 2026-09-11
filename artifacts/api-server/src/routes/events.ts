@@ -29,17 +29,25 @@ function formatEvent(
     eventId: string;
     title: string;
     description: string;
+    slotLabel?: string | null;
     location: string;
+    street?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zip?: string | null;
     eventDate: string;
     startTime: string;
     endTime: string;
     hoursValue: string;
     maxCapacity: number;
+    minGrade?: number | null;
+    maxGrade?: number | null;
     imageUrl: string | null;
     supervisorId: string;
     supervisorFirstName: string | null;
     supervisorLastName: string | null;
     supervisorEmail: string | null;
+    supervisorPhone?: string | null;
     organizationId?: string | null;
     organizationName?: string | null;
   },
@@ -51,18 +59,26 @@ function formatEvent(
     eventId: e.eventId,
     title: e.title,
     description: e.description,
+    slotLabel: e.slotLabel ?? null,
     location: e.location,
+    street: e.street ?? null,
+    city: e.city ?? null,
+    state: e.state ?? null,
+    zip: e.zip ?? null,
     eventDate: e.eventDate,
     startTime: e.startTime,
     endTime: e.endTime,
     hoursValue: calculateDurationHours(e.startTime, e.endTime) ?? Number(e.hoursValue),
     maxCapacity: e.maxCapacity,
+    minGrade: e.minGrade ?? null,
+    maxGrade: e.maxGrade ?? null,
     imageUrl: e.imageUrl ?? null,
     supervisorId: e.supervisorId,
     supervisorName: e.supervisorFirstName
       ? `${e.supervisorFirstName} ${e.supervisorLastName}`
       : null,
     supervisorEmail: e.supervisorEmail ?? null,
+    supervisorPhone: e.supervisorPhone ?? null,
     organizationId: e.organizationId ?? null,
     organizationName: e.organizationName ?? null,
     eligibleForMe,
@@ -80,6 +96,7 @@ router.get("/v1/events", authenticate, async (req, res) => {
   let viewerLevel: SchoolLevel | null = null;
   let viewerIsParticipant = false;
   let viewerOrgId: string | null = null;
+  let viewerGrade: number | null = null;
   if (userId) {
     const [viewer] = await db
       .select({
@@ -94,6 +111,7 @@ router.get("/v1/events", authenticate, async (req, res) => {
     if (viewerIsParticipant) {
       viewerLevel = gradeToLevel(viewer?.grade);
       viewerOrgId = viewer?.organizationId ?? null;
+      viewerGrade = viewer?.grade ? Number(viewer.grade) : null;
     }
   }
 
@@ -102,17 +120,25 @@ router.get("/v1/events", authenticate, async (req, res) => {
       eventId: eventsTable.eventId,
       title: eventsTable.title,
       description: eventsTable.description,
+      slotLabel: eventsTable.slotLabel,
       location: eventsTable.location,
+      street: eventsTable.street,
+      city: eventsTable.city,
+      state: eventsTable.state,
+      zip: eventsTable.zip,
       eventDate: eventsTable.eventDate,
       startTime: eventsTable.startTime,
       endTime: eventsTable.endTime,
       hoursValue: eventsTable.hoursValue,
       maxCapacity: eventsTable.maxCapacity,
+      minGrade: eventsTable.minGrade,
+      maxGrade: eventsTable.maxGrade,
       imageUrl: eventsTable.imageUrl,
       supervisorId: eventsTable.supervisorId,
       supervisorFirstName: usersTable.firstName,
       supervisorLastName: usersTable.lastName,
       supervisorEmail: usersTable.email,
+      supervisorPhone: usersTable.phone,
       organizationId: eventsTable.organizationId,
       organizationName: organizationsTable.name,
       allowsElementary: organizationsTable.allowsElementary,
@@ -161,13 +187,22 @@ router.get("/v1/events", authenticate, async (req, res) => {
 
   res.json(
     visible.map((e) => {
-      const eligibleForMe =
-        !viewerIsParticipant || !e.organizationId
-          ? true
-          : orgAllowsLevel(
-              { allowsElementary: e.allowsElementary ?? true, allowsMiddle: e.allowsMiddle ?? true, allowsHigh: e.allowsHigh ?? true },
-              viewerLevel,
-            );
+      let eligibleForMe = true;
+      if (viewerIsParticipant) {
+        // Org grade-band eligibility (only when the event is org-tied).
+        if (e.organizationId) {
+          eligibleForMe = orgAllowsLevel(
+            { allowsElementary: e.allowsElementary ?? true, allowsMiddle: e.allowsMiddle ?? true, allowsHigh: e.allowsHigh ?? true },
+            viewerLevel,
+          );
+        }
+        // Per-event grade floor/ceiling (e.g. checkout shift is grade 4+).
+        if (eligibleForMe && (e.minGrade != null || e.maxGrade != null)) {
+          if (viewerGrade == null) eligibleForMe = false;
+          else if (e.minGrade != null && viewerGrade < e.minGrade) eligibleForMe = false;
+          else if (e.maxGrade != null && viewerGrade > e.maxGrade) eligibleForMe = false;
+        }
+      }
       return formatEvent(e, regCounts[e.eventId] ?? 0, myRegMap[e.eventId] ?? null, eligibleForMe);
     }),
   );
@@ -240,17 +275,25 @@ router.get("/v1/events/:eventId", authenticate, async (req, res) => {
       eventId: eventsTable.eventId,
       title: eventsTable.title,
       description: eventsTable.description,
+      slotLabel: eventsTable.slotLabel,
       location: eventsTable.location,
+      street: eventsTable.street,
+      city: eventsTable.city,
+      state: eventsTable.state,
+      zip: eventsTable.zip,
       eventDate: eventsTable.eventDate,
       startTime: eventsTable.startTime,
       endTime: eventsTable.endTime,
       hoursValue: eventsTable.hoursValue,
       maxCapacity: eventsTable.maxCapacity,
+      minGrade: eventsTable.minGrade,
+      maxGrade: eventsTable.maxGrade,
       imageUrl: eventsTable.imageUrl,
       supervisorId: eventsTable.supervisorId,
       supervisorFirstName: usersTable.firstName,
       supervisorLastName: usersTable.lastName,
       supervisorEmail: usersTable.email,
+      supervisorPhone: usersTable.phone,
       organizationId: eventsTable.organizationId,
       organizationName: organizationsTable.name,
     })
@@ -308,16 +351,30 @@ router.post(
       return;
     }
 
-    // Enforce org gating (R2): a participant may only register for open
-    // opportunities or ones belonging to their own organization.
-    if (event.organizationId) {
-      const [viewer] = await db
-        .select({ organizationId: usersTable.organizationId })
-        .from(usersTable)
-        .where(eq(usersTable.userId, userId))
-        .limit(1);
-      if ((viewer?.organizationId ?? null) !== event.organizationId) {
-        res.status(403).json({ error: "This opportunity isn't open to your organization." });
+    // Enforce org gating (R2) and per-event grade limits.
+    const [viewer] = await db
+      .select({ organizationId: usersTable.organizationId, grade: usersTable.grade })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+    if (event.organizationId && (viewer?.organizationId ?? null) !== event.organizationId) {
+      res.status(403).json({ error: "This opportunity isn't open to your organization." });
+      return;
+    }
+    if (event.minGrade != null || event.maxGrade != null) {
+      const g = viewer?.grade ? Number(viewer.grade) : null;
+      if (
+        g == null ||
+        (event.minGrade != null && g < event.minGrade) ||
+        (event.maxGrade != null && g > event.maxGrade)
+      ) {
+        const range =
+          event.minGrade != null && event.maxGrade != null
+            ? `grades ${event.minGrade}–${event.maxGrade}`
+            : event.minGrade != null
+              ? `grade ${event.minGrade} and up`
+              : `grade ${event.maxGrade} and below`;
+        res.status(403).json({ error: `This opportunity is for ${range}.` });
         return;
       }
     }
@@ -368,6 +425,7 @@ router.post(
         firstName: usersTable.firstName,
         lastName: usersTable.lastName,
         email: usersTable.email,
+        phone: usersTable.phone,
       })
       .from(usersTable)
       .where(eq(usersTable.userId, event.supervisorId))
@@ -390,6 +448,7 @@ router.post(
         ? `${supervisor.firstName} ${supervisor.lastName}`
         : null,
       supervisorEmail: supervisor?.email ?? null,
+      supervisorPhone: supervisor?.phone ?? null,
     });
 
     // Fire-and-forget confirmation email (does not block the HTTP response)
@@ -523,11 +582,18 @@ router.patch(
     const d = parsed.data as Record<string, unknown>;
     if (d.title !== undefined) updates.title = d.title;
     if (d.description !== undefined) updates.description = d.description;
+    if ("slotLabel" in d) updates.slotLabel = (d.slotLabel as string)?.trim() || null;
     if (d.location !== undefined) updates.location = d.location;
+    if ("street" in d) updates.street = (d.street as string)?.trim() || null;
+    if ("city" in d) updates.city = (d.city as string)?.trim() || null;
+    if ("state" in d) updates.state = (d.state as string)?.trim() || null;
+    if ("zip" in d) updates.zip = (d.zip as string)?.trim() || null;
     if (d.eventDate !== undefined) updates.eventDate = d.eventDate;
     if (d.startTime !== undefined) updates.startTime = d.startTime;
     if (d.endTime !== undefined) updates.endTime = d.endTime;
     if (d.maxCapacity !== undefined) updates.maxCapacity = d.maxCapacity;
+    if ("minGrade" in d) updates.minGrade = d.minGrade ?? null;
+    if ("maxGrade" in d) updates.maxGrade = d.maxGrade ?? null;
     if (d.supervisorId !== undefined) updates.supervisorId = d.supervisorId;
     if ("imageUrl" in d) updates.imageUrl = d.imageUrl ?? null;
     if ("organizationId" in d) updates.organizationId = d.organizationId ?? null;
@@ -567,6 +633,7 @@ router.patch(
         firstName: usersTable.firstName,
         lastName: usersTable.lastName,
         email: usersTable.email,
+        phone: usersTable.phone,
       })
       .from(usersTable)
       .where(eq(usersTable.userId, updated.supervisorId))
@@ -579,6 +646,7 @@ router.patch(
           supervisorFirstName: supervisor?.firstName ?? null,
           supervisorLastName: supervisor?.lastName ?? null,
           supervisorEmail: supervisor?.email ?? null,
+          supervisorPhone: supervisor?.phone ?? null,
         },
         Number(cnt),
         null,
@@ -599,7 +667,7 @@ router.post(
       return;
     }
 
-    const { title, description, location, eventDate, startTime, endTime, maxCapacity, supervisorId, imageUrl, organizationId } =
+    const { title, description, slotLabel, location, street, city, state, zip, eventDate, startTime, endTime, maxCapacity, minGrade, maxGrade, supervisorId, imageUrl, organizationId } =
       parsed.data as any;
 
     // Organization Admins may only create events for the org(s) they manage.
@@ -622,12 +690,19 @@ router.post(
       .values({
         title,
         description,
+        slotLabel: slotLabel?.trim() || null,
         location: location ?? "",
+        street: street?.trim() || null,
+        city: city?.trim() || null,
+        state: state?.trim() || null,
+        zip: zip?.trim() || null,
         eventDate,
         startTime: startTime ?? "09:00:00",
         endTime: endTime ?? "17:00:00",
         hoursValue: String(durationHours),
         maxCapacity: maxCapacity ?? 50,
+        minGrade: minGrade ?? null,
+        maxGrade: maxGrade ?? null,
         supervisorId,
         imageUrl: imageUrl ?? null,
         organizationId: organizationId ?? null,
@@ -639,6 +714,7 @@ router.post(
         firstName: usersTable.firstName,
         lastName: usersTable.lastName,
         email: usersTable.email,
+        phone: usersTable.phone,
       })
       .from(usersTable)
       .where(eq(usersTable.userId, supervisorId))
@@ -651,6 +727,7 @@ router.post(
           supervisorFirstName: supervisor?.firstName ?? null,
           supervisorLastName: supervisor?.lastName ?? null,
           supervisorEmail: supervisor?.email ?? null,
+          supervisorPhone: supervisor?.phone ?? null,
         },
         0,
         null,

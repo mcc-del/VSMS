@@ -1630,6 +1630,8 @@ components:
           type: string
         role:
           type: string
+        phone:
+          type: ["string", "null"]
         createdAt:
           type: string
         managedOrganizationIds:
@@ -1671,6 +1673,8 @@ components:
           minLength: 8
         role:
           type: string
+        phone:
+          type: string
 
     Event:
       type: object
@@ -1682,8 +1686,18 @@ components:
           type: string
         description:
           type: string
+        slotLabel:
+          type: ["string", "null"]
         location:
           type: string
+        street:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        zip:
+          type: ["string", "null"]
         eventDate:
           type: string
         startTime:
@@ -1694,6 +1708,10 @@ components:
           type: number
         maxCapacity:
           type: integer
+        minGrade:
+          type: ["integer", "null"]
+        maxGrade:
+          type: ["integer", "null"]
         imageUrl:
           type: ["string", "null"]
         supervisorId:
@@ -1701,6 +1719,8 @@ components:
         supervisorName:
           type: ["string", "null"]
         supervisorEmail:
+          type: ["string", "null"]
+        supervisorPhone:
           type: ["string", "null"]
         registrationCount:
           type: integer
@@ -1722,7 +1742,18 @@ components:
           maxLength: 150
         description:
           type: string
+        slotLabel:
+          type: string
+          maxLength: 80
         location:
+          type: string
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
           type: string
         eventDate:
           type: string
@@ -1732,6 +1763,10 @@ components:
           type: string
         maxCapacity:
           type: integer
+        minGrade:
+          type: ["integer", "null"]
+        maxGrade:
+          type: ["integer", "null"]
         supervisorId:
           type: string
         imageUrl:
@@ -1747,8 +1782,18 @@ components:
           maxLength: 150
         description:
           type: string
+        slotLabel:
+          type: ["string", "null"]
         location:
           type: string
+        street:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        zip:
+          type: ["string", "null"]
         eventDate:
           type: string
         startTime:
@@ -1757,6 +1802,10 @@ components:
           type: string
         maxCapacity:
           type: integer
+        minGrade:
+          type: ["integer", "null"]
+        maxGrade:
+          type: ["integer", "null"]
         supervisorId:
           type: string
         imageUrl:
@@ -1795,6 +1844,8 @@ components:
         supervisorName:
           type: ["string", "null"]
         supervisorEmail:
+          type: ["string", "null"]
+        supervisorPhone:
           type: ["string", "null"]
 
     CheckInResponse:

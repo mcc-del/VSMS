@@ -103,7 +103,9 @@ router.post(
       return;
     }
 
-    const { firstName, lastName, email, password, role } = parsed.data;
+    const { firstName, lastName, email, password, role, phone } = parsed.data as typeof parsed.data & {
+      phone?: string;
+    };
 
     const existing = await db
       .select()
@@ -125,6 +127,7 @@ router.post(
         email: email.toLowerCase(),
         passwordHash,
         role: role as "participant" | "supervisor" | "admin",
+        phone: phone?.trim() || null,
       })
       .returning();
 
@@ -134,6 +137,7 @@ router.post(
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
+      phone: user.phone ?? null,
       createdAt: user.createdAt.toISOString(),
     });
   },

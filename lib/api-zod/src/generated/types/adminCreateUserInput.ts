@@ -13,4 +13,5 @@ export interface AdminCreateUserInput {
   /** @minLength 8 */
   password: string;
   role: string;
+  phone?: string;
 }

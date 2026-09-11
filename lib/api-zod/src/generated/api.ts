@@ -67,6 +67,7 @@ export const GetMeResponse = zod.object({
   "firstName": zod.string(),
   "lastName": zod.string(),
   "role": zod.string(),
+  "phone": zod.string().nullish(),
   "createdAt": zod.string(),
   "managedOrganizationIds": zod.array(zod.string()).optional()
 })
@@ -79,16 +80,24 @@ export const ListEventsResponseItem = zod.object({
   "eventId": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
+  "slotLabel": zod.string().nullish(),
   "location": zod.string(),
+  "street": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "zip": zod.string().nullish(),
   "eventDate": zod.string(),
   "startTime": zod.string(),
   "endTime": zod.string(),
   "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
+  "minGrade": zod.number().nullish(),
+  "maxGrade": zod.number().nullish(),
   "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
   "supervisorEmail": zod.string().nullish(),
+  "supervisorPhone": zod.string().nullish(),
   "registrationCount": zod.number(),
   "myRegistrationStatus": zod.string().nullish(),
   "organizationId": zod.string().nullish(),
@@ -103,16 +112,25 @@ export const ListEventsResponse = zod.array(ListEventsResponseItem)
  */
 export const createEventBodyTitleMax = 150;
 
+export const createEventBodySlotLabelMax = 80;
+
 
 
 export const CreateEventBody = zod.object({
   "title": zod.string().max(createEventBodyTitleMax),
   "description": zod.string(),
+  "slotLabel": zod.string().max(createEventBodySlotLabelMax).optional(),
   "location": zod.string(),
+  "street": zod.string().optional(),
+  "city": zod.string().optional(),
+  "state": zod.string().optional(),
+  "zip": zod.string().optional(),
   "eventDate": zod.string(),
   "startTime": zod.string(),
   "endTime": zod.string(),
   "maxCapacity": zod.number(),
+  "minGrade": zod.number().nullish(),
+  "maxGrade": zod.number().nullish(),
   "supervisorId": zod.string(),
   "imageUrl": zod.string().optional(),
   "organizationId": zod.string().optional()
@@ -136,7 +154,8 @@ export const ListMyRegistrationsResponseItem = zod.object({
   "hoursValue": zod.number().nullish(),
   "imageUrl": zod.string().nullish(),
   "supervisorName": zod.string().nullish(),
-  "supervisorEmail": zod.string().nullish()
+  "supervisorEmail": zod.string().nullish(),
+  "supervisorPhone": zod.string().nullish()
 })
 export const ListMyRegistrationsResponse = zod.array(ListMyRegistrationsResponseItem)
 
@@ -152,16 +171,24 @@ export const GetEventResponse = zod.object({
   "eventId": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
+  "slotLabel": zod.string().nullish(),
   "location": zod.string(),
+  "street": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "zip": zod.string().nullish(),
   "eventDate": zod.string(),
   "startTime": zod.string(),
   "endTime": zod.string(),
   "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
+  "minGrade": zod.number().nullish(),
+  "maxGrade": zod.number().nullish(),
   "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
   "supervisorEmail": zod.string().nullish(),
+  "supervisorPhone": zod.string().nullish(),
   "registrationCount": zod.number(),
   "myRegistrationStatus": zod.string().nullish(),
   "organizationId": zod.string().nullish(),
@@ -184,11 +211,18 @@ export const updateEventBodyTitleMax = 150;
 export const UpdateEventBody = zod.object({
   "title": zod.string().max(updateEventBodyTitleMax).optional(),
   "description": zod.string().optional(),
+  "slotLabel": zod.string().nullish(),
   "location": zod.string().optional(),
+  "street": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "zip": zod.string().nullish(),
   "eventDate": zod.string().optional(),
   "startTime": zod.string().optional(),
   "endTime": zod.string().optional(),
   "maxCapacity": zod.number().optional(),
+  "minGrade": zod.number().nullish(),
+  "maxGrade": zod.number().nullish(),
   "supervisorId": zod.string().optional(),
   "imageUrl": zod.string().nullish(),
   "organizationId": zod.string().nullish()
@@ -198,16 +232,24 @@ export const UpdateEventResponse = zod.object({
   "eventId": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
+  "slotLabel": zod.string().nullish(),
   "location": zod.string(),
+  "street": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "zip": zod.string().nullish(),
   "eventDate": zod.string(),
   "startTime": zod.string(),
   "endTime": zod.string(),
   "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
+  "minGrade": zod.number().nullish(),
+  "maxGrade": zod.number().nullish(),
   "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
   "supervisorEmail": zod.string().nullish(),
+  "supervisorPhone": zod.string().nullish(),
   "registrationCount": zod.number(),
   "myRegistrationStatus": zod.string().nullish(),
   "organizationId": zod.string().nullish(),
@@ -551,6 +593,7 @@ export const ListUsersResponseItem = zod.object({
   "firstName": zod.string(),
   "lastName": zod.string(),
   "role": zod.string(),
+  "phone": zod.string().nullish(),
   "createdAt": zod.string(),
   "managedOrganizationIds": zod.array(zod.string()).optional()
 })
@@ -569,7 +612,8 @@ export const CreateUserBody = zod.object({
   "lastName": zod.string(),
   "email": zod.string(),
   "password": zod.string().min(createUserBodyPasswordMin),
-  "role": zod.string()
+  "role": zod.string(),
+  "phone": zod.string().optional()
 })
 
 

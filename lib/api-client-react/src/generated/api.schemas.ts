@@ -281,6 +281,8 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   role: string;
+  /** @nullable */
+  phone?: string | null;
   createdAt: string;
   managedOrganizationIds?: string[];
 }
@@ -301,18 +303,33 @@ export interface AdminCreateUserInput {
   /** @minLength 8 */
   password: string;
   role: string;
+  phone?: string;
 }
 
 export interface Event {
   eventId: string;
   title: string;
   description: string;
+  /** @nullable */
+  slotLabel?: string | null;
   location: string;
+  /** @nullable */
+  street?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  zip?: string | null;
   eventDate: string;
   startTime: string;
   endTime: string;
   hoursValue: number;
   maxCapacity: number;
+  /** @nullable */
+  minGrade?: number | null;
+  /** @nullable */
+  maxGrade?: number | null;
   /** @nullable */
   imageUrl?: string | null;
   supervisorId: string;
@@ -320,6 +337,8 @@ export interface Event {
   supervisorName?: string | null;
   /** @nullable */
   supervisorEmail?: string | null;
+  /** @nullable */
+  supervisorPhone?: string | null;
   registrationCount: number;
   /** @nullable */
   myRegistrationStatus?: string | null;
@@ -334,11 +353,21 @@ export interface EventInput {
   /** @maxLength 150 */
   title: string;
   description: string;
+  /** @maxLength 80 */
+  slotLabel?: string;
   location: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   eventDate: string;
   startTime: string;
   endTime: string;
   maxCapacity: number;
+  /** @nullable */
+  minGrade?: number | null;
+  /** @nullable */
+  maxGrade?: number | null;
   supervisorId: string;
   imageUrl?: string;
   organizationId?: string;
@@ -348,11 +377,25 @@ export interface EventUpdateInput {
   /** @maxLength 150 */
   title?: string;
   description?: string;
+  /** @nullable */
+  slotLabel?: string | null;
   location?: string;
+  /** @nullable */
+  street?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  zip?: string | null;
   eventDate?: string;
   startTime?: string;
   endTime?: string;
   maxCapacity?: number;
+  /** @nullable */
+  minGrade?: number | null;
+  /** @nullable */
+  maxGrade?: number | null;
   supervisorId?: string;
   /** @nullable */
   imageUrl?: string | null;
@@ -384,6 +427,8 @@ export interface EventRegistration {
   supervisorName?: string | null;
   /** @nullable */
   supervisorEmail?: string | null;
+  /** @nullable */
+  supervisorPhone?: string | null;
 }
 
 export interface CheckInResponse {

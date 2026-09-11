@@ -23,6 +23,7 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(8, "Min 8 characters"),
   role: z.enum(["participant", "supervisor", "admin"]),
+  phone: z.string().optional(),
 });
 
 const hoursSchema = z.object({
@@ -90,7 +91,7 @@ export default function AdminUsers() {
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "participant" as const },
+    defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "participant" as const, phone: "" },
   });
 
   const hoursForm = useForm({
@@ -277,6 +278,13 @@ export default function AdminUsers() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl><Input type="password" placeholder="Min 8 characters" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="phone" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone <span className="text-muted-foreground font-normal">(optional — shown to participants for supervisors)</span></FormLabel>
+                  <FormControl><Input type="tel" placeholder="(425) 555-0100" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

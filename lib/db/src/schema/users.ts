@@ -20,6 +20,8 @@ export const usersTable = pgTable("users", {
   firstName: varchar("first_name", { length: 50 }).notNull(),
   lastName: varchar("last_name", { length: 50 }).notNull(),
   role: userRoleEnum("role").notNull().default("participant"),
+  // Contact phone — shown to participants for a supervisor/event contact.
+  phone: varchar("phone", { length: 30 }),
   // A managed child account (parent-led elementary): no login of its own,
   // fully managed by a linked guardian via the guardianships table.
   isManaged: boolean("is_managed").notNull().default(false),

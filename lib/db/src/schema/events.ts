@@ -11,12 +11,23 @@ export const eventsTable = pgTable("events", {
   }),
   title: varchar("title", { length: 150 }).notNull(),
   description: text("description").notNull(),
+  // A short optional label for a specific shift/slot of a multi-slot event,
+  // e.g. "Setup", "Checkout", "Cleanup crew".
+  slotLabel: varchar("slot_label", { length: 80 }),
+  // Location: `location` is the venue name; the rest is the structured address.
   location: varchar("location", { length: 255 }).notNull().default(""),
+  street: varchar("street", { length: 200 }),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 40 }),
+  zip: varchar("zip", { length: 20 }),
   eventDate: date("event_date", { mode: "string" }).notNull(),
   startTime: time("start_time").notNull().default("09:00:00"),
   endTime: time("end_time").notNull().default("17:00:00"),
   hoursValue: decimal("hours_value", { precision: 5, scale: 2 }).notNull(),
   maxCapacity: integer("max_capacity").notNull().default(50),
+  // Optional grade eligibility floor/ceiling (e.g. min 4 for a checkout shift).
+  minGrade: integer("min_grade"),
+  maxGrade: integer("max_grade"),
   imageUrl: varchar("image_url", { length: 500 }),
   supervisorId: uuid("supervisor_id")
     .notNull()

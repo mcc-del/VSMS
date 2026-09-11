@@ -30,4 +30,6 @@ export interface EventRegistration {
   supervisorName?: string | null;
   /** @nullable */
   supervisorEmail?: string | null;
+  /** @nullable */
+  supervisorPhone?: string | null;
 }
