@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ImageUpload } from "@/components/image-upload";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -200,21 +200,28 @@ export default function AdminNewEvent() {
 
                 <FormField control={form.control} name="organizationId" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Organization (optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <FormLabel>Who can see this</FormLabel>
+                    <Select
+                      onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
+                      value={field.value || "none"}
+                    >
                       <FormControl>
                         <SelectTrigger data-testid="select-organization">
-                          <SelectValue placeholder="Select an organization" />
+                          <SelectValue placeholder="Open to all (community)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="none">Open to all (community)</SelectItem>
                         {(organizations ?? []).map((o) => (
                           <SelectItem key={o.organizationId} value={o.organizationId}>
-                            {o.name}
+                            {o.name} only
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormDescription>
+                      "Open to all" shows to every eligible student. Choosing an organization keeps it private to that org's students (e.g. Medina on-site events).
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />

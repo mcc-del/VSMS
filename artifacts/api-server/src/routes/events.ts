@@ -78,14 +78,22 @@ router.get("/v1/events", authenticate, async (req, res) => {
   // which opportunities they're eligible for by org grade-band.
   let viewerLevel: SchoolLevel | null = null;
   let viewerIsParticipant = false;
+  let viewerOrgId: string | null = null;
   if (userId) {
     const [viewer] = await db
-      .select({ role: usersTable.role, grade: usersTable.grade })
+      .select({
+        role: usersTable.role,
+        grade: usersTable.grade,
+        organizationId: usersTable.organizationId,
+      })
       .from(usersTable)
       .where(eq(usersTable.userId, userId))
       .limit(1);
     viewerIsParticipant = viewer?.role === "participant";
-    if (viewerIsParticipant) viewerLevel = gradeToLevel(viewer?.grade);
+    if (viewerIsParticipant) {
+      viewerLevel = gradeToLevel(viewer?.grade);
+      viewerOrgId = viewer?.organizationId ?? null;
+    }
   }
 
   const events = await db
@@ -139,8 +147,19 @@ router.get("/v1/events", authenticate, async (req, res) => {
     });
   }
 
+  const visible = events.filter((e) => {
+    // Admins/supervisors (and any non-participant viewer) see everything.
+    if (!viewerIsParticipant) return true;
+    // Open-to-all opportunities (no org) are visible to every participant.
+    if (!e.organizationId) return true;
+    // Org-gated opportunities are visible only to that org's students. This is
+    // a safety boundary (R2): e.g. Medina on-site events, which may share
+    // building access or a QR code, must never appear to non-Medina students.
+    return e.organizationId === viewerOrgId;
+  });
+
   res.json(
-    events.map((e) => {
+    visible.map((e) => {
       const eligibleForMe =
         !viewerIsParticipant || !e.organizationId
           ? true
@@ -286,6 +305,20 @@ router.post(
     if (!event) {
       res.status(404).json({ error: "Event not found" });
       return;
+    }
+
+    // Enforce org gating (R2): a participant may only register for open
+    // opportunities or ones belonging to their own organization.
+    if (event.organizationId) {
+      const [viewer] = await db
+        .select({ organizationId: usersTable.organizationId })
+        .from(usersTable)
+        .where(eq(usersTable.userId, userId))
+        .limit(1);
+      if ((viewer?.organizationId ?? null) !== event.organizationId) {
+        res.status(403).json({ error: "This opportunity isn't open to your organization." });
+        return;
+      }
     }
 
     const today = new Date().toISOString().split("T")[0];

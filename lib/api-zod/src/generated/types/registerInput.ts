@@ -25,4 +25,6 @@ export interface RegisterInput {
   parentEmail?: string;
   school?: string;
   grade?: string;
+  /** @nullable */
+  organizationId?: string | null;
 }

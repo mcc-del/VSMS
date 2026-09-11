@@ -37,7 +37,8 @@ export const RegisterBody = zod.object({
   "accountType": zod.enum(['student', 'parent']).optional(),
   "parentEmail": zod.string().email().optional(),
   "school": zod.string().optional(),
-  "grade": zod.string().optional()
+  "grade": zod.string().optional(),
+  "organizationId": zod.string().nullish()
 })
 
 

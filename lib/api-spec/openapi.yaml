@@ -1437,6 +1437,8 @@ components:
           type: string
         grade:
           type: string
+        organizationId:
+          type: ["string", "null"]
 
     LoginInput:
       type: object

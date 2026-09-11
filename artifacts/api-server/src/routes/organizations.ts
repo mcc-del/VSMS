@@ -17,8 +17,9 @@ function format(o: typeof organizationsTable.$inferSelect) {
   };
 }
 
-// GET /api/v1/organizations — any authenticated user can list orgs.
-router.get("/v1/organizations", authenticate, async (_req, res) => {
+// GET /api/v1/organizations — public: the sign-up form needs it before the
+// user has an account (to choose an affiliation).
+router.get("/v1/organizations", async (_req, res) => {
   const rows = await db.select().from(organizationsTable).orderBy(asc(organizationsTable.name));
   res.json(rows.map(format));
 });

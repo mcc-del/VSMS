@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link } from "wouter";
-import { useRegister } from "@workspace/api-client-react";
+import { useRegister, useListOrganizations } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ const schema = z
     parentEmail: z.string().email("Enter a valid parent email").or(z.literal("")).optional(),
     school: z.string().optional(),
     grade: z.string().optional(),
+    organizationId: z.string().optional(),
   })
   .refine((v) => v.accountType !== "student" || (v.parentEmail && v.parentEmail.length > 0), {
     message: "A parent email is required",
@@ -36,10 +37,11 @@ export default function RegisterPage() {
   const { login } = useAuth();
   const { toast } = useToast();
   const registerMutation = useRegister();
+  const { data: orgs } = useListOrganizations();
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { accountType: "student" as const, firstName: "", lastName: "", email: "", password: "", parentEmail: "", school: "", grade: "" },
+    defaultValues: { accountType: "student" as const, firstName: "", lastName: "", email: "", password: "", parentEmail: "", school: "", grade: "", organizationId: "" },
   });
 
   const accountType = form.watch("accountType");
@@ -54,7 +56,12 @@ export default function RegisterPage() {
           password: values.password,
           accountType: values.accountType,
           ...(values.accountType === "student"
-            ? { parentEmail: values.parentEmail, school: values.school, grade: values.grade }
+            ? {
+                parentEmail: values.parentEmail,
+                school: values.school,
+                grade: values.grade,
+                organizationId: values.organizationId || null,
+              }
             : {}),
         },
       },
@@ -161,6 +168,39 @@ export default function RegisterPage() {
                       </FormControl>
                       <FormDescription>
                         Your parent can sign up with this email to see your schedule and drive you to events.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              {accountType === "student" && (
+                <FormField
+                  control={form.control}
+                  name="organizationId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Program / affiliation</FormLabel>
+                      <Select
+                        value={field.value || "none"}
+                        onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-organization">
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="none">None / Community</SelectItem>
+                          {(orgs ?? []).map((o) => (
+                            <SelectItem key={o.organizationId} value={o.organizationId}>
+                              {o.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose your school program if you have one — it decides which opportunities you see. Pick "None / Community" otherwise.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

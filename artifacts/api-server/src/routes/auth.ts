@@ -16,7 +16,8 @@ router.post("/v1/auth/register", async (req, res) => {
     return;
   }
 
-  const { firstName, lastName, email, password, accountType, parentEmail, school, grade } = parsed.data;
+  const { firstName, lastName, email, password, accountType, parentEmail, school, grade, organizationId } =
+    parsed.data;
 
   const isParent = accountType === "parent";
 
@@ -54,6 +55,7 @@ router.post("/v1/auth/register", async (req, res) => {
       parentEmail: isParent ? null : parentEmail!.toLowerCase(),
       school: isParent ? null : school!.trim(),
       grade: isParent ? null : (grade?.trim() || null),
+      organizationId: isParent ? null : (organizationId || null),
     })
     .returning();
 
