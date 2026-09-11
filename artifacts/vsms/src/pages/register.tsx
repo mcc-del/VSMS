@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,10 +12,39 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { GRADES } from "@/lib/schools";
 import { SchoolSelect } from "@/components/school-select";
+import { GraduationCap, Users, Eye } from "lucide-react";
+
+// Three guided sign-up paths. "student" and the two parent kinds all map to the
+// backend's accountType (student | parent); the parent kinds differ only in
+// guidance and where they go next.
+type SignupType = "student" | "parent_participant" | "parent_viewer";
+
+const SIGNUP_OPTIONS: { value: SignupType; title: string; blurb: string; icon: typeof Users }[] = [
+  {
+    value: "student",
+    title: "I'm a student (grades 6–12)",
+    blurb: "Sign up yourself, log your hours, and invite a parent to follow along.",
+    icon: GraduationCap,
+  },
+  {
+    value: "parent_participant",
+    title: "I'm a parent of a grade 2–5 child",
+    blurb: "You'll sign up and manage your child — young children don't get their own login.",
+    icon: Users,
+  },
+  {
+    value: "parent_viewer",
+    title: "I'm a parent of a grade 6–12 student",
+    blurb: "Your student signs up themselves; you get view-only access to their schedule.",
+    icon: Eye,
+  },
+];
+
+const MEDINA_SCHOOL = "Medina Academy";
 
 const schema = z
   .object({
-    accountType: z.enum(["student", "parent"]),
+    signupType: z.enum(["student", "parent_participant", "parent_viewer"]),
     firstName: z.string().min(2).max(50),
     lastName: z.string().min(2).max(50),
     email: z.string().email("Enter a valid email"),
@@ -24,13 +54,17 @@ const schema = z
     grade: z.string().optional(),
     organizationId: z.string().optional(),
   })
-  .refine((v) => v.accountType !== "student" || (v.parentEmail && v.parentEmail.length > 0), {
+  .refine((v) => v.signupType !== "student" || (v.parentEmail && v.parentEmail.length > 0), {
     message: "A parent email is required",
     path: ["parentEmail"],
   })
-  .refine((v) => v.accountType !== "student" || (v.school && v.school.length > 0), {
+  .refine((v) => v.signupType !== "student" || (v.school && v.school.length > 0), {
     message: "Please select your school",
     path: ["school"],
+  })
+  .refine((v) => v.signupType !== "student" || (v.grade && v.grade.length > 0), {
+    message: "Please select your grade",
+    path: ["grade"],
   });
 
 export default function RegisterPage() {
@@ -39,14 +73,67 @@ export default function RegisterPage() {
   const registerMutation = useRegister();
   const { data: orgs } = useListOrganizations();
 
+  const [signupType, setSignupType] = useState<SignupType>("student");
+
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { accountType: "student" as const, firstName: "", lastName: "", email: "", password: "", parentEmail: "", school: "", grade: "", organizationId: "" },
+    defaultValues: {
+      signupType: "student" as SignupType,
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      parentEmail: "",
+      school: MEDINA_SCHOOL,
+      grade: "",
+      organizationId: "",
+    },
   });
 
-  const accountType = form.watch("accountType");
+  const isStudent = signupType === "student";
+
+  // Resolve the Medina / EF organization ids so affiliation stays a fixed set
+  // of three first-person choices regardless of what's in the org table.
+  const medinaOrg = (orgs ?? []).find((o) => /medina/i.test(o.name));
+  const efOrg = (orgs ?? []).find((o) => /essentials/i.test(o.name));
+
+  // Default a new student to Medina (the large majority), which also fills the
+  // school. They can change it.
+  useEffect(() => {
+    if (isStudent && medinaOrg && !form.getValues("organizationId")) {
+      form.setValue("organizationId", medinaOrg.organizationId);
+      form.setValue("school", MEDINA_SCHOOL);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isStudent, medinaOrg?.organizationId]);
+
+  const currentAffiliation = (() => {
+    const id = form.watch("organizationId");
+    if (medinaOrg && id === medinaOrg.organizationId) return "medina";
+    if (efOrg && id === efOrg.organizationId) return "ef";
+    return "none";
+  })();
+
+  function onAffiliationChange(v: string) {
+    if (v === "medina") {
+      form.setValue("organizationId", medinaOrg?.organizationId ?? "");
+      form.setValue("school", MEDINA_SCHOOL);
+    } else if (v === "ef") {
+      form.setValue("organizationId", efOrg?.organizationId ?? "");
+      if (form.getValues("school") === MEDINA_SCHOOL) form.setValue("school", "");
+    } else {
+      form.setValue("organizationId", "");
+      if (form.getValues("school") === MEDINA_SCHOOL) form.setValue("school", "");
+    }
+  }
+
+  function selectType(t: SignupType) {
+    setSignupType(t);
+    form.setValue("signupType", t);
+  }
 
   function onSubmit(values: z.infer<typeof schema>) {
+    const accountType = values.signupType === "student" ? "student" : "parent";
     registerMutation.mutate(
       {
         data: {
@@ -54,8 +141,8 @@ export default function RegisterPage() {
           lastName: values.lastName,
           email: values.email,
           password: values.password,
-          accountType: values.accountType,
-          ...(values.accountType === "student"
+          accountType,
+          ...(accountType === "student"
             ? {
                 parentEmail: values.parentEmail,
                 school: values.school,
@@ -72,12 +159,12 @@ export default function RegisterPage() {
         onError: (err: any) => {
           toast({ title: "Registration failed", description: err?.data?.error ?? "Something went wrong", variant: "destructive" });
         },
-      }
+      },
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <img src="/medinacares-logo.png" alt="MedinaCares" className="w-20 h-20 object-contain mx-auto mb-4" />
@@ -88,33 +175,33 @@ export default function RegisterPage() {
         <div className="bg-card border rounded-xl p-6 shadow-sm">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="accountType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>I am a…</FormLabel>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(["student", "parent"] as const).map((t) => (
-                        <button
-                          key={t}
-                          type="button"
-                          data-testid={`toggle-${t}`}
-                          onClick={() => field.onChange(t)}
-                          className={`rounded-md border px-3 py-2 text-sm font-medium capitalize transition-colors ${
-                            field.value === t
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-input text-muted-foreground hover:bg-muted"
-                          }`}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormItem>
+                <FormLabel>How are you signing up?</FormLabel>
+                <div className="space-y-2">
+                  {SIGNUP_OPTIONS.map((opt) => {
+                    const Icon = opt.icon;
+                    const active = signupType === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        data-testid={`toggle-${opt.value}`}
+                        onClick={() => selectType(opt.value)}
+                        className={`w-full text-left rounded-lg border p-3 flex gap-3 transition-colors ${
+                          active ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-input hover:bg-muted"
+                        }`}
+                      >
+                        <Icon className={`w-5 h-5 shrink-0 mt-0.5 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                        <span>
+                          <span className="block text-sm font-medium">{opt.title}</span>
+                          <span className="block text-xs text-muted-foreground mt-0.5">{opt.blurb}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </FormItem>
+
               <div className="grid grid-cols-2 gap-3">
                 <FormField
                   control={form.control}
@@ -143,12 +230,13 @@ export default function RegisterPage() {
                   )}
                 />
               </div>
+
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email address</FormLabel>
+                    <FormLabel>Your email address</FormLabel>
                     <FormControl>
                       <Input data-testid="input-email" type="email" placeholder="you@example.com" {...field} />
                     </FormControl>
@@ -156,7 +244,22 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
-              {accountType === "student" && (
+
+              {/* Guidance for the two parent paths */}
+              {signupType === "parent_participant" && (
+                <p className="text-xs text-muted-foreground rounded-md bg-muted p-3">
+                  After you create your account, you'll add your child (name, grade 2–5, school) and
+                  manage their sign-ups and hours from your parent dashboard.
+                </p>
+              )}
+              {signupType === "parent_viewer" && (
+                <p className="text-xs text-muted-foreground rounded-md bg-muted p-3">
+                  Your student signs up on their own and enters <strong>this email</strong> as their
+                  parent's email — their schedule then appears on your dashboard automatically.
+                </p>
+              )}
+
+              {isStudent && (
                 <FormField
                   control={form.control}
                   name="parentEmail"
@@ -174,40 +277,27 @@ export default function RegisterPage() {
                   )}
                 />
               )}
-              {accountType === "student" && (
-                <FormField
-                  control={form.control}
-                  name="organizationId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Program / affiliation</FormLabel>
-                      <Select
-                        value={field.value || "none"}
-                        onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-organization">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">None / Community</SelectItem>
-                          {(orgs ?? []).map((o) => (
-                            <SelectItem key={o.organizationId} value={o.organizationId}>
-                              {o.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Choose your school program if you have one — it decides which opportunities you see. Pick "None / Community" otherwise.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
+              {isStudent && (
+                <FormItem>
+                  <FormLabel>Program / affiliation</FormLabel>
+                  <Select value={currentAffiliation} onValueChange={onAffiliationChange}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-organization">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="medina">I'm enrolled at Medina Academy</SelectItem>
+                      <SelectItem value="ef">I'm enrolled in Essentials First</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>This decides which opportunities you see.</FormDescription>
+                </FormItem>
               )}
-              {accountType === "student" && (
+
+              {isStudent && (
                 <div className="grid grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
@@ -247,6 +337,7 @@ export default function RegisterPage() {
                   />
                 </div>
               )}
+
               <FormField
                 control={form.control}
                 name="password"

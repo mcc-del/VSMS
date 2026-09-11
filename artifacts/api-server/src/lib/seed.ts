@@ -7,7 +7,7 @@ import { logger } from "./logger";
 // approve/merge more via the school-request queue. Keeping enrollment on a
 // controlled list keeps school data clean (no spelling-variant duplicates).
 const DEFAULT_SCHOOLS: Array<{ name: string; city: string }> = [
-  { name: "Medina Academy", city: "Bellevue" },
+  { name: "Medina Academy", city: "Redmond" },
   { name: "Bellevue High School", city: "Bellevue" },
   { name: "Interlake High School", city: "Bellevue" },
   { name: "Newport High School", city: "Bellevue" },
