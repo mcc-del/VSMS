@@ -73,18 +73,21 @@ export interface LeaderboardEntry {
 
 export interface LeaderboardResponse {
   /** @nullable */
-  school: string | null;
-  /** @nullable */
   myRank?: number | null;
   myHours: number;
   entries: LeaderboardEntry[];
 }
 
-export interface SchoolStanding {
-  school: string;
-  totalHours: number;
-  avgHours: number;
-  participantCount: number;
+export interface LeaderboardPreferences {
+  /** @nullable */
+  displayAlias?: string | null;
+  hideFromLeaderboard: boolean;
+}
+
+export interface LeaderboardPreferencesInput {
+  /** @nullable */
+  displayAlias?: string | null;
+  hideFromLeaderboard?: boolean;
 }
 
 export interface ParentChildRegistration {

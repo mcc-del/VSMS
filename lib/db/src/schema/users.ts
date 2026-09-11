@@ -29,6 +29,10 @@ export const usersTable = pgTable("users", {
   }),
   // For parents: when they last viewed their children's activity (for "new" badges).
   parentLastSeenAt: timestamp("parent_last_seen_at", { withTimezone: true }),
+  // Leaderboard privacy (R6): an optional display alias, and a flag to appear
+  // as "Anonymous" to everyone but themselves.
+  displayAlias: varchar("display_alias", { length: 40 }),
+  hideFromLeaderboard: boolean("hide_from_leaderboard").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

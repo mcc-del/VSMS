@@ -9,8 +9,6 @@ import type { LeaderboardEntry } from './leaderboardEntry';
 
 export interface LeaderboardResponse {
   /** @nullable */
-  school: string | null;
-  /** @nullable */
   myRank?: number | null;
   myHours: number;
   entries: LeaderboardEntry[];

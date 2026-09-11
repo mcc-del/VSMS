@@ -914,7 +914,7 @@ paths:
     get:
       operationId: getLeaderboard
       tags: [leaderboard]
-      summary: Within-school participant leaderboard by approved hours
+      summary: Overall individual leaderboard by approved hours
       responses:
         "200":
           description: OK
@@ -923,20 +923,41 @@ paths:
               schema:
                 $ref: "#/components/schemas/LeaderboardResponse"
 
-  /v1/leaderboard/schools:
+  /v1/me/leaderboard-preferences:
     get:
-      operationId: getSchoolStandings
-      tags: [leaderboard]
-      summary: Aggregate approved hours per school
+      operationId: getLeaderboardPreferences
+      tags: [profile]
+      summary: Get my leaderboard alias + hide setting
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/SchoolStanding"
+                $ref: "#/components/schemas/LeaderboardPreferences"
+    patch:
+      operationId: updateLeaderboardPreferences
+      tags: [profile]
+      summary: Set my leaderboard alias and/or hide setting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaderboardPreferencesInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardPreferences"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/parent/children:
     get:
@@ -1280,10 +1301,8 @@ components:
           type: boolean
     LeaderboardResponse:
       type: object
-      required: [school, entries, myHours]
+      required: [entries, myHours]
       properties:
-        school:
-          type: ["string", "null"]
         myRank:
           type: ["integer", "null"]
         myHours:
@@ -1292,18 +1311,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LeaderboardEntry"
-    SchoolStanding:
+    LeaderboardPreferences:
       type: object
-      required: [school, totalHours, avgHours, participantCount]
+      required: [hideFromLeaderboard]
       properties:
-        school:
-          type: string
-        totalHours:
-          type: number
-        avgHours:
-          type: number
-        participantCount:
-          type: integer
+        displayAlias:
+          type: ["string", "null"]
+        hideFromLeaderboard:
+          type: boolean
+    LeaderboardPreferencesInput:
+      type: object
+      properties:
+        displayAlias:
+          type: ["string", "null"]
+        hideFromLeaderboard:
+          type: boolean
 
     ParentChildRegistration:
       type: object

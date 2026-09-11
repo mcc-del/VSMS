@@ -38,6 +38,8 @@ import type {
   ExternalSubmissionDetail,
   ExternalSubmissionInput,
   HealthStatus,
+  LeaderboardPreferences,
+  LeaderboardPreferencesInput,
   LeaderboardResponse,
   ListAllSchoolsParams,
   LoginInput,
@@ -54,7 +56,6 @@ import type {
   School,
   SchoolMergeInput,
   SchoolRequestInput,
-  SchoolStanding,
   Submission,
   SubmissionDetail,
   SubmissionInput,
@@ -3029,7 +3030,7 @@ export const getGetLeaderboardUrl = () => {
 }
 
 /**
- * @summary Within-school participant leaderboard by approved hours
+ * @summary Overall individual leaderboard by approved hours
  */
 export const getLeaderboard = async ( options?: RequestInit): Promise<LeaderboardResponse> => {
 
@@ -3076,7 +3077,7 @@ export type GetLeaderboardQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Within-school participant leaderboard by approved hours
+ * @summary Overall individual leaderboard by approved hours
  */
 
 export function useGetLeaderboard<TData = Awaited<ReturnType<typeof getLeaderboard>>, TError = ErrorType<unknown>>(
@@ -3097,20 +3098,20 @@ export function useGetLeaderboard<TData = Awaited<ReturnType<typeof getLeaderboa
 
 
 
-export const getGetSchoolStandingsUrl = () => {
+export const getGetLeaderboardPreferencesUrl = () => {
 
 
 
 
-  return `/api/v1/leaderboard/schools`
+  return `/api/v1/me/leaderboard-preferences`
 }
 
 /**
- * @summary Aggregate approved hours per school
+ * @summary Get my leaderboard alias + hide setting
  */
-export const getSchoolStandings = async ( options?: RequestInit): Promise<SchoolStanding[]> => {
+export const getLeaderboardPreferences = async ( options?: RequestInit): Promise<LeaderboardPreferences> => {
 
-  return customFetch<SchoolStanding[]>(getGetSchoolStandingsUrl(),
+  return customFetch<LeaderboardPreferences>(getGetLeaderboardPreferencesUrl(),
   {
     ...options,
     method: 'GET'
@@ -3123,45 +3124,45 @@ export const getSchoolStandings = async ( options?: RequestInit): Promise<School
 
 
 
-export const getGetSchoolStandingsQueryKey = () => {
+export const getGetLeaderboardPreferencesQueryKey = () => {
     return [
-    `/api/v1/leaderboard/schools`
+    `/api/v1/me/leaderboard-preferences`
     ] as const;
     }
 
 
-export const getGetSchoolStandingsQueryOptions = <TData = Awaited<ReturnType<typeof getSchoolStandings>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSchoolStandings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetLeaderboardPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof getLeaderboardPreferences>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLeaderboardPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetSchoolStandingsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetLeaderboardPreferencesQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSchoolStandings>>> = ({ signal }) => getSchoolStandings({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLeaderboardPreferences>>> = ({ signal }) => getLeaderboardPreferences({ signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSchoolStandings>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLeaderboardPreferences>>, TError, TData> & { queryKey: QueryKey }
 }
 
-export type GetSchoolStandingsQueryResult = NonNullable<Awaited<ReturnType<typeof getSchoolStandings>>>
-export type GetSchoolStandingsQueryError = ErrorType<unknown>
+export type GetLeaderboardPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof getLeaderboardPreferences>>>
+export type GetLeaderboardPreferencesQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Aggregate approved hours per school
+ * @summary Get my leaderboard alias + hide setting
  */
 
-export function useGetSchoolStandings<TData = Awaited<ReturnType<typeof getSchoolStandings>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSchoolStandings>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export function useGetLeaderboardPreferences<TData = Awaited<ReturnType<typeof getLeaderboardPreferences>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLeaderboardPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetSchoolStandingsQueryOptions(options)
+  const queryOptions = getGetLeaderboardPreferencesQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3173,6 +3174,77 @@ export function useGetSchoolStandings<TData = Awaited<ReturnType<typeof getSchoo
 
 
 
+
+export const getUpdateLeaderboardPreferencesUrl = () => {
+
+
+
+
+  return `/api/v1/me/leaderboard-preferences`
+}
+
+/**
+ * @summary Set my leaderboard alias and/or hide setting
+ */
+export const updateLeaderboardPreferences = async (leaderboardPreferencesInput: LeaderboardPreferencesInput, options?: RequestInit): Promise<LeaderboardPreferences> => {
+
+  return customFetch<LeaderboardPreferences>(getUpdateLeaderboardPreferencesUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      leaderboardPreferencesInput,)
+  }
+);}
+
+
+
+
+export const getUpdateLeaderboardPreferencesMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLeaderboardPreferences>>, TError,{data: BodyType<LeaderboardPreferencesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateLeaderboardPreferences>>, TError,{data: BodyType<LeaderboardPreferencesInput>}, TContext> => {
+
+const mutationKey = ['updateLeaderboardPreferences'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateLeaderboardPreferences>>, {data: BodyType<LeaderboardPreferencesInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateLeaderboardPreferences(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateLeaderboardPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof updateLeaderboardPreferences>>>
+    export type UpdateLeaderboardPreferencesMutationBody = BodyType<LeaderboardPreferencesInput>
+    export type UpdateLeaderboardPreferencesMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Set my leaderboard alias and/or hide setting
+ */
+export const useUpdateLeaderboardPreferences = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLeaderboardPreferences>>, TError,{data: BodyType<LeaderboardPreferencesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateLeaderboardPreferences>>,
+        TError,
+        {data: BodyType<LeaderboardPreferencesInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateLeaderboardPreferencesMutationOptions(options));
+    }
 
 export const getGetParentChildrenUrl = () => {
 

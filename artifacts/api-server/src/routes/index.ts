@@ -11,6 +11,7 @@ import parentRouter from "./parent";
 import leaderboardRouter from "./leaderboard";
 import organizationsRouter from "./organizations";
 import schoolsRouter from "./schools";
+import profileRouter from "./profile";
 import storageRouter from "./storage";
 
 const router: IRouter = Router();
@@ -27,6 +28,7 @@ router.use(parentRouter);
 router.use(leaderboardRouter);
 router.use(organizationsRouter);
 router.use(schoolsRouter);
+router.use(profileRouter);
 router.use(storageRouter);
 
 export default router;

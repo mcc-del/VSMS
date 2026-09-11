@@ -6,9 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SchoolStanding {
-  school: string;
-  totalHours: number;
-  avgHours: number;
-  participantCount: number;
+export interface LeaderboardPreferencesInput {
+  /** @nullable */
+  displayAlias?: string | null;
+  hideFromLeaderboard?: boolean;
 }

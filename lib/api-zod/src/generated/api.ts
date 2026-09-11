@@ -820,10 +820,9 @@ export const UpdateOrganizationResponse = zod.object({
 
 
 /**
- * @summary Within-school participant leaderboard by approved hours
+ * @summary Overall individual leaderboard by approved hours
  */
 export const GetLeaderboardResponse = zod.object({
-  "school": zod.string().nullable(),
   "myRank": zod.number().nullish(),
   "myHours": zod.number(),
   "entries": zod.array(zod.object({
@@ -838,15 +837,26 @@ export const GetLeaderboardResponse = zod.object({
 
 
 /**
- * @summary Aggregate approved hours per school
+ * @summary Get my leaderboard alias + hide setting
  */
-export const GetSchoolStandingsResponseItem = zod.object({
-  "school": zod.string(),
-  "totalHours": zod.number(),
-  "avgHours": zod.number(),
-  "participantCount": zod.number()
+export const GetLeaderboardPreferencesResponse = zod.object({
+  "displayAlias": zod.string().nullish(),
+  "hideFromLeaderboard": zod.boolean()
 })
-export const GetSchoolStandingsResponse = zod.array(GetSchoolStandingsResponseItem)
+
+
+/**
+ * @summary Set my leaderboard alias and/or hide setting
+ */
+export const UpdateLeaderboardPreferencesBody = zod.object({
+  "displayAlias": zod.string().nullish(),
+  "hideFromLeaderboard": zod.boolean().optional()
+})
+
+export const UpdateLeaderboardPreferencesResponse = zod.object({
+  "displayAlias": zod.string().nullish(),
+  "hideFromLeaderboard": zod.boolean()
+})
 
 
 /**
