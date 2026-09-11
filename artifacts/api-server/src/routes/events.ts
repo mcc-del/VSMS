@@ -557,7 +557,7 @@ router.post(
 router.patch(
   "/v1/events/:eventId",
   authenticate,
-  requireRole("admin", "org_admin"),
+  requireRole("admin", "org_admin", "supervisor"),
   async (req, res) => {
     const { eventId } = req.params as { eventId: string };
 
@@ -578,10 +578,10 @@ router.patch(
       return;
     }
 
-    // Org admins may only edit events for org(s) they manage, and may not move
-    // an event to an org they don't manage.
-    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
-    if (managed !== null) {
+    const role = req.auth!.role;
+    if (role === "org_admin") {
+      // Org admins: only their org's events, and can't move to another org.
+      const managed = await managedOrgIds(req.auth!.userId, role);
       if (!canManageOrg(managed, current.organizationId)) {
         res.status(403).json({ error: "You can only edit your own organization's events." });
         return;
@@ -589,6 +589,12 @@ router.patch(
       const d0 = parsed.data as Record<string, unknown>;
       if ("organizationId" in d0 && !canManageOrg(managed, (d0.organizationId as string) ?? null)) {
         res.status(403).json({ error: "You can only assign events to your own organization." });
+        return;
+      }
+    } else if (role === "supervisor") {
+      // Supervisors: only events they supervise.
+      if (current.supervisorId !== req.auth!.userId) {
+        res.status(403).json({ error: "You can only edit events you supervise." });
         return;
       }
     }
@@ -674,7 +680,7 @@ router.patch(
 router.post(
   "/v1/events",
   authenticate,
-  requireRole("admin", "org_admin"),
+  requireRole("admin", "org_admin", "supervisor"),
   async (req, res) => {
     const parsed = CreateEventBody.safeParse(req.body);
     if (!parsed.success) {
@@ -682,12 +688,18 @@ router.post(
       return;
     }
 
-    const { title, description, slotLabel, location, street, city, state, zip, eventDate, startTime, endTime, maxCapacity, minGrade, maxGrade, supervisorId, imageUrl, organizationId } =
+    const { title, description, slotLabel, location, street, city, state, zip, eventDate, startTime, endTime, maxCapacity, minGrade, maxGrade, imageUrl, organizationId } =
       parsed.data as any;
+    let { supervisorId } = parsed.data as any;
 
+    const role = req.auth!.role;
+    // Supervisors and Org Admins supervise their own events.
+    if (role === "supervisor" || role === "org_admin") {
+      supervisorId = req.auth!.userId;
+    }
     // Organization Admins may only create events for the org(s) they manage.
-    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
-    if (managed !== null) {
+    if (role === "org_admin") {
+      const managed = await managedOrgIds(req.auth!.userId, role);
       if (!organizationId || !canManageOrg(managed, organizationId)) {
         res.status(403).json({ error: "You can only create events for your own organization." });
         return;
@@ -755,14 +767,17 @@ router.post(
 router.delete(
   "/v1/events/:eventId",
   authenticate,
-  requireRole("admin", "org_admin"),
+  requireRole("admin", "org_admin", "supervisor"),
   async (req, res) => {
     const { eventId } = req.params as { eventId: string };
+    const role = req.auth!.role;
 
-    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
-    if (managed !== null) {
+    if (role === "org_admin" || role === "supervisor") {
       const [current] = await db
-        .select({ organizationId: eventsTable.organizationId })
+        .select({
+          organizationId: eventsTable.organizationId,
+          supervisorId: eventsTable.supervisorId,
+        })
         .from(eventsTable)
         .where(eq(eventsTable.eventId, eventId))
         .limit(1);
@@ -770,8 +785,14 @@ router.delete(
         res.status(404).json({ error: "Event not found" });
         return;
       }
-      if (!canManageOrg(managed, current.organizationId)) {
-        res.status(403).json({ error: "You can only delete your own organization's events." });
+      if (role === "org_admin") {
+        const managed = await managedOrgIds(req.auth!.userId, role);
+        if (!canManageOrg(managed, current.organizationId)) {
+          res.status(403).json({ error: "You can only delete your own organization's events." });
+          return;
+        }
+      } else if (current.supervisorId !== req.auth!.userId) {
+        res.status(403).json({ error: "You can only delete events you supervise." });
         return;
       }
     }

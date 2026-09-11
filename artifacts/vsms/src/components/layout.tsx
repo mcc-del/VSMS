@@ -27,6 +27,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ...(role === "supervisor" ? [
       { label: "Pending Reviews", href: "/supervisor/pending", icon: CheckSquare },
       { label: "Reviewed History", href: "/supervisor/history", icon: FileText },
+      { label: "My Events", href: "/admin/events", icon: Calendar },
+      { label: "New Event", href: "/admin/events/new", icon: FileText },
     ] : []),
     ...(role === "org_admin" ? [
       { label: "Pending Reviews", href: "/supervisor/pending", icon: CheckSquare },

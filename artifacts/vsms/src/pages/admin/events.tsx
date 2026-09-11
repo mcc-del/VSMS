@@ -67,12 +67,14 @@ function formatTime(t: string) {
 
 export default function AdminEventsPage() {
   const today = new Date().toISOString().split("T")[0];
-  const { role } = useAuth();
+  const { role, userId } = useAuth();
   const isOrgAdmin = role === "org_admin";
+  const isSupervisor = role === "supervisor";
+  const isSelfSupervised = isOrgAdmin || isSupervisor;
   const { data: events, isLoading } = useListEvents();
   const { data: managed } = useGetManagedOrganizations();
   const { data: users } = useListUsers({
-    query: { enabled: !isOrgAdmin, queryKey: getListUsersQueryKey() },
+    query: { enabled: !isSelfSupervised, queryKey: getListUsersQueryKey() },
   });
   const deleteEvent = useDeleteEvent();
   const updateEvent = useUpdateEvent();
@@ -82,9 +84,11 @@ export default function AdminEventsPage() {
 
   const supervisors = (users ?? []).filter((u) => u.role === "supervisor");
 
-  // Org admins only manage their own org's events.
-  const visibleEvents =
-    isOrgAdmin && managed && !managed.all
+  // Org admins manage their own org's events; supervisors manage events they
+  // supervise; admins see everything.
+  const visibleEvents = isSupervisor
+    ? (events ?? []).filter((e) => e.supervisorId === userId)
+    : isOrgAdmin && managed && !managed.all
       ? (events ?? []).filter(
           (e) => e.organizationId && managed.organizationIds.includes(e.organizationId),
         )
@@ -392,7 +396,7 @@ export default function AdminEventsPage() {
                 )} />
               </div>
 
-              {!isOrgAdmin && (
+              {!isSelfSupervised && (
                 <FormField control={form.control} name="supervisorId" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Supervisor</FormLabel>

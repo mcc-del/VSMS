@@ -60,8 +60,12 @@ export default function AdminNewEvent() {
   const createEvent = useCreateEvent();
   const { role, userId } = useAuth();
   const isOrgAdmin = role === "org_admin";
+  const isSupervisor = role === "supervisor";
+  // Supervisors and org admins supervise their own events, so they don't pick
+  // a supervisor and don't need the (admin-only) user list.
+  const isSelfSupervised = isOrgAdmin || isSupervisor;
   const { data: users } = useListUsers({
-    query: { enabled: !isOrgAdmin, queryKey: getListUsersQueryKey() },
+    query: { enabled: !isSelfSupervised, queryKey: getListUsersQueryKey() },
   });
   const { data: managed } = useGetManagedOrganizations();
   const queryClient = useQueryClient();
@@ -96,12 +100,12 @@ export default function AdminNewEvent() {
       : organizations ?? [];
 
   useEffect(() => {
-    if (isOrgAdmin && userId) form.setValue("supervisorId", userId);
+    if (isSelfSupervised && userId) form.setValue("supervisorId", userId);
     if (isOrgAdmin && selectableOrgs.length === 1) {
       form.setValue("organizationId", selectableOrgs[0].organizationId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOrgAdmin, userId, selectableOrgs.length]);
+  }, [isSelfSupervised, isOrgAdmin, userId, selectableOrgs.length]);
 
   async function onSubmit(values: FormValues) {
     const shared = {
@@ -320,7 +324,7 @@ export default function AdminNewEvent() {
                   })}
                 </div>
 
-                {!isOrgAdmin && (
+                {!isSelfSupervised && (
                   <FormField control={form.control} name="supervisorId" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Assigned supervisor</FormLabel>
