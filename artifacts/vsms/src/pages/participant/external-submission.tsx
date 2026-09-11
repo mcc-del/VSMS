@@ -46,6 +46,17 @@ const schema = z.object({
 ).refine(
   (v) => !v.volunteerDate || v.volunteerDate <= new Date().toISOString().split("T")[0],
   { message: "The date can't be in the future — log hours after you've volunteered.", path: ["volunteerDate"] },
+).refine(
+  (v) => {
+    if (!v.volunteerDate) return true;
+    const md = Number(v.volunteerDate.slice(5, 7)) * 100 + Number(v.volunteerDate.slice(8, 10));
+    // Award season runs Sept 15 – Jun 15; the summer gap is outside any window.
+    return md >= 915 || md <= 615;
+  },
+  {
+    message: "That date is outside the award season (Sept 15 – Jun 15).",
+    path: ["volunteerDate"],
+  },
 );
 
 function StatusBadge({ status }: { status: string }) {

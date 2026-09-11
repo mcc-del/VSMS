@@ -3,6 +3,7 @@ import { db, externalSubmissionsTable, volunteerSubmissionsTable, eventsTable, u
 import { eq, and, inArray, sum, sql } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitExternalActivityBody } from "@workspace/api-zod";
+import { isWithinAwardWindow, AWARD_WINDOW_MESSAGE } from "../lib/season";
 
 const router = Router();
 
@@ -83,6 +84,10 @@ router.post(
     }
     if (volunteerDate < oneYearAgoStr) {
       res.status(400).json({ error: "That date is more than a year ago and can no longer be submitted." });
+      return;
+    }
+    if (!isWithinAwardWindow(volunteerDate)) {
+      res.status(400).json({ error: AWARD_WINDOW_MESSAGE });
       return;
     }
 
