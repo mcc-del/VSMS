@@ -635,6 +635,31 @@ export const SetOrgAdminResponse = zod.object({
 
 
 /**
+ * @summary Edit a user's name and/or phone (admin only)
+ */
+export const UpdateUserParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const UpdateUserBody = zod.object({
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
+  "phone": zod.string().nullish()
+})
+
+export const UpdateUserResponse = zod.object({
+  "userId": zod.string(),
+  "email": zod.string().nullish(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "role": zod.string(),
+  "phone": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "managedOrganizationIds": zod.array(zod.string()).optional()
+})
+
+
+/**
  * @summary Delete a user (admin only)
  */
 export const DeleteUserParams = zod.object({

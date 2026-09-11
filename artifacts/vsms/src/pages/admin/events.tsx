@@ -26,15 +26,25 @@ import { useToast } from "@/hooks/use-toast";
 import { Pencil, Trash2, MapPin, Clock, Calendar } from "lucide-react";
 import { AuthenticatedImage } from "@/components/authenticated-image";
 import { calculateEventDuration, formatHours } from "@/lib/event-duration";
+import { ALL_GRADES } from "@/lib/schools";
+
+const NONE = "none";
 
 const editSchema = z.object({
   title: z.string().min(1, "Required").max(150),
   description: z.string().min(1, "Required"),
+  slotLabel: z.string().optional(),
   location: z.string().min(1, "Required"),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
   eventDate: z.string().min(1, "Required"),
   startTime: z.string().min(1, "Required"),
   endTime: z.string().min(1, "Required"),
   maxCapacity: z.coerce.number().int().positive("Must be positive"),
+  minGrade: z.string().optional(),
+  maxGrade: z.string().optional(),
   supervisorId: z.string().min(1, "Required"),
   imageUrl: z.string().nullable(),
 }).superRefine((values, ctx) => {
@@ -69,11 +79,18 @@ export default function AdminEventsPage() {
     defaultValues: {
       title: "",
       description: "",
+      slotLabel: "",
       location: "",
+      street: "",
+      city: "",
+      state: "",
+      zip: "",
       eventDate: "",
       startTime: "09:00",
       endTime: "17:00",
       maxCapacity: 50,
+      minGrade: NONE,
+      maxGrade: NONE,
       supervisorId: "",
       imageUrl: null,
     },
@@ -84,11 +101,18 @@ export default function AdminEventsPage() {
     form.reset({
       title: event.title,
       description: event.description,
+      slotLabel: event.slotLabel ?? "",
       location: event.location ?? "",
+      street: event.street ?? "",
+      city: event.city ?? "",
+      state: event.state ?? "",
+      zip: event.zip ?? "",
       eventDate: event.eventDate,
       startTime: (event.startTime ?? "09:00:00").slice(0, 5),
       endTime: (event.endTime ?? "17:00:00").slice(0, 5),
       maxCapacity: event.maxCapacity,
+      minGrade: event.minGrade != null ? String(event.minGrade) : NONE,
+      maxGrade: event.maxGrade != null ? String(event.maxGrade) : NONE,
       supervisorId: event.supervisorId,
       imageUrl: event.imageUrl ?? null,
     });
@@ -118,6 +142,13 @@ export default function AdminEventsPage() {
     if (payload.imageUrl === null || payload.imageUrl === undefined || payload.imageUrl === "") {
       payload.imageUrl = null;
     }
+    payload.slotLabel = values.slotLabel?.trim() || null;
+    payload.street = values.street?.trim() || null;
+    payload.city = values.city?.trim() || null;
+    payload.state = values.state?.trim() || null;
+    payload.zip = values.zip?.trim() || null;
+    payload.minGrade = values.minGrade && values.minGrade !== NONE ? Number(values.minGrade) : null;
+    payload.maxGrade = values.maxGrade && values.maxGrade !== NONE ? Number(values.maxGrade) : null;
 
     updateEvent.mutate(
       {
@@ -240,13 +271,43 @@ export default function AdminEventsPage() {
                 </FormItem>
               )} />
 
+              <FormField control={form.control} name="slotLabel" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Slot label <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                  <FormControl><Input placeholder="e.g. Checkout, Cleanup crew" {...field} /></FormControl>
+                </FormItem>
+              )} />
+
               <FormField control={form.control} name="location" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl><Input placeholder="Room 101 / Community Center" {...field} /></FormControl>
+                  <FormLabel>Location name / venue</FormLabel>
+                  <FormControl><Input placeholder="Medina Academy — Main Hall" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
+              <FormField control={form.control} name="street" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Street address <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                  <FormControl><Input placeholder="123 Main St" {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-6 gap-3">
+                <div className="col-span-3">
+                  <FormField control={form.control} name="city" render={({ field }) => (
+                    <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Redmond" {...field} /></FormControl></FormItem>
+                  )} />
+                </div>
+                <div className="col-span-1">
+                  <FormField control={form.control} name="state" render={({ field }) => (
+                    <FormItem><FormLabel>State</FormLabel><FormControl><Input placeholder="WA" {...field} /></FormControl></FormItem>
+                  )} />
+                </div>
+                <div className="col-span-2">
+                  <FormField control={form.control} name="zip" render={({ field }) => (
+                    <FormItem><FormLabel>ZIP</FormLabel><FormControl><Input placeholder="98052" {...field} /></FormControl></FormItem>
+                  )} />
+                </div>
+              </div>
 
               <FormField control={form.control} name="eventDate" render={({ field }) => (
                 <FormItem>
@@ -287,6 +348,33 @@ export default function AdminEventsPage() {
                   <FormMessage />
                 </FormItem>
               )} />
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="minGrade" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Minimum grade <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Any</SelectItem>
+                        {ALL_GRADES.map((g) => <SelectItem key={g} value={g}>Grade {g}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="maxGrade" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Maximum grade <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Any</SelectItem>
+                        {ALL_GRADES.map((g) => <SelectItem key={g} value={g}>Grade {g}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+              </div>
 
               <FormField control={form.control} name="supervisorId" render={({ field }) => (
                 <FormItem>

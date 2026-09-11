@@ -132,6 +132,26 @@ const TEST_ACCOUNTS = [
   },
 ];
 
+// Now that opportunities are org-gated, a participant with no organization only
+// sees open/community events. Attach the seeded test participant to Medina so
+// the Medina-gated flow is testable out of the box. Idempotent.
+export async function seedTestParticipantOrg(): Promise<void> {
+  try {
+    const [medina] = await db
+      .select({ organizationId: organizationsTable.organizationId })
+      .from(organizationsTable)
+      .where(eq(organizationsTable.name, "Medina Academy"))
+      .limit(1);
+    if (!medina) return;
+    await db
+      .update(usersTable)
+      .set({ organizationId: medina.organizationId })
+      .where(eq(usersTable.email, "participant@test.com"));
+  } catch (err) {
+    logger.error({ err }, "Failed to set test participant org");
+  }
+}
+
 // Seed a demo Organization Admin (over Essentials First) so the org-scoped
 // admin role can be exercised. Idempotent.
 export async function seedOrgAdmins(): Promise<void> {

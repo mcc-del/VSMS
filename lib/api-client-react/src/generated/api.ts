@@ -64,6 +64,7 @@ import type {
   SubmissionInput,
   SuccessResponse,
   SupervisorDashboard,
+  UpdateUserInput,
   UploadUrlRequest,
   UploadUrlResponse,
   UserProfile
@@ -2069,6 +2070,78 @@ export const useSetOrgAdmin = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getSetOrgAdminMutationOptions(options));
+    }
+
+export const getUpdateUserUrl = (userId: string,) => {
+
+
+
+
+  return `/api/v1/admin/users/${userId}`
+}
+
+/**
+ * @summary Edit a user's name and/or phone (admin only)
+ */
+export const updateUser = async (userId: string,
+    updateUserInput: UpdateUserInput, options?: RequestInit): Promise<UserProfile> => {
+
+  return customFetch<UserProfile>(getUpdateUserUrl(userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateUserInput,)
+  }
+);}
+
+
+
+
+export const getUpdateUserMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUser>>, TError,{userId: string;data: BodyType<UpdateUserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateUser>>, TError,{userId: string;data: BodyType<UpdateUserInput>}, TContext> => {
+
+const mutationKey = ['updateUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateUser>>, {userId: string;data: BodyType<UpdateUserInput>}> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  updateUser(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateUserMutationResult = NonNullable<Awaited<ReturnType<typeof updateUser>>>
+    export type UpdateUserMutationBody = BodyType<UpdateUserInput>
+    export type UpdateUserMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Edit a user's name and/or phone (admin only)
+ */
+export const useUpdateUser = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUser>>, TError,{userId: string;data: BodyType<UpdateUserInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateUser>>,
+        TError,
+        {userId: string;data: BodyType<UpdateUserInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateUserMutationOptions(options));
     }
 
 export const getDeleteUserUrl = (userId: string,) => {

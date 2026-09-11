@@ -296,6 +296,13 @@ export interface SetOrgAdminResult {
   organizationIds: string[];
 }
 
+export interface UpdateUserInput {
+  firstName?: string;
+  lastName?: string;
+  /** @nullable */
+  phone?: string | null;
+}
+
 export interface AdminCreateUserInput {
   firstName: string;
   lastName: string;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListUsers, useCreateUser, useDeleteUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useListUsers, useCreateUser, useDeleteUser, useUpdateUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Clock, Building2 } from "lucide-react";
+import { Plus, Trash2, Clock, Building2, Pencil } from "lucide-react";
 
 const schema = z.object({
   firstName: z.string().min(2).max(50),
@@ -53,9 +53,26 @@ export default function AdminUsers() {
   const deleteUser = useDeleteUser();
   const addHours = useAddManualHours();
   const setOrgAdmin = useSetOrgAdmin();
+  const updateUser = useUpdateUser();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [showCreate, setShowCreate] = useState(false);
+  const [editUser, setEditUser] = useState<{ userId: string; firstName: string; lastName: string; phone: string } | null>(null);
+
+  function saveEditUser() {
+    if (!editUser) return;
+    updateUser.mutate(
+      { userId: editUser.userId, data: { firstName: editUser.firstName, lastName: editUser.lastName, phone: editUser.phone || null } },
+      {
+        onSuccess: () => {
+          toast({ title: "User updated" });
+          queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+          setEditUser(null);
+        },
+        onError: (err: any) => toast({ title: "Error", description: err?.data?.error ?? "Failed", variant: "destructive" }),
+      },
+    );
+  }
   const [hoursUser, setHoursUser] = useState<{ userId: string; name: string } | null>(null);
   const [orgAdminUser, setOrgAdminUser] = useState<{ userId: string; name: string } | null>(null);
   const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]);
@@ -226,6 +243,22 @@ export default function AdminUsers() {
                           )}
                           <Button
                             variant="ghost"
+                            size="sm"
+                            data-testid={`button-edit-user-${u.userId}`}
+                            onClick={() =>
+                              setEditUser({
+                                userId: u.userId,
+                                firstName: u.firstName,
+                                lastName: u.lastName,
+                                phone: u.phone ?? "",
+                              })
+                            }
+                            className="text-muted-foreground hover:text-primary gap-1"
+                          >
+                            <Pencil className="w-4 h-4" /> Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
                             size="icon"
                             data-testid={`button-delete-user-${u.userId}`}
                             onClick={() => handleDelete(u.userId, `${u.firstName} ${u.lastName}`)}
@@ -309,6 +342,42 @@ export default function AdminUsers() {
               </Button>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editUser !== null} onOpenChange={(open) => !open && setEditUser(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit user</DialogTitle>
+          </DialogHeader>
+          {editUser && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">First name</label>
+                  <Input value={editUser.firstName} onChange={(e) => setEditUser({ ...editUser, firstName: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Last name</label>
+                  <Input value={editUser.lastName} onChange={(e) => setEditUser({ ...editUser, lastName: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Phone</label>
+                <Input
+                  type="tel"
+                  placeholder="(425) 555-0100"
+                  value={editUser.phone}
+                  onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
+                  data-testid="input-edit-phone"
+                />
+                <p className="text-xs text-muted-foreground">Shown to participants for supervisors.</p>
+              </div>
+              <Button className="w-full" onClick={saveEditUser} disabled={updateUser.isPending} data-testid="button-save-user">
+                {updateUser.isPending ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

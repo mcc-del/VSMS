@@ -57,6 +57,7 @@ export * from './submissionDetail';
 export * from './submissionInput';
 export * from './successResponse';
 export * from './supervisorDashboard';
+export * from './updateUserInput';
 export * from './uploadUrlRequest';
 export * from './uploadUrlResponse';
 export * from './userProfile';

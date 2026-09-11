@@ -143,6 +143,40 @@ router.post(
   },
 );
 
+// PATCH /api/v1/admin/users/:userId — edit a user's name and/or phone.
+router.patch("/v1/admin/users/:userId", authenticate, requireRole("admin"), async (req, res) => {
+  const { userId } = req.params as { userId: string };
+  const body = (req.body ?? {}) as { firstName?: unknown; lastName?: unknown; phone?: unknown };
+  const updates: { firstName?: string; lastName?: string; phone?: string | null } = {};
+  if (typeof body.firstName === "string" && body.firstName.trim()) updates.firstName = body.firstName.trim();
+  if (typeof body.lastName === "string" && body.lastName.trim()) updates.lastName = body.lastName.trim();
+  if ("phone" in body) {
+    updates.phone = typeof body.phone === "string" && body.phone.trim() ? body.phone.trim() : null;
+  }
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "Nothing to update." });
+    return;
+  }
+  const [user] = await db
+    .update(usersTable)
+    .set(updates)
+    .where(eq(usersTable.userId, userId))
+    .returning();
+  if (!user) {
+    res.status(404).json({ error: "User not found." });
+    return;
+  }
+  res.json({
+    userId: user.userId,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+    phone: user.phone ?? null,
+    createdAt: user.createdAt.toISOString(),
+  });
+});
+
 // GET /api/v1/admin/users/:userId/hours — list manual credits for a participant
 router.get(
   "/v1/admin/users/:userId/hours",

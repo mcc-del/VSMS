@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedTestAccounts, seedOrganizations, seedSchools, seedOrgAdmins } from "./lib/seed";
+import { seedTestAccounts, seedOrganizations, seedSchools, seedOrgAdmins, seedTestParticipantOrg } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -27,10 +27,12 @@ app.listen(port, (err) => {
   // Ensure the supervisor/admin test personas exist so all roles can be
   // exercised without manual database edits. Org admins are seeded after
   // organizations exist (they reference an org).
-  void seedTestAccounts();
   void seedSchools();
   void (async () => {
-    await seedOrganizations();
+    // Order matters: accounts and organizations must exist before we link the
+    // demo org admin and attach the test participant to Medina.
+    await Promise.all([seedTestAccounts(), seedOrganizations()]);
     await seedOrgAdmins();
+    await seedTestParticipantOrg();
   })();
 });
