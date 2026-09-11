@@ -16,4 +16,6 @@ export interface OrganizationInput {
   allowsElementary?: boolean;
   allowsMiddle?: boolean;
   allowsHigh?: boolean;
+  /** @nullable */
+  joinCode?: string | null;
 }

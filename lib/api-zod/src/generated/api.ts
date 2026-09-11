@@ -38,7 +38,8 @@ export const RegisterBody = zod.object({
   "parentEmail": zod.string().email().optional(),
   "school": zod.string().optional(),
   "grade": zod.string().optional(),
-  "organizationId": zod.string().nullish()
+  "organizationId": zod.string().nullish(),
+  "joinCode": zod.string().optional()
 })
 
 
@@ -861,9 +862,27 @@ export const ListOrganizationsResponseItem = zod.object({
   "description": zod.string().nullish(),
   "allowsElementary": zod.boolean(),
   "allowsMiddle": zod.boolean(),
-  "allowsHigh": zod.boolean()
+  "allowsHigh": zod.boolean(),
+  "requiresJoinCode": zod.boolean().optional(),
+  "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
 })
 export const ListOrganizationsResponse = zod.array(ListOrganizationsResponseItem)
+
+
+/**
+ * @summary List organizations with join codes (admin only)
+ */
+export const ListAdminOrganizationsResponseItem = zod.object({
+  "organizationId": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "allowsElementary": zod.boolean(),
+  "allowsMiddle": zod.boolean(),
+  "allowsHigh": zod.boolean(),
+  "requiresJoinCode": zod.boolean().optional(),
+  "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
+})
+export const ListAdminOrganizationsResponse = zod.array(ListAdminOrganizationsResponseItem)
 
 
 /**
@@ -879,7 +898,8 @@ export const CreateOrganizationBody = zod.object({
   "description": zod.string().optional(),
   "allowsElementary": zod.boolean().optional(),
   "allowsMiddle": zod.boolean().optional(),
-  "allowsHigh": zod.boolean().optional()
+  "allowsHigh": zod.boolean().optional(),
+  "joinCode": zod.string().nullish()
 })
 
 
@@ -900,7 +920,8 @@ export const UpdateOrganizationBody = zod.object({
   "description": zod.string().optional(),
   "allowsElementary": zod.boolean().optional(),
   "allowsMiddle": zod.boolean().optional(),
-  "allowsHigh": zod.boolean().optional()
+  "allowsHigh": zod.boolean().optional(),
+  "joinCode": zod.string().nullish()
 })
 
 export const UpdateOrganizationResponse = zod.object({
@@ -909,7 +930,9 @@ export const UpdateOrganizationResponse = zod.object({
   "description": zod.string().nullish(),
   "allowsElementary": zod.boolean(),
   "allowsMiddle": zod.boolean(),
-  "allowsHigh": zod.boolean()
+  "allowsHigh": zod.boolean(),
+  "requiresJoinCode": zod.boolean().optional(),
+  "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
 })
 
 

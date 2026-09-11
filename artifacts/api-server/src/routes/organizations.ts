@@ -6,6 +6,7 @@ import { CreateOrganizationBody, UpdateOrganizationBody } from "@workspace/api-z
 
 const router = Router();
 
+// Public shape: never exposes the actual join code, only whether one is needed.
 function format(o: typeof organizationsTable.$inferSelect) {
   return {
     organizationId: o.organizationId,
@@ -14,14 +15,26 @@ function format(o: typeof organizationsTable.$inferSelect) {
     allowsElementary: o.allowsElementary,
     allowsMiddle: o.allowsMiddle,
     allowsHigh: o.allowsHigh,
+    requiresJoinCode: Boolean(o.joinCode),
   };
 }
 
+// Admin shape: includes the join code so a Super Admin can see/share it.
+function formatAdmin(o: typeof organizationsTable.$inferSelect) {
+  return { ...format(o), joinCode: o.joinCode ?? null };
+}
+
 // GET /api/v1/organizations — public: the sign-up form needs it before the
-// user has an account (to choose an affiliation).
+// user has an account (to choose an affiliation). Codes are never returned here.
 router.get("/v1/organizations", async (_req, res) => {
   const rows = await db.select().from(organizationsTable).orderBy(asc(organizationsTable.name));
   res.json(rows.map(format));
+});
+
+// GET /api/v1/admin/organizations — Super Admin view, includes join codes.
+router.get("/v1/admin/organizations", authenticate, requireRole("admin"), async (_req, res) => {
+  const rows = await db.select().from(organizationsTable).orderBy(asc(organizationsTable.name));
+  res.json(rows.map(formatAdmin));
 });
 
 // POST /api/v1/admin/organizations
@@ -31,7 +44,8 @@ router.post("/v1/admin/organizations", authenticate, requireRole("admin"), async
     res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });
     return;
   }
-  const { name, description, allowsElementary, allowsMiddle, allowsHigh } = parsed.data;
+  const { name, description, allowsElementary, allowsMiddle, allowsHigh, joinCode } =
+    parsed.data as typeof parsed.data & { joinCode?: string | null };
   try {
     const [org] = await db
       .insert(organizationsTable)
@@ -41,9 +55,10 @@ router.post("/v1/admin/organizations", authenticate, requireRole("admin"), async
         allowsElementary: allowsElementary ?? true,
         allowsMiddle: allowsMiddle ?? true,
         allowsHigh: allowsHigh ?? true,
+        joinCode: joinCode?.trim() || null,
       })
       .returning();
-    res.status(201).json(format(org));
+    res.status(201).json(formatAdmin(org));
   } catch {
     res.status(400).json({ error: "An organization with that name already exists." });
   }
@@ -61,13 +76,15 @@ router.put(
       res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });
       return;
     }
-    const { name, description, allowsElementary, allowsMiddle, allowsHigh } = parsed.data;
+    const { name, description, allowsElementary, allowsMiddle, allowsHigh, joinCode } =
+      parsed.data as typeof parsed.data & { joinCode?: string | null };
     const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name.trim();
     if (description !== undefined) updates.description = description ?? null;
     if (allowsElementary !== undefined) updates.allowsElementary = allowsElementary;
     if (allowsMiddle !== undefined) updates.allowsMiddle = allowsMiddle;
     if (allowsHigh !== undefined) updates.allowsHigh = allowsHigh;
+    if (joinCode !== undefined) updates.joinCode = joinCode?.trim() || null;
 
     const [org] = await db
       .update(organizationsTable)
@@ -78,7 +95,7 @@ router.put(
       res.status(404).json({ error: "Organization not found." });
       return;
     }
-    res.json(format(org));
+    res.json(formatAdmin(org));
   },
 );
 

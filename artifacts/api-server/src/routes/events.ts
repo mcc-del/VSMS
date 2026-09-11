@@ -557,7 +557,7 @@ router.post(
 router.patch(
   "/v1/events/:eventId",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const { eventId } = req.params as { eventId: string };
 
@@ -576,6 +576,21 @@ router.patch(
     if (!current) {
       res.status(404).json({ error: "Event not found" });
       return;
+    }
+
+    // Org admins may only edit events for org(s) they manage, and may not move
+    // an event to an org they don't manage.
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null) {
+      if (!canManageOrg(managed, current.organizationId)) {
+        res.status(403).json({ error: "You can only edit your own organization's events." });
+        return;
+      }
+      const d0 = parsed.data as Record<string, unknown>;
+      if ("organizationId" in d0 && !canManageOrg(managed, (d0.organizationId as string) ?? null)) {
+        res.status(403).json({ error: "You can only assign events to your own organization." });
+        return;
+      }
     }
 
     const updates: Record<string, unknown> = {};
@@ -740,9 +755,27 @@ router.post(
 router.delete(
   "/v1/events/:eventId",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const { eventId } = req.params as { eventId: string };
+
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null) {
+      const [current] = await db
+        .select({ organizationId: eventsTable.organizationId })
+        .from(eventsTable)
+        .where(eq(eventsTable.eventId, eventId))
+        .limit(1);
+      if (!current) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      if (!canManageOrg(managed, current.organizationId)) {
+        res.status(403).json({ error: "You can only delete your own organization's events." });
+        return;
+      }
+    }
+
     await db.delete(eventsTable).where(eq(eventsTable.eventId, eventId));
     res.json({ status: "success", message: "Event deleted" });
   },

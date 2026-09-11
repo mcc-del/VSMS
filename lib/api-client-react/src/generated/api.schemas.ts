@@ -46,6 +46,12 @@ export interface Organization {
   allowsElementary: boolean;
   allowsMiddle: boolean;
   allowsHigh: boolean;
+  requiresJoinCode?: boolean;
+  /**
+     * Only returned from the admin organizations endpoint.
+     * @nullable
+     */
+  joinCode?: string | null;
 }
 
 export interface OrganizationInput {
@@ -58,6 +64,8 @@ export interface OrganizationInput {
   allowsElementary?: boolean;
   allowsMiddle?: boolean;
   allowsHigh?: boolean;
+  /** @nullable */
+  joinCode?: string | null;
 }
 
 export interface LeaderboardEntry {
@@ -260,6 +268,7 @@ export interface RegisterInput {
   grade?: string;
   /** @nullable */
   organizationId?: string | null;
+  joinCode?: string;
 }
 
 export interface LoginInput {

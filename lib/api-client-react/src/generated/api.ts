@@ -3026,6 +3026,83 @@ export function useListOrganizations<TData = Awaited<ReturnType<typeof listOrgan
 
 
 
+export const getListAdminOrganizationsUrl = () => {
+
+
+
+
+  return `/api/v1/admin/organizations`
+}
+
+/**
+ * @summary List organizations with join codes (admin only)
+ */
+export const listAdminOrganizations = async ( options?: RequestInit): Promise<Organization[]> => {
+
+  return customFetch<Organization[]>(getListAdminOrganizationsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminOrganizationsQueryKey = () => {
+    return [
+    `/api/v1/admin/organizations`
+    ] as const;
+    }
+
+
+export const getListAdminOrganizationsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminOrganizations>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminOrganizations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminOrganizationsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminOrganizations>>> = ({ signal }) => listAdminOrganizations({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminOrganizations>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminOrganizationsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminOrganizations>>>
+export type ListAdminOrganizationsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List organizations with join codes (admin only)
+ */
+
+export function useListAdminOrganizations<TData = Awaited<ReturnType<typeof listAdminOrganizations>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminOrganizations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminOrganizationsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getCreateOrganizationUrl = () => {
 
 

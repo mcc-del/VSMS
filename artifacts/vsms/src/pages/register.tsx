@@ -53,6 +53,7 @@ const schema = z
     school: z.string().optional(),
     grade: z.string().optional(),
     organizationId: z.string().optional(),
+    joinCode: z.string().optional(),
   })
   .refine((v) => v.signupType !== "student" || (v.parentEmail && v.parentEmail.length > 0), {
     message: "A parent email is required",
@@ -87,6 +88,7 @@ export default function RegisterPage() {
       school: MEDINA_SCHOOL,
       grade: "",
       organizationId: "",
+      joinCode: "",
     },
   });
 
@@ -148,6 +150,7 @@ export default function RegisterPage() {
                 school: values.school,
                 grade: values.grade,
                 organizationId: values.organizationId || null,
+                ...(values.joinCode ? { joinCode: values.joinCode } : {}),
               }
             : {}),
         },
@@ -296,6 +299,29 @@ export default function RegisterPage() {
                   <FormDescription>This decides which opportunities you see.</FormDescription>
                 </FormItem>
               )}
+
+              {isStudent && (() => {
+                const selectedOrg = (orgs ?? []).find((o) => o.organizationId === form.watch("organizationId"));
+                if (!selectedOrg?.requiresJoinCode) return null;
+                return (
+                  <FormField
+                    control={form.control}
+                    name="joinCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{selectedOrg.name} join code</FormLabel>
+                        <FormControl>
+                          <Input data-testid="input-join-code" placeholder="Enter the code from your program" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          {selectedOrg.name} gives this code to its students. It confirms you're really enrolled.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                );
+              })()}
 
               {isStudent && (
                 <div className="grid grid-cols-2 gap-3">

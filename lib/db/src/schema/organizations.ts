@@ -9,6 +9,9 @@ export const organizationsTable = pgTable("organizations", {
   organizationId: uuid("organization_id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 150 }).unique().notNull(),
   description: text("description"),
+  // Optional join code: when set, a student choosing this org at sign-up must
+  // enter the matching code (keeps org-gated visibility honest — R3 safety).
+  joinCode: varchar("join_code", { length: 20 }),
   allowsElementary: boolean("allows_elementary").notNull().default(true),
   allowsMiddle: boolean("allows_middle").notNull().default(true),
   allowsHigh: boolean("allows_high").notNull().default(true),

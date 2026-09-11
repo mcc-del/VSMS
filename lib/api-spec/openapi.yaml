@@ -937,6 +937,19 @@ paths:
                   $ref: "#/components/schemas/Organization"
 
   /v1/admin/organizations:
+    get:
+      operationId: listAdminOrganizations
+      tags: [admin]
+      summary: List organizations with join codes (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
     post:
       operationId: createOrganization
       tags: [admin]
@@ -1351,6 +1364,11 @@ components:
           type: boolean
         allowsHigh:
           type: boolean
+        requiresJoinCode:
+          type: boolean
+        joinCode:
+          type: ["string", "null"]
+          description: Only returned from the admin organizations endpoint.
     OrganizationInput:
       type: object
       required: [name]
@@ -1367,6 +1385,8 @@ components:
           type: boolean
         allowsHigh:
           type: boolean
+        joinCode:
+          type: ["string", "null"]
 
     LeaderboardEntry:
       type: object
@@ -1628,6 +1648,8 @@ components:
           type: string
         organizationId:
           type: ["string", "null"]
+        joinCode:
+          type: string
 
     LoginInput:
       type: object

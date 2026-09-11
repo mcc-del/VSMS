@@ -1,8 +1,9 @@
 import { useState } from "react";
 import {
-  useListOrganizations,
+  useListAdminOrganizations,
   useCreateOrganization,
   useUpdateOrganization,
+  getListAdminOrganizationsQueryKey,
   getListOrganizationsQueryKey,
 } from "@workspace/api-client-react";
 import type { Organization } from "@workspace/api-client-react";
@@ -26,6 +27,7 @@ type Draft = {
   allowsElementary: boolean;
   allowsMiddle: boolean;
   allowsHigh: boolean;
+  joinCode: string;
 };
 
 const emptyDraft: Draft = {
@@ -34,7 +36,15 @@ const emptyDraft: Draft = {
   allowsElementary: true,
   allowsMiddle: true,
   allowsHigh: true,
+  joinCode: "",
 };
+
+function randomCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
 
 function levelBadges(o: Organization) {
   const levels = [
@@ -46,7 +56,7 @@ function levelBadges(o: Organization) {
 }
 
 export default function AdminOrganizations() {
-  const { data: orgs, isLoading } = useListOrganizations();
+  const { data: orgs, isLoading } = useListAdminOrganizations();
   const createOrg = useCreateOrganization();
   const updateOrg = useUpdateOrganization();
   const queryClient = useQueryClient();
@@ -61,8 +71,10 @@ export default function AdminOrganizations() {
       allowsElementary: draft.allowsElementary,
       allowsMiddle: draft.allowsMiddle,
       allowsHigh: draft.allowsHigh,
+      joinCode: draft.joinCode.trim() || null,
     };
     const onDone = () => {
+      queryClient.invalidateQueries({ queryKey: getListAdminOrganizationsQueryKey() });
       queryClient.invalidateQueries({ queryKey: getListOrganizationsQueryKey() });
       setDraft(null);
     };
@@ -118,6 +130,11 @@ export default function AdminOrganizations() {
                         <Building2 className="w-4 h-4 text-muted-foreground" /> {o.name}
                       </p>
                       {o.description && <p className="text-sm text-muted-foreground mt-0.5">{o.description}</p>}
+                      {o.joinCode && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Join code: <code className="font-mono font-semibold text-foreground">{o.joinCode}</code>
+                        </p>
+                      )}
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {levelBadges(o).length === 0 ? (
                           <Badge className="bg-red-100 text-red-700 border-0">No levels enabled</Badge>
@@ -139,6 +156,7 @@ export default function AdminOrganizations() {
                           allowsElementary: o.allowsElementary,
                           allowsMiddle: o.allowsMiddle,
                           allowsHigh: o.allowsHigh,
+                          joinCode: o.joinCode ?? "",
                         })
                       }
                     >
@@ -183,6 +201,23 @@ export default function AdminOrganizations() {
                       {label}
                     </label>
                   ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Join code</label>
+                <p className="text-xs text-muted-foreground mb-1.5">
+                  When set, students choosing this organization at sign-up must enter this code. Leave blank for no code.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    value={draft.joinCode}
+                    onChange={(e) => setDraft({ ...draft, joinCode: e.target.value.toUpperCase() })}
+                    placeholder="e.g. MEDINA"
+                    data-testid="input-join-code"
+                  />
+                  <Button type="button" variant="outline" onClick={() => setDraft({ ...draft, joinCode: randomCode() })}>
+                    Generate
+                  </Button>
                 </div>
               </div>
               <Button className="w-full" onClick={save} disabled={createOrg.isPending || updateOrg.isPending || !draft.name.trim()}>

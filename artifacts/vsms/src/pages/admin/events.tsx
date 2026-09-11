@@ -4,9 +4,12 @@ import {
   useDeleteEvent,
   useUpdateEvent,
   useListUsers,
+  useGetManagedOrganizations,
   getListEventsQueryKey,
+  getListUsersQueryKey,
   getGetAdminDashboardQueryKey,
 } from "@workspace/api-client-react";
+import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,8 +67,13 @@ function formatTime(t: string) {
 
 export default function AdminEventsPage() {
   const today = new Date().toISOString().split("T")[0];
+  const { role } = useAuth();
+  const isOrgAdmin = role === "org_admin";
   const { data: events, isLoading } = useListEvents();
-  const { data: users } = useListUsers();
+  const { data: managed } = useGetManagedOrganizations();
+  const { data: users } = useListUsers({
+    query: { enabled: !isOrgAdmin, queryKey: getListUsersQueryKey() },
+  });
   const deleteEvent = useDeleteEvent();
   const updateEvent = useUpdateEvent();
   const queryClient = useQueryClient();
@@ -73,6 +81,14 @@ export default function AdminEventsPage() {
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
 
   const supervisors = (users ?? []).filter((u) => u.role === "supervisor");
+
+  // Org admins only manage their own org's events.
+  const visibleEvents =
+    isOrgAdmin && managed && !managed.all
+      ? (events ?? []).filter(
+          (e) => e.organizationId && managed.organizationIds.includes(e.organizationId),
+        )
+      : events ?? [];
 
   const form = useForm<z.infer<typeof editSchema>>({
     resolver: zodResolver(editSchema),
@@ -178,13 +194,13 @@ export default function AdminEventsPage() {
 
         {isLoading ? (
           <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-24" />)}</div>
-        ) : (events ?? []).length === 0 ? (
+        ) : visibleEvents.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">No events yet.</CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
-            {[...(events ?? [])].sort((a, b) => b.eventDate.localeCompare(a.eventDate)).map((event) => {
+            {[...visibleEvents].sort((a, b) => b.eventDate.localeCompare(a.eventDate)).map((event) => {
               const isUpcoming = event.eventDate >= today;
               return (
                 <Card key={event.eventId}>
@@ -376,26 +392,28 @@ export default function AdminEventsPage() {
                 )} />
               </div>
 
-              <FormField control={form.control} name="supervisorId" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Supervisor</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a supervisor" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {supervisors.map((s) => (
-                        <SelectItem key={s.userId} value={s.userId}>
-                          {s.firstName} {s.lastName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              {!isOrgAdmin && (
+                <FormField control={form.control} name="supervisorId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Supervisor</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a supervisor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {supervisors.map((s) => (
+                          <SelectItem key={s.userId} value={s.userId}>
+                            {s.firstName} {s.lastName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
 
               <FormField control={form.control} name="imageUrl" render={({ field }) => (
                 <FormItem>

@@ -14,4 +14,10 @@ export interface Organization {
   allowsElementary: boolean;
   allowsMiddle: boolean;
   allowsHigh: boolean;
+  requiresJoinCode?: boolean;
+  /**
+     * Only returned from the admin organizations endpoint.
+     * @nullable
+     */
+  joinCode?: string | null;
 }

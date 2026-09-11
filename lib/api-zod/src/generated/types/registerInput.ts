@@ -27,4 +27,5 @@ export interface RegisterInput {
   grade?: string;
   /** @nullable */
   organizationId?: string | null;
+  joinCode?: string;
 }

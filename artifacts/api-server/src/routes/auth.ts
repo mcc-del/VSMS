@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { db, usersTable, guardianInvitesTable } from "@workspace/db";
+import { db, usersTable, guardianInvitesTable, organizationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authenticate, signToken } from "../middlewares/auth";
 import { RegisterBody, LoginBody } from "@workspace/api-zod";
@@ -18,6 +18,7 @@ router.post("/v1/auth/register", async (req, res) => {
 
   const { firstName, lastName, email, password, accountType, parentEmail, school, grade, organizationId } =
     parsed.data;
+  const joinCode = (parsed.data as typeof parsed.data & { joinCode?: string }).joinCode;
 
   const isParent = accountType === "parent";
 
@@ -30,6 +31,23 @@ router.post("/v1/auth/register", async (req, res) => {
   if (!isParent && (!school || school.trim() === "")) {
     res.status(400).json({ error: "Please select your school." });
     return;
+  }
+
+  // If the chosen organization has a join code, the student must supply it.
+  // This keeps org-gated visibility honest (e.g. only real Medina students
+  // land in the Medina org and can see on-site events).
+  if (!isParent && organizationId) {
+    const [org] = await db
+      .select({ joinCode: organizationsTable.joinCode, name: organizationsTable.name })
+      .from(organizationsTable)
+      .where(eq(organizationsTable.organizationId, organizationId))
+      .limit(1);
+    if (org?.joinCode) {
+      if (!joinCode || joinCode.trim().toLowerCase() !== org.joinCode.toLowerCase()) {
+        res.status(400).json({ error: `Incorrect join code for ${org.name}. Ask the program for the code.` });
+        return;
+      }
+    }
   }
 
   const existing = await db
