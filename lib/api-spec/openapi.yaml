@@ -423,6 +423,78 @@ paths:
         "400":
           description: Validation error
 
+  /v1/external-submissions/{externalSubmissionId}:
+    patch:
+      operationId: editExternalSubmission
+      tags: [submissions]
+      summary: Edit a still-pending external submission (participant)
+      parameters:
+        - name: externalSubmissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExternalSubmissionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalSubmission"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: withdrawExternalSubmission
+      tags: [submissions]
+      summary: Withdraw a still-pending external submission (participant)
+      parameters:
+        - name: externalSubmissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Withdrawn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Not withdrawable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/supervisor/external-submissions:
     get:
       operationId: listPendingExternalSubmissions

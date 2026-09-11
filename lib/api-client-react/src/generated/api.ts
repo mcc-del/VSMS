@@ -1479,6 +1479,148 @@ export const useSubmitExternalActivity = <TError = ErrorType<void>,
       return useMutation(getSubmitExternalActivityMutationOptions(options));
     }
 
+export const getEditExternalSubmissionUrl = (externalSubmissionId: string,) => {
+
+
+
+
+  return `/api/v1/external-submissions/${externalSubmissionId}`
+}
+
+/**
+ * @summary Edit a still-pending external submission (participant)
+ */
+export const editExternalSubmission = async (externalSubmissionId: string,
+    externalSubmissionInput: ExternalSubmissionInput, options?: RequestInit): Promise<ExternalSubmission> => {
+
+  return customFetch<ExternalSubmission>(getEditExternalSubmissionUrl(externalSubmissionId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      externalSubmissionInput,)
+  }
+);}
+
+
+
+
+export const getEditExternalSubmissionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editExternalSubmission>>, TError,{externalSubmissionId: string;data: BodyType<ExternalSubmissionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof editExternalSubmission>>, TError,{externalSubmissionId: string;data: BodyType<ExternalSubmissionInput>}, TContext> => {
+
+const mutationKey = ['editExternalSubmission'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof editExternalSubmission>>, {externalSubmissionId: string;data: BodyType<ExternalSubmissionInput>}> = (props) => {
+          const {externalSubmissionId,data} = props ?? {};
+
+          return  editExternalSubmission(externalSubmissionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EditExternalSubmissionMutationResult = NonNullable<Awaited<ReturnType<typeof editExternalSubmission>>>
+    export type EditExternalSubmissionMutationBody = BodyType<ExternalSubmissionInput>
+    export type EditExternalSubmissionMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Edit a still-pending external submission (participant)
+ */
+export const useEditExternalSubmission = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof editExternalSubmission>>, TError,{externalSubmissionId: string;data: BodyType<ExternalSubmissionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof editExternalSubmission>>,
+        TError,
+        {externalSubmissionId: string;data: BodyType<ExternalSubmissionInput>},
+        TContext
+      > => {
+      return useMutation(getEditExternalSubmissionMutationOptions(options));
+    }
+
+export const getWithdrawExternalSubmissionUrl = (externalSubmissionId: string,) => {
+
+
+
+
+  return `/api/v1/external-submissions/${externalSubmissionId}`
+}
+
+/**
+ * @summary Withdraw a still-pending external submission (participant)
+ */
+export const withdrawExternalSubmission = async (externalSubmissionId: string, options?: RequestInit): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getWithdrawExternalSubmissionUrl(externalSubmissionId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getWithdrawExternalSubmissionMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawExternalSubmission>>, TError,{externalSubmissionId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof withdrawExternalSubmission>>, TError,{externalSubmissionId: string}, TContext> => {
+
+const mutationKey = ['withdrawExternalSubmission'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof withdrawExternalSubmission>>, {externalSubmissionId: string}> = (props) => {
+          const {externalSubmissionId} = props ?? {};
+
+          return  withdrawExternalSubmission(externalSubmissionId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type WithdrawExternalSubmissionMutationResult = NonNullable<Awaited<ReturnType<typeof withdrawExternalSubmission>>>
+
+    export type WithdrawExternalSubmissionMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Withdraw a still-pending external submission (participant)
+ */
+export const useWithdrawExternalSubmission = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawExternalSubmission>>, TError,{externalSubmissionId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof withdrawExternalSubmission>>,
+        TError,
+        {externalSubmissionId: string},
+        TContext
+      > => {
+      return useMutation(getWithdrawExternalSubmissionMutationOptions(options));
+    }
+
 export const getListPendingExternalSubmissionsUrl = () => {
 
 

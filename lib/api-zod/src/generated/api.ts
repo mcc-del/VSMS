@@ -400,6 +400,72 @@ export const SubmitExternalActivityBody = zod.object({
 
 
 /**
+ * @summary Edit a still-pending external submission (participant)
+ */
+export const EditExternalSubmissionParams = zod.object({
+  "externalSubmissionId": zod.coerce.string()
+})
+
+export const editExternalSubmissionBodyActivityNameMin = 2;
+export const editExternalSubmissionBodyActivityNameMax = 200;
+
+export const editExternalSubmissionBodyOrganizationNameMin = 2;
+export const editExternalSubmissionBodyOrganizationNameMax = 200;
+
+export const editExternalSubmissionBodyHoursWorkedMin = 0.5;
+export const editExternalSubmissionBodyHoursWorkedMax = 24;
+
+export const editExternalSubmissionBodyExtSupervisorNameMin = 2;
+export const editExternalSubmissionBodyExtSupervisorNameMax = 100;
+
+
+
+export const EditExternalSubmissionBody = zod.object({
+  "activityName": zod.string().min(editExternalSubmissionBodyActivityNameMin).max(editExternalSubmissionBodyActivityNameMax),
+  "organizationName": zod.string().min(editExternalSubmissionBodyOrganizationNameMin).max(editExternalSubmissionBodyOrganizationNameMax),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number().min(editExternalSubmissionBodyHoursWorkedMin).max(editExternalSubmissionBodyHoursWorkedMax),
+  "extSupervisorName": zod.string().min(editExternalSubmissionBodyExtSupervisorNameMin).max(editExternalSubmissionBodyExtSupervisorNameMax),
+  "extSupervisorEmail": zod.string().email(),
+  "description": zod.string().optional(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().optional()
+})
+
+export const EditExternalSubmissionResponse = zod.object({
+  "externalSubmissionId": zod.string(),
+  "userId": zod.string(),
+  "activityName": zod.string(),
+  "organizationName": zod.string(),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number(),
+  "extSupervisorName": zod.string(),
+  "extSupervisorEmail": zod.string(),
+  "description": zod.string().nullish(),
+  "status": zod.string(),
+  "supervisorComments": zod.string().nullish(),
+  "submittedAt": zod.string(),
+  "reviewedAt": zod.string().nullish(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().nullish(),
+  "message": zod.string().nullish().describe('Present when status is deferred_overflow; explains why the submission was deferred.')
+})
+
+
+/**
+ * @summary Withdraw a still-pending external submission (participant)
+ */
+export const WithdrawExternalSubmissionParams = zod.object({
+  "externalSubmissionId": zod.coerce.string()
+})
+
+export const WithdrawExternalSubmissionResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
  * @summary List pending external submissions (supervisor/admin)
  */
 export const ListPendingExternalSubmissionsResponseItem = zod.object({

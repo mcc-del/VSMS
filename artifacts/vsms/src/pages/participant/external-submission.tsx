@@ -3,10 +3,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   useSubmitExternalActivity,
+  useEditExternalSubmission,
+  useWithdrawExternalSubmission,
   useListMyExternalSubmissions,
   useListMySubmissions,
   getListMyExternalSubmissionsQueryKey,
   getGetParticipantDashboardQueryKey,
+  type ExternalSubmission,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,7 +22,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Info, X } from "lucide-react";
+import { AlertTriangle, Info, X, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 const GUIDELINES = [
@@ -68,11 +71,14 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function ExternalSubmissionPage() {
   const submitMutation = useSubmitExternalActivity();
+  const editMutation = useEditExternalSubmission();
+  const withdrawMutation = useWithdrawExternalSubmission();
   const { data: externals, isLoading } = useListMyExternalSubmissions();
   const { data: calendarSubs } = useListMySubmissions();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [deferredBanner, setDeferredBanner] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -114,8 +120,78 @@ export default function ExternalSubmissionPage() {
     Number(watchedHours) > 0 &&
     usedExternal + Number(watchedHours) > maxExternal;
 
+  const refreshLists = () => {
+    queryClient.invalidateQueries({ queryKey: getListMyExternalSubmissionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetParticipantDashboardQueryKey() });
+  };
+
+  function startEdit(s: ExternalSubmission) {
+    setEditingId(s.externalSubmissionId);
+    setDeferredBanner(false);
+    form.reset({
+      activityName: s.activityName,
+      organizationName: s.organizationName,
+      isNonprofit: s.isNonprofit ?? false,
+      ein: s.ein ?? "",
+      volunteerDate: s.volunteerDate,
+      hoursWorked: s.hoursWorked,
+      extSupervisorName: s.extSupervisorName,
+      extSupervisorEmail: s.extSupervisorEmail,
+      description: s.description ?? "",
+      guidelines: [] as string[],
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    form.reset();
+  }
+
+  function withdraw(s: ExternalSubmission) {
+    if (!window.confirm(`Withdraw "${s.activityName}"? This can't be undone.`)) return;
+    withdrawMutation.mutate(
+      { externalSubmissionId: s.externalSubmissionId },
+      {
+        onSuccess: () => {
+          toast({ title: "Submission withdrawn" });
+          if (editingId === s.externalSubmissionId) cancelEdit();
+          refreshLists();
+        },
+        onError: (err: any) =>
+          toast({
+            title: "Could not withdraw",
+            description: err?.data?.error ?? "Something went wrong",
+            variant: "destructive",
+          }),
+      },
+    );
+  }
+
   function onSubmit(values: z.infer<typeof schema>) {
     const { guidelines: _g, ...rest } = values;
+
+    if (editingId) {
+      editMutation.mutate(
+        { externalSubmissionId: editingId, data: rest },
+        {
+          onSuccess: () => {
+            toast({ title: "Submission updated", description: "Your changes are pending review." });
+            setEditingId(null);
+            refreshLists();
+            form.reset();
+          },
+          onError: (err: any) =>
+            toast({
+              title: "Could not update",
+              description: err?.data?.error ?? "Something went wrong",
+              variant: "destructive",
+            }),
+        },
+      );
+      return;
+    }
+
     submitMutation.mutate(
       { data: rest },
       {
@@ -129,8 +205,7 @@ export default function ExternalSubmissionPage() {
               description: "Your external volunteer activity is pending review.",
             });
           }
-          queryClient.invalidateQueries({ queryKey: getListMyExternalSubmissionsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetParticipantDashboardQueryKey() });
+          refreshLists();
           form.reset();
         },
         onError: (err: any) => {
@@ -195,8 +270,14 @@ export default function ExternalSubmissionPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Submit New Activity</CardTitle>
-            <CardDescription>All fields marked * are required</CardDescription>
+            <CardTitle className="text-base">
+              {editingId ? "Edit Submission" : "Submit New Activity"}
+            </CardTitle>
+            <CardDescription>
+              {editingId
+                ? "Update your pending submission — it stays pending review after saving."
+                : "All fields marked * are required"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -414,14 +495,37 @@ export default function ExternalSubmissionPage() {
                   )}
                 />
 
-                <Button
-                  data-testid="button-submit-external"
-                  type="submit"
-                  className="w-full"
-                  disabled={submitMutation.isPending || !watchedGuidelines?.length}
-                >
-                  {submitMutation.isPending ? "Submitting..." : "Submit for Review"}
-                </Button>
+                <div className="flex gap-2">
+                  {editingId && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={cancelEdit}
+                      data-testid="button-cancel-edit"
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                  <Button
+                    data-testid="button-submit-external"
+                    type="submit"
+                    className="flex-1"
+                    disabled={
+                      submitMutation.isPending ||
+                      editMutation.isPending ||
+                      !watchedGuidelines?.length
+                    }
+                  >
+                    {editingId
+                      ? editMutation.isPending
+                        ? "Saving…"
+                        : "Save changes"
+                      : submitMutation.isPending
+                        ? "Submitting..."
+                        : "Submit for Review"}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>
@@ -467,6 +571,28 @@ export default function ExternalSubmissionPage() {
                       </div>
                       <StatusBadge status={s.status} />
                     </div>
+                    {(s.status === "pending" || s.status === "deferred_overflow") && (
+                      <div className="flex gap-2 mt-2 pt-2 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEdit(s)}
+                          data-testid={`button-edit-external-${s.externalSubmissionId}`}
+                        >
+                          <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => withdraw(s)}
+                          disabled={withdrawMutation.isPending}
+                          data-testid={`button-withdraw-external-${s.externalSubmissionId}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Withdraw
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
