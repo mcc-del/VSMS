@@ -22,8 +22,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Info } from "lucide-react";
 import { ProofLink } from "@/components/proof-link";
+import { GettingStarted } from "@/components/getting-started";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function SupervisorPending() {
+  const { role } = useAuth();
   const { data: internalSubs, isLoading: internalLoading } = useListPendingSubmissions();
   const { data: externalSubs, isLoading: extLoading } = useListPendingExternalSubmissions();
   const reviewCalendar = useReviewSubmission();
@@ -87,6 +90,7 @@ export default function SupervisorPending() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <GettingStarted role={role} />
         <div>
           <h1 className="text-2xl font-bold">Pending Reviews</h1>
           <p className="text-muted-foreground text-sm mt-1">

@@ -10,6 +10,7 @@ import {
   getListMyRegistrationsQueryKey,
 } from "@workspace/api-client-react";
 import type { EventRegistration } from "@workspace/api-client-react";
+import { GettingStarted } from "@/components/getting-started";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -197,6 +198,7 @@ export default function ParticipantDashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <GettingStarted role="participant" />
         <div>
           <h1 className="text-2xl font-bold text-foreground">My Dashboard</h1>
           <p className="text-muted-foreground text-sm mt-1">Track your volunteer service hours</p>

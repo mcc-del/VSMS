@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { SchoolSelect } from "@/components/school-select";
+import { GettingStarted } from "@/components/getting-started";
 import { ALL_GRADES } from "@/lib/schools";
 import { Clock, MapPin, CalendarDays, Trophy, Users, Plus, Pencil, UserPlus, Mail } from "lucide-react";
 
@@ -184,6 +185,7 @@ export default function ParentDashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <GettingStarted role="parent" />
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Parent Dashboard</h1>

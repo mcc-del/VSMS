@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Calendar, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { GettingStarted } from "@/components/getting-started";
 
 interface StatCardProps {
   title: string;
@@ -32,6 +33,7 @@ export default function AdminDashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <GettingStarted role="admin" />
         <div>
           <h1 className="text-2xl font-bold">System Overview</h1>
           <p className="text-muted-foreground text-sm mt-1">Platform-wide metrics and activity</p>
