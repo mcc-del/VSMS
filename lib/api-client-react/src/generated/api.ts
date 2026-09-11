@@ -36,6 +36,7 @@ import type {
   ExternalSubmissionInput,
   HealthStatus,
   LeaderboardResponse,
+  ListAllSchoolsParams,
   LoginInput,
   ManualHoursCredit,
   ManualHoursInput,
@@ -47,6 +48,9 @@ import type {
   ParticipantDashboard,
   RegisterInput,
   ReviewInput,
+  School,
+  SchoolMergeInput,
+  SchoolRequestInput,
   SchoolStanding,
   Submission,
   SubmissionDetail,
@@ -2205,6 +2209,450 @@ export const useOverrideSubmission = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getOverrideSubmissionMutationOptions(options));
+    }
+
+export const getListSchoolsUrl = () => {
+
+
+
+
+  return `/api/v1/schools`
+}
+
+/**
+ * @summary List approved schools for the enrollment picker
+ */
+export const listSchools = async ( options?: RequestInit): Promise<School[]> => {
+
+  return customFetch<School[]>(getListSchoolsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSchoolsQueryKey = () => {
+    return [
+    `/api/v1/schools`
+    ] as const;
+    }
+
+
+export const getListSchoolsQueryOptions = <TData = Awaited<ReturnType<typeof listSchools>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSchools>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSchoolsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSchools>>> = ({ signal }) => listSchools({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSchools>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSchoolsQueryResult = NonNullable<Awaited<ReturnType<typeof listSchools>>>
+export type ListSchoolsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List approved schools for the enrollment picker
+ */
+
+export function useListSchools<TData = Awaited<ReturnType<typeof listSchools>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSchools>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSchoolsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getRequestSchoolUrl = () => {
+
+
+
+
+  return `/api/v1/schools/request`
+}
+
+/**
+ * @summary Request a school that isn't listed (queued for admin review)
+ */
+export const requestSchool = async (schoolRequestInput: SchoolRequestInput, options?: RequestInit): Promise<School> => {
+
+  return customFetch<School>(getRequestSchoolUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      schoolRequestInput,)
+  }
+);}
+
+
+
+
+export const getRequestSchoolMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSchool>>, TError,{data: BodyType<SchoolRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestSchool>>, TError,{data: BodyType<SchoolRequestInput>}, TContext> => {
+
+const mutationKey = ['requestSchool'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestSchool>>, {data: BodyType<SchoolRequestInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestSchool(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestSchoolMutationResult = NonNullable<Awaited<ReturnType<typeof requestSchool>>>
+    export type RequestSchoolMutationBody = BodyType<SchoolRequestInput>
+    export type RequestSchoolMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Request a school that isn't listed (queued for admin review)
+ */
+export const useRequestSchool = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestSchool>>, TError,{data: BodyType<SchoolRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestSchool>>,
+        TError,
+        {data: BodyType<SchoolRequestInput>},
+        TContext
+      > => {
+      return useMutation(getRequestSchoolMutationOptions(options));
+    }
+
+export const getListAllSchoolsUrl = (params?: ListAllSchoolsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/admin/schools?${stringifiedParams}` : `/api/v1/admin/schools`
+}
+
+/**
+ * @summary List all schools (admin), optionally filtered by status
+ */
+export const listAllSchools = async (params?: ListAllSchoolsParams, options?: RequestInit): Promise<School[]> => {
+
+  return customFetch<School[]>(getListAllSchoolsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAllSchoolsQueryKey = (params?: ListAllSchoolsParams,) => {
+    return [
+    `/api/v1/admin/schools`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAllSchoolsQueryOptions = <TData = Awaited<ReturnType<typeof listAllSchools>>, TError = ErrorType<unknown>>(params?: ListAllSchoolsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllSchools>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAllSchoolsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllSchools>>> = ({ signal }) => listAllSchools(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAllSchools>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAllSchoolsQueryResult = NonNullable<Awaited<ReturnType<typeof listAllSchools>>>
+export type ListAllSchoolsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all schools (admin), optionally filtered by status
+ */
+
+export function useListAllSchools<TData = Awaited<ReturnType<typeof listAllSchools>>, TError = ErrorType<unknown>>(
+ params?: ListAllSchoolsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAllSchools>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAllSchoolsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getApproveSchoolUrl = (schoolId: string,) => {
+
+
+
+
+  return `/api/v1/admin/schools/${schoolId}/approve`
+}
+
+/**
+ * @summary Approve a requested school (admin only)
+ */
+export const approveSchool = async (schoolId: string, options?: RequestInit): Promise<School> => {
+
+  return customFetch<School>(getApproveSchoolUrl(schoolId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getApproveSchoolMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveSchool>>, TError,{schoolId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof approveSchool>>, TError,{schoolId: string}, TContext> => {
+
+const mutationKey = ['approveSchool'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveSchool>>, {schoolId: string}> = (props) => {
+          const {schoolId} = props ?? {};
+
+          return  approveSchool(schoolId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveSchoolMutationResult = NonNullable<Awaited<ReturnType<typeof approveSchool>>>
+
+    export type ApproveSchoolMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Approve a requested school (admin only)
+ */
+export const useApproveSchool = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveSchool>>, TError,{schoolId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof approveSchool>>,
+        TError,
+        {schoolId: string},
+        TContext
+      > => {
+      return useMutation(getApproveSchoolMutationOptions(options));
+    }
+
+export const getMergeSchoolUrl = (schoolId: string,) => {
+
+
+
+
+  return `/api/v1/admin/schools/${schoolId}/merge`
+}
+
+/**
+ * @summary Merge a duplicate school into an approved one (admin only)
+ */
+export const mergeSchool = async (schoolId: string,
+    schoolMergeInput: SchoolMergeInput, options?: RequestInit): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getMergeSchoolUrl(schoolId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      schoolMergeInput,)
+  }
+);}
+
+
+
+
+export const getMergeSchoolMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mergeSchool>>, TError,{schoolId: string;data: BodyType<SchoolMergeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof mergeSchool>>, TError,{schoolId: string;data: BodyType<SchoolMergeInput>}, TContext> => {
+
+const mutationKey = ['mergeSchool'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof mergeSchool>>, {schoolId: string;data: BodyType<SchoolMergeInput>}> = (props) => {
+          const {schoolId,data} = props ?? {};
+
+          return  mergeSchool(schoolId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MergeSchoolMutationResult = NonNullable<Awaited<ReturnType<typeof mergeSchool>>>
+    export type MergeSchoolMutationBody = BodyType<SchoolMergeInput>
+    export type MergeSchoolMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Merge a duplicate school into an approved one (admin only)
+ */
+export const useMergeSchool = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mergeSchool>>, TError,{schoolId: string;data: BodyType<SchoolMergeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof mergeSchool>>,
+        TError,
+        {schoolId: string;data: BodyType<SchoolMergeInput>},
+        TContext
+      > => {
+      return useMutation(getMergeSchoolMutationOptions(options));
+    }
+
+export const getDeleteSchoolUrl = (schoolId: string,) => {
+
+
+
+
+  return `/api/v1/admin/schools/${schoolId}`
+}
+
+/**
+ * @summary Reject/remove a school request (admin only)
+ */
+export const deleteSchool = async (schoolId: string, options?: RequestInit): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getDeleteSchoolUrl(schoolId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteSchoolMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSchool>>, TError,{schoolId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSchool>>, TError,{schoolId: string}, TContext> => {
+
+const mutationKey = ['deleteSchool'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSchool>>, {schoolId: string}> = (props) => {
+          const {schoolId} = props ?? {};
+
+          return  deleteSchool(schoolId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSchoolMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSchool>>>
+
+    export type DeleteSchoolMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Reject/remove a school request (admin only)
+ */
+export const useDeleteSchool = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSchool>>, TError,{schoolId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSchool>>,
+        TError,
+        {schoolId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteSchoolMutationOptions(options));
     }
 
 export const getListOrganizationsUrl = () => {

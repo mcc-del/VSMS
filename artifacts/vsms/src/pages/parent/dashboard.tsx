@@ -31,7 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { SCHOOLS, ALL_GRADES } from "@/lib/schools";
+import { SchoolSelect } from "@/components/school-select";
+import { ALL_GRADES } from "@/lib/schools";
 import { Clock, MapPin, CalendarDays, Trophy, Users, Plus, Pencil } from "lucide-react";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -340,18 +341,11 @@ export default function ParentDashboard() {
 
             <div className="space-y-1.5">
               <Label>School</Label>
-              <Select value={form.school} onValueChange={(v) => setForm({ ...form, school: v })}>
-                <SelectTrigger data-testid="select-child-school">
-                  <SelectValue placeholder="Select school" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SCHOOLS.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SchoolSelect
+                value={form.school}
+                onValueChange={(v) => setForm({ ...form, school: v })}
+                testId="select-child-school"
+              />
             </div>
 
             <div className="space-y-1.5">

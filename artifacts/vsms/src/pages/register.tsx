@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { SCHOOLS, GRADES } from "@/lib/schools";
+import { GRADES } from "@/lib/schools";
+import { SchoolSelect } from "@/components/school-select";
 
 const schema = z
   .object({
@@ -174,14 +175,14 @@ export default function RegisterPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>School</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-school"><SelectValue placeholder="Select" /></SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {SCHOOLS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <SchoolSelect
+                            value={field.value ?? ""}
+                            onValueChange={field.onChange}
+                            placeholder="Select"
+                            testId="select-school"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

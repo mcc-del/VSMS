@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedTestAccounts, seedOrganizations } from "./lib/seed";
+import { seedTestAccounts, seedOrganizations, seedSchools } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -28,4 +28,5 @@ app.listen(port, (err) => {
   // exercised without manual database edits.
   void seedTestAccounts();
   void seedOrganizations();
+  void seedSchools();
 });

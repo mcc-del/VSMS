@@ -622,6 +622,161 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /v1/schools:
+    get:
+      operationId: listSchools
+      tags: [schools]
+      summary: List approved schools for the enrollment picker
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/School"
+
+  /v1/schools/request:
+    post:
+      operationId: requestSchool
+      tags: [schools]
+      summary: Request a school that isn't listed (queued for admin review)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchoolRequestInput"
+      responses:
+        "200":
+          description: School already exists (approved or pending)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+        "201":
+          description: Request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/schools:
+    get:
+      operationId: listAllSchools
+      tags: [admin]
+      summary: List all schools (admin), optionally filtered by status
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [approved, pending]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/School"
+
+  /v1/admin/schools/{schoolId}/approve:
+    post:
+      operationId: approveSchool
+      tags: [admin]
+      summary: Approve a requested school (admin only)
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/schools/{schoolId}/merge:
+    post:
+      operationId: mergeSchool
+      tags: [admin]
+      summary: Merge a duplicate school into an approved one (admin only)
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchoolMergeInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/schools/{schoolId}:
+    delete:
+      operationId: deleteSchool
+      tags: [admin]
+      summary: Reject/remove a school request (admin only)
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/organizations:
     get:
       operationId: listOrganizations
@@ -923,6 +1078,43 @@ paths:
 
 components:
   schemas:
+    School:
+      type: object
+      required: [schoolId, name, status, createdAt]
+      properties:
+        schoolId:
+          type: string
+        name:
+          type: string
+        city:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [approved, pending]
+        createdAt:
+          type: string
+        alreadyApproved:
+          type: boolean
+        alreadyRequested:
+          type: boolean
+    SchoolRequestInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 80
+    SchoolMergeInput:
+      type: object
+      required: [targetSchoolId]
+      properties:
+        targetSchoolId:
+          type: string
+
     Organization:
       type: object
       required: [organizationId, name, allowsElementary, allowsMiddle, allowsHigh]

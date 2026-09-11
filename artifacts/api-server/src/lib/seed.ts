@@ -1,7 +1,54 @@
 import bcrypt from "bcryptjs";
-import { db, usersTable, organizationsTable } from "@workspace/db";
+import { db, usersTable, organizationsTable, schoolsTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { logger } from "./logger";
+
+// A curated starter list of Greater Seattle schools plus Medina. Admins can
+// approve/merge more via the school-request queue. Keeping enrollment on a
+// controlled list keeps school data clean (no spelling-variant duplicates).
+const DEFAULT_SCHOOLS: Array<{ name: string; city: string }> = [
+  { name: "Medina Academy", city: "Bellevue" },
+  { name: "Bellevue High School", city: "Bellevue" },
+  { name: "Interlake High School", city: "Bellevue" },
+  { name: "Newport High School", city: "Bellevue" },
+  { name: "Sammamish High School", city: "Bellevue" },
+  { name: "Mercer Island High School", city: "Mercer Island" },
+  { name: "Islander Middle School", city: "Mercer Island" },
+  { name: "Redmond High School", city: "Redmond" },
+  { name: "Redmond Middle School", city: "Redmond" },
+  { name: "Eastlake High School", city: "Sammamish" },
+  { name: "Skyline High School", city: "Sammamish" },
+  { name: "Issaquah High School", city: "Issaquah" },
+  { name: "Liberty High School", city: "Renton" },
+  { name: "Garfield High School", city: "Seattle" },
+  { name: "Roosevelt High School", city: "Seattle" },
+  { name: "Ballard High School", city: "Seattle" },
+  { name: "Lakeside School", city: "Seattle" },
+  { name: "Ingraham High School", city: "Seattle" },
+  { name: "Chief Sealth International High School", city: "Seattle" },
+  { name: "Kirkland Middle School", city: "Kirkland" },
+  { name: "Lake Washington High School", city: "Kirkland" },
+  { name: "Juanita High School", city: "Kirkland" },
+  { name: "Bothell High School", city: "Bothell" },
+  { name: "Inglemoor High School", city: "Kenmore" },
+];
+
+export async function seedSchools(): Promise<void> {
+  try {
+    for (const s of DEFAULT_SCHOOLS) {
+      await db
+        .insert(schoolsTable)
+        .values({ name: s.name, city: s.city, status: "approved" })
+        .onConflictDoUpdate({
+          target: schoolsTable.name,
+          set: { city: s.city, status: "approved" },
+        });
+    }
+    logger.info({ count: DEFAULT_SCHOOLS.length }, "Seeded schools");
+  } catch (err) {
+    logger.error({ err }, "Failed to seed schools");
+  }
+}
 
 const DEFAULT_ORGS = [
   { name: "Medina Academy", description: "Host school and accreditor of volunteer hours.", allowsElementary: true, allowsMiddle: true, allowsHigh: true },

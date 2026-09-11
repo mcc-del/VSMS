@@ -584,6 +584,114 @@ export const OverrideSubmissionResponse = zod.object({
 
 
 /**
+ * @summary List approved schools for the enrollment picker
+ */
+export const ListSchoolsResponseItem = zod.object({
+  "schoolId": zod.string(),
+  "name": zod.string(),
+  "city": zod.string().nullish(),
+  "status": zod.enum(['approved', 'pending']),
+  "createdAt": zod.string(),
+  "alreadyApproved": zod.boolean().optional(),
+  "alreadyRequested": zod.boolean().optional()
+})
+export const ListSchoolsResponse = zod.array(ListSchoolsResponseItem)
+
+
+/**
+ * @summary Request a school that isn't listed (queued for admin review)
+ */
+export const requestSchoolBodyNameMin = 2;
+export const requestSchoolBodyNameMax = 120;
+
+export const requestSchoolBodyCityMax = 80;
+
+
+
+export const RequestSchoolBody = zod.object({
+  "name": zod.string().min(requestSchoolBodyNameMin).max(requestSchoolBodyNameMax),
+  "city": zod.string().max(requestSchoolBodyCityMax).optional()
+})
+
+export const RequestSchoolResponse = zod.object({
+  "schoolId": zod.string(),
+  "name": zod.string(),
+  "city": zod.string().nullish(),
+  "status": zod.enum(['approved', 'pending']),
+  "createdAt": zod.string(),
+  "alreadyApproved": zod.boolean().optional(),
+  "alreadyRequested": zod.boolean().optional()
+})
+
+
+/**
+ * @summary List all schools (admin), optionally filtered by status
+ */
+export const ListAllSchoolsQueryParams = zod.object({
+  "status": zod.enum(['approved', 'pending']).optional()
+})
+
+export const ListAllSchoolsResponseItem = zod.object({
+  "schoolId": zod.string(),
+  "name": zod.string(),
+  "city": zod.string().nullish(),
+  "status": zod.enum(['approved', 'pending']),
+  "createdAt": zod.string(),
+  "alreadyApproved": zod.boolean().optional(),
+  "alreadyRequested": zod.boolean().optional()
+})
+export const ListAllSchoolsResponse = zod.array(ListAllSchoolsResponseItem)
+
+
+/**
+ * @summary Approve a requested school (admin only)
+ */
+export const ApproveSchoolParams = zod.object({
+  "schoolId": zod.coerce.string()
+})
+
+export const ApproveSchoolResponse = zod.object({
+  "schoolId": zod.string(),
+  "name": zod.string(),
+  "city": zod.string().nullish(),
+  "status": zod.enum(['approved', 'pending']),
+  "createdAt": zod.string(),
+  "alreadyApproved": zod.boolean().optional(),
+  "alreadyRequested": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Merge a duplicate school into an approved one (admin only)
+ */
+export const MergeSchoolParams = zod.object({
+  "schoolId": zod.coerce.string()
+})
+
+export const MergeSchoolBody = zod.object({
+  "targetSchoolId": zod.string()
+})
+
+export const MergeSchoolResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Reject/remove a school request (admin only)
+ */
+export const DeleteSchoolParams = zod.object({
+  "schoolId": zod.coerce.string()
+})
+
+export const DeleteSchoolResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
  * @summary List organizations
  */
 export const ListOrganizationsResponseItem = zod.object({

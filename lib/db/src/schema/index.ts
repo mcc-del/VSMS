@@ -6,3 +6,4 @@ export * from "./registrations";
 export * from "./manual-hours";
 export * from "./organizations";
 export * from "./guardianships";
+export * from "./schools";

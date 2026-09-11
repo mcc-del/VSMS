@@ -5,6 +5,39 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export type SchoolStatus = typeof SchoolStatus[keyof typeof SchoolStatus];
+
+
+export const SchoolStatus = {
+  approved: 'approved',
+  pending: 'pending',
+} as const;
+
+export interface School {
+  schoolId: string;
+  name: string;
+  /** @nullable */
+  city?: string | null;
+  status: SchoolStatus;
+  createdAt: string;
+  alreadyApproved?: boolean;
+  alreadyRequested?: boolean;
+}
+
+export interface SchoolRequestInput {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     */
+  name: string;
+  /** @maxLength 80 */
+  city?: string;
+}
+
+export interface SchoolMergeInput {
+  targetSchoolId: string;
+}
+
 export interface Organization {
   organizationId: string;
   name: string;
@@ -485,4 +518,16 @@ export interface UploadUrlResponse {
   uploadURL: string;
   objectPath: string;
 }
+
+export type ListAllSchoolsParams = {
+status?: ListAllSchoolsStatus;
+};
+
+export type ListAllSchoolsStatus = typeof ListAllSchoolsStatus[keyof typeof ListAllSchoolsStatus];
+
+
+export const ListAllSchoolsStatus = {
+  approved: 'approved',
+  pending: 'pending',
+} as const;
 
