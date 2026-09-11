@@ -178,8 +178,8 @@ export default function RegisterPage() {
         <div className="bg-card border rounded-xl p-6 shadow-sm">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormItem>
-                <FormLabel>How are you signing up?</FormLabel>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">How are you signing up?</label>
                 <div className="space-y-2">
                   {SIGNUP_OPTIONS.map((opt) => {
                     const Icon = opt.icon;
@@ -203,7 +203,7 @@ export default function RegisterPage() {
                     );
                   })}
                 </div>
-              </FormItem>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <FormField
@@ -282,22 +282,20 @@ export default function RegisterPage() {
               )}
 
               {isStudent && (
-                <FormItem>
-                  <FormLabel>Program / affiliation</FormLabel>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Program / affiliation</label>
                   <Select value={currentAffiliation} onValueChange={onAffiliationChange}>
-                    <FormControl>
-                      <SelectTrigger data-testid="select-organization">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
+                    <SelectTrigger data-testid="select-organization">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="medina">I'm enrolled at Medina Academy</SelectItem>
                       <SelectItem value="ef">I'm enrolled in Essentials First</SelectItem>
                       <SelectItem value="none">None</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>This decides which opportunities you see.</FormDescription>
-                </FormItem>
+                  <p className="text-xs text-muted-foreground">This decides which opportunities you see.</p>
+                </div>
               )}
 
               {isStudent && (() => {

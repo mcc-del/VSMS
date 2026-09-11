@@ -259,7 +259,7 @@ export default function AdminNewEvent() {
                 {/* Time slots */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <FormLabel>Time slots</FormLabel>
+                    <span className="text-sm font-medium">Time slots</span>
                     <Button type="button" variant="outline" size="sm" onClick={() => append({ ...emptySlot })} data-testid="button-add-slot">
                       <Plus className="w-4 h-4 mr-1" /> Add time slot
                     </Button>
