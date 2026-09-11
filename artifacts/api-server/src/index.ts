@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedTestAccounts, seedOrganizations, seedSchools, seedOrgAdmins, seedTestParticipantOrg } from "./lib/seed";
+import { seedTestAccounts, seedOrganizations, seedSchools, seedOrgAdmins, seedTestParticipantOrg, seedPersonas } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -34,5 +34,6 @@ app.listen(port, (err) => {
     await Promise.all([seedTestAccounts(), seedOrganizations()]);
     await seedOrgAdmins();
     await seedTestParticipantOrg();
+    await seedPersonas();
   })();
 });
