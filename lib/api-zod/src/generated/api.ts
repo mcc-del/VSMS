@@ -364,6 +364,7 @@ export const ListMyExternalSubmissionsResponseItem = zod.object({
   "reviewedAt": zod.string().nullish(),
   "isNonprofit": zod.boolean().optional(),
   "ein": zod.string().nullish(),
+  "proofUrl": zod.string().nullish(),
   "message": zod.string().nullish().describe('Present when status is deferred_overflow; explains why the submission was deferred.')
 })
 export const ListMyExternalSubmissionsResponse = zod.array(ListMyExternalSubmissionsResponseItem)
@@ -395,7 +396,8 @@ export const SubmitExternalActivityBody = zod.object({
   "extSupervisorEmail": zod.string().email(),
   "description": zod.string().optional(),
   "isNonprofit": zod.boolean().optional(),
-  "ein": zod.string().optional()
+  "ein": zod.string().optional(),
+  "proofUrl": zod.string().nullish()
 })
 
 
@@ -429,7 +431,8 @@ export const EditExternalSubmissionBody = zod.object({
   "extSupervisorEmail": zod.string().email(),
   "description": zod.string().optional(),
   "isNonprofit": zod.boolean().optional(),
-  "ein": zod.string().optional()
+  "ein": zod.string().optional(),
+  "proofUrl": zod.string().nullish()
 })
 
 export const EditExternalSubmissionResponse = zod.object({
@@ -448,6 +451,7 @@ export const EditExternalSubmissionResponse = zod.object({
   "reviewedAt": zod.string().nullish(),
   "isNonprofit": zod.boolean().optional(),
   "ein": zod.string().nullish(),
+  "proofUrl": zod.string().nullish(),
   "message": zod.string().nullish().describe('Present when status is deferred_overflow; explains why the submission was deferred.')
 })
 
@@ -484,6 +488,7 @@ export const ListPendingExternalSubmissionsResponseItem = zod.object({
   "reviewedAt": zod.string().nullish(),
   "isNonprofit": zod.boolean().optional(),
   "ein": zod.string().nullish(),
+  "proofUrl": zod.string().nullish(),
   "participantFirstName": zod.string().nullish(),
   "participantLastName": zod.string().nullish(),
   "participantEmail": zod.string().nullish()
@@ -528,6 +533,7 @@ export const ListReviewedExternalSubmissionsResponseItem = zod.object({
   "reviewedAt": zod.string().nullish(),
   "isNonprofit": zod.boolean().optional(),
   "ein": zod.string().nullish(),
+  "proofUrl": zod.string().nullish(),
   "participantFirstName": zod.string().nullish(),
   "participantLastName": zod.string().nullish(),
   "participantEmail": zod.string().nullish()

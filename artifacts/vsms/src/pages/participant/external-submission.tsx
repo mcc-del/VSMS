@@ -23,6 +23,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, Info, X, Pencil, Trash2 } from "lucide-react";
+import { ProofUpload } from "@/components/proof-upload";
+import { ProofLink } from "@/components/proof-link";
 import { useState } from "react";
 
 const GUIDELINES = [
@@ -42,6 +44,7 @@ const schema = z.object({
   extSupervisorName: z.string().min(2, "Required").max(100),
   extSupervisorEmail: z.string().email("Enter a valid email"),
   description: z.string().optional(),
+  proofUrl: z.string().nullable().optional(),
   guidelines: z.array(z.string()).min(1, "Please check at least one guideline"),
 }).refine(
   (v) => !v.isNonprofit || ((v.ein ?? "").replace(/[^0-9]/g, "").length === 9),
@@ -92,6 +95,7 @@ export default function ExternalSubmissionPage() {
       extSupervisorName: "",
       extSupervisorEmail: "",
       description: "",
+      proofUrl: null as string | null,
       guidelines: [] as string[],
     },
   });
@@ -138,6 +142,7 @@ export default function ExternalSubmissionPage() {
       extSupervisorName: s.extSupervisorName,
       extSupervisorEmail: s.extSupervisorEmail,
       description: s.description ?? "",
+      proofUrl: s.proofUrl ?? null,
       guidelines: [] as string[],
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -456,6 +461,25 @@ export default function ExternalSubmissionPage() {
 
                 <FormField
                   control={form.control}
+                  name="proofUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Proof <span className="text-muted-foreground font-normal">(optional)</span>
+                      </FormLabel>
+                      <FormControl>
+                        <ProofUpload value={field.value ?? null} onChange={field.onChange} />
+                      </FormControl>
+                      <FormDescription>
+                        A photo or a letter (PDF) confirming your volunteering helps the supervisor approve faster.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="guidelines"
                   render={() => (
                     <FormItem>
@@ -567,6 +591,11 @@ export default function ExternalSubmissionPage() {
                         )}
                         {s.supervisorComments && (
                           <p className="text-xs text-muted-foreground mt-1 italic">"{s.supervisorComments}"</p>
+                        )}
+                        {s.proofUrl && (
+                          <div className="mt-1">
+                            <ProofLink objectPath={s.proofUrl} />
+                          </div>
                         )}
                       </div>
                       <StatusBadge status={s.status} />

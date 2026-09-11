@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Info } from "lucide-react";
+import { ProofLink } from "@/components/proof-link";
 
 export default function SupervisorPending() {
   const { data: internalSubs, isLoading: internalLoading } = useListPendingSubmissions();
@@ -259,6 +260,12 @@ export default function SupervisorPending() {
                       <p><span className="font-medium">Ext. Supervisor:</span> {reviewing.data.extSupervisorName} ({reviewing.data.extSupervisorEmail})</p>
                       {reviewing.data.description && (
                         <p><span className="font-medium">Description:</span> {reviewing.data.description}</p>
+                      )}
+                      {reviewing.data.proofUrl && (
+                        <p className="flex items-center gap-1">
+                          <span className="font-medium">Proof:</span>{" "}
+                          <ProofLink objectPath={reviewing.data.proofUrl} />
+                        </p>
                       )}
                     </>
                   )}

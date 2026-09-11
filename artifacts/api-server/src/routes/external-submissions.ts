@@ -121,6 +121,7 @@ function formatExternal(r: typeof externalSubmissionsTable.$inferSelect) {
     reviewedAt: r.reviewedAt?.toISOString() ?? null,
     isNonprofit: r.isNonprofit,
     ein: r.ein ?? null,
+    proofUrl: r.proofUrl ?? null,
   };
 }
 
@@ -155,7 +156,7 @@ router.post(
     }
 
     const userId = req.auth!.userId;
-    const { activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail, description, isNonprofit, ein } = parsed.data;
+    const { activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail, description, isNonprofit, ein, proofUrl } = parsed.data;
 
     // The external supervisor must be someone other than the student.
     const [self] = await db
@@ -205,6 +206,7 @@ router.post(
         description: description?.trim() || null,
         isNonprofit: isNonprofit ?? false,
         ein: isNonprofit ? (ein ?? "").replace(/[^0-9]/g, "") : null,
+        proofUrl: proofUrl?.trim() || null,
         status: isDeferred ? "deferred_overflow" : "pending",
       })
       .returning();
@@ -260,6 +262,7 @@ router.patch(
       description,
       isNonprofit,
       ein,
+      proofUrl,
     } = parsed.data;
 
     const [self] = await db
@@ -307,6 +310,7 @@ router.patch(
         description: description?.trim() || null,
         isNonprofit: isNonprofit ?? false,
         ein: isNonprofit ? (ein ?? "").replace(/[^0-9]/g, "") : null,
+        proofUrl: proofUrl?.trim() || null,
         status: isDeferred ? "deferred_overflow" : "pending",
         supervisorComments: null,
         reviewedAt: null,
@@ -367,6 +371,7 @@ router.get(
         description: externalSubmissionsTable.description,
         isNonprofit: externalSubmissionsTable.isNonprofit,
         ein: externalSubmissionsTable.ein,
+        proofUrl: externalSubmissionsTable.proofUrl,
         status: externalSubmissionsTable.status,
         supervisorComments: externalSubmissionsTable.supervisorComments,
         submittedAt: externalSubmissionsTable.submittedAt,
@@ -397,6 +402,7 @@ router.get(
         reviewedAt: r.reviewedAt?.toISOString() ?? null,
         isNonprofit: r.isNonprofit,
         ein: r.ein ?? null,
+        proofUrl: r.proofUrl ?? null,
         participantFirstName: r.participantFirstName ?? null,
         participantLastName: r.participantLastName ?? null,
         participantEmail: r.participantEmail ?? null,

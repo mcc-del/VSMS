@@ -467,6 +467,8 @@ export interface ExternalSubmissionInput {
   description?: string;
   isNonprofit?: boolean;
   ein?: string;
+  /** @nullable */
+  proofUrl?: string | null;
 }
 
 export interface ExternalSubmission {
@@ -489,6 +491,8 @@ export interface ExternalSubmission {
   isNonprofit?: boolean;
   /** @nullable */
   ein?: string | null;
+  /** @nullable */
+  proofUrl?: string | null;
   /**
      * Present when status is deferred_overflow; explains why the submission was deferred.
      * @nullable
@@ -516,6 +520,8 @@ export interface ExternalSubmissionDetail {
   isNonprofit?: boolean;
   /** @nullable */
   ein?: string | null;
+  /** @nullable */
+  proofUrl?: string | null;
   /** @nullable */
   participantFirstName?: string | null;
   /** @nullable */

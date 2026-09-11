@@ -1843,6 +1843,8 @@ components:
           type: boolean
         ein:
           type: string
+        proofUrl:
+          type: ["string", "null"]
 
     ExternalSubmission:
       type: object
@@ -1877,6 +1879,8 @@ components:
         isNonprofit:
           type: boolean
         ein:
+          type: ["string", "null"]
+        proofUrl:
           type: ["string", "null"]
         message:
           type: ["string", "null"]
@@ -1915,6 +1919,8 @@ components:
         isNonprofit:
           type: boolean
         ein:
+          type: ["string", "null"]
+        proofUrl:
           type: ["string", "null"]
         participantFirstName:
           type: ["string", "null"]

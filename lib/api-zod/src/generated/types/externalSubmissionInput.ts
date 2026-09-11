@@ -32,4 +32,6 @@ export interface ExternalSubmissionInput {
   description?: string;
   isNonprofit?: boolean;
   ein?: string;
+  /** @nullable */
+  proofUrl?: string | null;
 }

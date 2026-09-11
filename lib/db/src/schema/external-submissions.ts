@@ -19,6 +19,8 @@ export const externalSubmissionsTable = pgTable("external_submissions", {
   // Legitimacy check: is the org a registered 501(c)(3), and its EIN.
   isNonprofit: boolean("is_nonprofit").notNull().default(false),
   ein: text("ein"),
+  // Optional proof (photo/letter) stored in object storage — the object path.
+  proofUrl: text("proof_url"),
   status: submissionStatusEnum("status").notNull().default("pending"),
   supervisorComments: text("supervisor_comments"),
   submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
