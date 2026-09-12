@@ -921,6 +921,7 @@ export const ListOrganizationsResponseItem = zod.object({
   "allowsElementary": zod.boolean(),
   "allowsMiddle": zod.boolean(),
   "allowsHigh": zod.boolean(),
+  "competesOnLeaderboard": zod.boolean().optional(),
   "requiresJoinCode": zod.boolean().optional(),
   "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
 })
@@ -937,6 +938,7 @@ export const ListAdminOrganizationsResponseItem = zod.object({
   "allowsElementary": zod.boolean(),
   "allowsMiddle": zod.boolean(),
   "allowsHigh": zod.boolean(),
+  "competesOnLeaderboard": zod.boolean().optional(),
   "requiresJoinCode": zod.boolean().optional(),
   "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
 })
@@ -957,6 +959,7 @@ export const CreateOrganizationBody = zod.object({
   "allowsElementary": zod.boolean().optional(),
   "allowsMiddle": zod.boolean().optional(),
   "allowsHigh": zod.boolean().optional(),
+  "competesOnLeaderboard": zod.boolean().optional(),
   "joinCode": zod.string().nullish()
 })
 
@@ -979,6 +982,7 @@ export const UpdateOrganizationBody = zod.object({
   "allowsElementary": zod.boolean().optional(),
   "allowsMiddle": zod.boolean().optional(),
   "allowsHigh": zod.boolean().optional(),
+  "competesOnLeaderboard": zod.boolean().optional(),
   "joinCode": zod.string().nullish()
 })
 
@@ -989,6 +993,7 @@ export const UpdateOrganizationResponse = zod.object({
   "allowsElementary": zod.boolean(),
   "allowsMiddle": zod.boolean(),
   "allowsHigh": zod.boolean(),
+  "competesOnLeaderboard": zod.boolean().optional(),
   "requiresJoinCode": zod.boolean().optional(),
   "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
 })

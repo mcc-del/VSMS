@@ -1459,6 +1459,8 @@ components:
           type: boolean
         allowsHigh:
           type: boolean
+        competesOnLeaderboard:
+          type: boolean
         requiresJoinCode:
           type: boolean
         joinCode:
@@ -1479,6 +1481,8 @@ components:
         allowsMiddle:
           type: boolean
         allowsHigh:
+          type: boolean
+        competesOnLeaderboard:
           type: boolean
         joinCode:
           type: ["string", "null"]

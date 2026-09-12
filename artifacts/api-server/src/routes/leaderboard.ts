@@ -5,6 +5,7 @@ import {
   eventsTable,
   volunteerSubmissionsTable,
   manualHoursTable,
+  organizationsTable,
 } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { authenticate } from "../middlewares/auth";
@@ -57,14 +58,19 @@ router.get("/v1/leaderboard", authenticate, async (req, res) => {
       grade: usersTable.grade,
       displayAlias: usersTable.displayAlias,
       hideFromLeaderboard: usersTable.hideFromLeaderboard,
+      orgCompetes: organizationsTable.competesOnLeaderboard,
     })
     .from(usersTable)
+    .leftJoin(organizationsTable, eq(usersTable.organizationId, organizationsTable.organizationId))
     .where(eq(usersTable.role, "participant"));
 
   const hours = await approvedHoursByUser();
   const meId = req.auth!.userId;
 
   const ranked = students
+    // Participants whose org has opted out of competing are excluded from the
+    // public board — but a viewer always sees their own row (like alias/hide).
+    .filter((s) => s.orgCompetes !== false || s.userId === meId)
     .map((s) => ({
       userId: s.userId,
       firstName: s.firstName,

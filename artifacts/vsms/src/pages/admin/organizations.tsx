@@ -27,6 +27,7 @@ type Draft = {
   allowsElementary: boolean;
   allowsMiddle: boolean;
   allowsHigh: boolean;
+  competesOnLeaderboard: boolean;
   joinCode: string;
 };
 
@@ -36,6 +37,7 @@ const emptyDraft: Draft = {
   allowsElementary: true,
   allowsMiddle: true,
   allowsHigh: true,
+  competesOnLeaderboard: true,
   joinCode: "",
 };
 
@@ -71,6 +73,7 @@ export default function AdminOrganizations() {
       allowsElementary: draft.allowsElementary,
       allowsMiddle: draft.allowsMiddle,
       allowsHigh: draft.allowsHigh,
+      competesOnLeaderboard: draft.competesOnLeaderboard,
       joinCode: draft.joinCode.trim() || null,
     };
     const onDone = () => {
@@ -143,6 +146,9 @@ export default function AdminOrganizations() {
                             <Badge key={l} className="bg-primary/10 text-primary border-0">{l}</Badge>
                           ))
                         )}
+                        {o.competesOnLeaderboard === false && (
+                          <Badge className="bg-amber-100 text-amber-700 border-0">Not on leaderboard</Badge>
+                        )}
                       </div>
                     </div>
                     <Button
@@ -156,6 +162,7 @@ export default function AdminOrganizations() {
                           allowsElementary: o.allowsElementary,
                           allowsMiddle: o.allowsMiddle,
                           allowsHigh: o.allowsHigh,
+                          competesOnLeaderboard: o.competesOnLeaderboard ?? true,
                           joinCode: o.joinCode ?? "",
                         })
                       }
@@ -202,6 +209,23 @@ export default function AdminOrganizations() {
                     </label>
                   ))}
                 </div>
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-2">Leaderboard</p>
+                <label className="flex items-start gap-2.5 text-sm cursor-pointer">
+                  <Checkbox
+                    checked={draft.competesOnLeaderboard}
+                    onCheckedChange={(c) => setDraft({ ...draft, competesOnLeaderboard: Boolean(c) })}
+                  />
+                  <span>
+                    Compete on the public leaderboard
+                    <span className="block text-xs text-muted-foreground">
+                      Uncheck for partner orgs whose students just want verified hours, not to
+                      compete — their members are hidden from the public board (they still earn
+                      accredited hours and see their own rank).
+                    </span>
+                  </span>
+                </label>
               </div>
               <div>
                 <label className="text-sm font-medium">Join code</label>

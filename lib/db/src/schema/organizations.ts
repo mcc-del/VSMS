@@ -15,6 +15,10 @@ export const organizationsTable = pgTable("organizations", {
   allowsElementary: boolean("allows_elementary").notNull().default(true),
   allowsMiddle: boolean("allows_middle").notNull().default(true),
   allowsHigh: boolean("allows_high").notNull().default(true),
+  // When false, this org's participants are excluded from the public leaderboard
+  // by default (they still earn accredited hours and see their own row). For
+  // partner orgs whose students just want verified hours, not to compete.
+  competesOnLeaderboard: boolean("competes_on_leaderboard").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

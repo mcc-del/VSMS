@@ -14,6 +14,7 @@ export interface Organization {
   allowsElementary: boolean;
   allowsMiddle: boolean;
   allowsHigh: boolean;
+  competesOnLeaderboard?: boolean;
   requiresJoinCode?: boolean;
   /**
      * Only returned from the admin organizations endpoint.

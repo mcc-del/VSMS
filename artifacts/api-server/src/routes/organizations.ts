@@ -15,6 +15,7 @@ function format(o: typeof organizationsTable.$inferSelect) {
     allowsElementary: o.allowsElementary,
     allowsMiddle: o.allowsMiddle,
     allowsHigh: o.allowsHigh,
+    competesOnLeaderboard: o.competesOnLeaderboard,
     requiresJoinCode: Boolean(o.joinCode),
   };
 }
@@ -44,8 +45,8 @@ router.post("/v1/admin/organizations", authenticate, requireRole("admin"), async
     res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });
     return;
   }
-  const { name, description, allowsElementary, allowsMiddle, allowsHigh, joinCode } =
-    parsed.data as typeof parsed.data & { joinCode?: string | null };
+  const { name, description, allowsElementary, allowsMiddle, allowsHigh, competesOnLeaderboard, joinCode } =
+    parsed.data as typeof parsed.data & { competesOnLeaderboard?: boolean; joinCode?: string | null };
   try {
     const [org] = await db
       .insert(organizationsTable)
@@ -55,6 +56,7 @@ router.post("/v1/admin/organizations", authenticate, requireRole("admin"), async
         allowsElementary: allowsElementary ?? true,
         allowsMiddle: allowsMiddle ?? true,
         allowsHigh: allowsHigh ?? true,
+        competesOnLeaderboard: competesOnLeaderboard ?? true,
         joinCode: joinCode?.trim() || null,
       })
       .returning();
@@ -76,14 +78,15 @@ router.put(
       res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });
       return;
     }
-    const { name, description, allowsElementary, allowsMiddle, allowsHigh, joinCode } =
-      parsed.data as typeof parsed.data & { joinCode?: string | null };
+    const { name, description, allowsElementary, allowsMiddle, allowsHigh, competesOnLeaderboard, joinCode } =
+      parsed.data as typeof parsed.data & { competesOnLeaderboard?: boolean; joinCode?: string | null };
     const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name.trim();
     if (description !== undefined) updates.description = description ?? null;
     if (allowsElementary !== undefined) updates.allowsElementary = allowsElementary;
     if (allowsMiddle !== undefined) updates.allowsMiddle = allowsMiddle;
     if (allowsHigh !== undefined) updates.allowsHigh = allowsHigh;
+    if (competesOnLeaderboard !== undefined) updates.competesOnLeaderboard = competesOnLeaderboard;
     if (joinCode !== undefined) updates.joinCode = joinCode?.trim() || null;
 
     const [org] = await db
