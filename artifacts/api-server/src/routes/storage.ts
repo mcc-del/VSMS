@@ -5,7 +5,7 @@ import {
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
-import { authenticate, requireRole } from "../middlewares/auth";
+import { authenticate } from "../middlewares/auth";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -23,14 +23,14 @@ const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
 /**
  * POST /storage/uploads/request-url
  *
- * Admin-only: request a presigned PUT URL for an event image upload.
+ * Any signed-in user: request a presigned PUT URL for an image/proof upload
+ * (event images by admins/org-admins/supervisors; proof files by participants).
  * The client sends JSON metadata (name, size, contentType) — NOT the file.
  * Then uploads the file directly to the returned presigned URL.
  */
 router.post(
   "/storage/uploads/request-url",
   authenticate,
-  requireRole("admin"),
   async (req: Request, res: Response) => {
     const parsed = RequestUploadUrlBody.safeParse(req.body);
     if (!parsed.success) {
