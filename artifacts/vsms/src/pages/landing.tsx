@@ -89,7 +89,7 @@ const css = `
 .mc-landing .hero-stats { display: flex; flex-wrap: wrap; gap: 26px; margin-top: 34px; padding-top: 26px; border-top: 2px solid var(--line); }
 .mc-landing .hstat b { display: block; font-family: var(--display); font-size: 26px; font-weight: 800; line-height: 1; }
 .mc-landing .hstat span { font-size: 13px; color: var(--ink-soft); }
-.mc-landing .hstat b .gc { color: var(--gold); }
+.mc-landing .hstat b .gc { color: var(--gold); font-size: inherit; font-weight: inherit; }
 
 .mc-landing .card { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 26px; }
 .mc-landing .hero .card { position: relative; border-radius: 26px; box-shadow: 22px 22px 0 rgba(44,65,76,0.06), 0 30px 60px -30px rgba(44,65,76,0.35); }
@@ -108,6 +108,7 @@ const css = `
 .mc-landing .rhrs { margin-left: auto; font-family: var(--mono); font-weight: 700; font-size: 22px; }
 
 .mc-landing section { padding: 56px 0; }
+.mc-landing .section-band { margin-top: 48px; }
 .mc-landing .sec-head { max-width: 34em; margin-bottom: 36px; }
 .mc-landing .sec-head h2 { font-size: clamp(28px, 4vw, 38px); font-weight: 800; margin-top: 10px; }
 .mc-landing .sec-head p { color: var(--ink-soft); margin-top: 12px; font-size: 17px; }
@@ -168,7 +169,7 @@ export default function LandingPage() {
             </div>
             <div className="hero-stats">
               <div className="hstat"><b>3</b><span>medals to earn</span></div>
-              <div className="hstat"><b>40&ndash;<span className="gc">80</span></b><span>hours to Gold</span></div>
+              <div className="hstat"><b><span className="gc">80+</span></b><span>hours to Gold</span></div>
               <div className="hstat"><b>100%</b><span>supervisor-verified</span></div>
             </div>
           </div>
@@ -178,9 +179,9 @@ export default function LandingPage() {
             <div className="lc-label">The ladder</div>
             <div className="lc-sub">Reach the hours, earn the medal.</div>
             <ol className="ladder">
-              <li className="rung gold"><span className="rmedal g">G</span><span className="rinfo"><b>Gold</b><span>Highest service honor</span></span><span className="rhrs">80h</span></li>
-              <li className="rung"><span className="rmedal s">S</span><span className="rinfo"><b>Silver</b><span>Serious commitment</span></span><span className="rhrs">75h</span></li>
-              <li className="rung"><span className="rmedal b">B</span><span className="rinfo"><b>Bronze</b><span>Your first milestone</span></span><span className="rhrs">40h</span></li>
+              <li className="rung gold"><span className="rmedal g">G</span><span className="rinfo"><b>Gold</b><span>Highest service honor</span></span><span className="rhrs">80h+</span></li>
+              <li className="rung"><span className="rmedal s">S</span><span className="rinfo"><b>Silver</b><span>Serious commitment</span></span><span className="rhrs">75h+</span></li>
+              <li className="rung"><span className="rmedal b">B</span><span className="rinfo"><b>Bronze</b><span>Your first milestone</span></span><span className="rhrs">40h+</span></li>
             </ol>
           </div>
         </header>
@@ -199,14 +200,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="wrap">
+      <section className="wrap section-band">
         <div className="band">
           <span className="eyebrow">The milestones</span>
           <h2>Something to aim for.</h2>
           <div className="tiers">
-            <div className="tier"><h3>Bronze</h3><div className="hrs">40 hrs</div><p>Your first big milestone — the habit is real.</p></div>
-            <div className="tier"><h3>Silver</h3><div className="hrs">75 hrs</div><p>Serious commitment to service.</p></div>
-            <div className="tier"><h3>Gold</h3><div className="hrs">80 hrs</div><p>The highest honor — recognized leadership.</p></div>
+            <div className="tier"><h3>Bronze</h3><div className="hrs">40+ hrs</div><p>Your first big milestone — the habit is real.</p></div>
+            <div className="tier"><h3>Silver</h3><div className="hrs">75+ hrs</div><p>Serious commitment to service.</p></div>
+            <div className="tier"><h3>Gold</h3><div className="hrs">80+ hrs</div><p>The highest honor — recognized leadership.</p></div>
           </div>
         </div>
       </section>
