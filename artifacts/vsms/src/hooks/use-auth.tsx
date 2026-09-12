@@ -91,12 +91,12 @@ export function useAuth() {
 
     const resetTimer = () => {
       window.clearTimeout(timeoutId);
-      // 30 minutes
+      // 2 hours of inactivity (long enough for filling out big forms).
       timeoutId = window.setTimeout(
         () => {
           logout();
         },
-        30 * 60 * 1000,
+        120 * 60 * 1000,
       );
     };
 
