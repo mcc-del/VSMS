@@ -9,7 +9,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,13 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Trophy, Medal, Settings } from "lucide-react";
-
-function medalClass(medal?: string | null) {
-  if (medal === "Gold") return "bg-yellow-100 text-yellow-800";
-  if (medal === "Silver") return "bg-slate-200 text-slate-700";
-  if (medal === "Bronze") return "bg-amber-100 text-amber-800";
-  return "bg-muted text-muted-foreground";
-}
+import { MedalBadge } from "@/components/medal-badge";
 
 export default function LeaderboardPage() {
   const { data: board, isLoading } = useGetLeaderboard();
@@ -146,7 +139,11 @@ export default function LeaderboardPage() {
                       </p>
                       {e.grade && <p className="text-xs text-muted-foreground">Grade {e.grade}</p>}
                     </div>
-                    {e.medal && <Badge className={`${medalClass(e.medal)} border-0`}>{e.medal}</Badge>}
+                    {e.medal && (
+                      <span title={`${e.medal} medal`}>
+                        <MedalBadge tier={e.medal.toLowerCase() as "gold" | "silver" | "bronze"} size={26} />
+                      </span>
+                    )}
                     <span className="font-semibold tabular-nums text-sm w-16 text-right">
                       {e.totalApprovedHours.toFixed(1)}h
                     </span>

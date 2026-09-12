@@ -11,6 +11,7 @@ import {
 } from "@workspace/api-client-react";
 import type { EventRegistration } from "@workspace/api-client-react";
 import { GettingStarted } from "@/components/getting-started";
+import { MedalBadge } from "@/components/medal-badge";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,7 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, XCircle, AlertCircle, MapPin, CheckCheck, Trophy, CalendarDays } from "lucide-react";
+import { Clock, XCircle, AlertCircle, MapPin, CheckCheck, CalendarDays } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -220,7 +221,7 @@ export default function ParticipantDashboard() {
             : 100;
           const remaining = next ? Math.max(0, next.goal - totalHours) : 0;
           return (
-            <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lift overflow-hidden">
+            <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lift overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div className="p-6 sm:p-7">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div>
@@ -235,11 +236,19 @@ export default function ParticipantDashboard() {
                       {dashboard?.approvedCount ?? 0} approved submissions
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3.5 py-2">
-                    <Trophy className="w-5 h-5" />
-                    <span className="text-sm font-semibold">
-                      {next ? `${next.label} next` : "Gold achieved 🎉"}
-                    </span>
+                  <div className="flex items-center gap-2.5 rounded-2xl bg-white/15 backdrop-blur px-3.5 py-2.5">
+                    <MedalBadge
+                      tier={totalHours >= 80 ? "gold" : totalHours >= 75 ? "silver" : totalHours >= 40 ? "bronze" : "none"}
+                      size={34}
+                    />
+                    <div className="leading-tight">
+                      <p className="text-[11px] uppercase tracking-wide text-primary-foreground/70">
+                        {totalHours >= 40 ? "Earned" : "Next up"}
+                      </p>
+                      <p className="text-sm font-semibold">
+                        {totalHours >= 80 ? "Gold" : totalHours >= 75 ? "Silver" : totalHours >= 40 ? "Bronze" : next?.label}
+                      </p>
+                    </div>
                   </div>
                 </div>
 

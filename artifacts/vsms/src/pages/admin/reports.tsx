@@ -44,7 +44,7 @@ function Donut({ counts }: { counts: { gold: number; silver: number; bronze: num
   const circ = 2 * Math.PI * r;
   let offset = 0;
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex items-center gap-6 flex-wrap">
       <svg width="140" height="140" viewBox="0 0 140 140" className="shrink-0 -rotate-90">
         <circle cx="70" cy="70" r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth="16" />
         {segments.map((s) => {
