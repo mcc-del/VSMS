@@ -36,7 +36,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Clock, XCircle, AlertCircle, MapPin, CheckCheck, CalendarDays } from "lucide-react";
+import { Link } from "wouter";
+import { Clock, AlertCircle, MapPin, CheckCheck, CalendarDays, Search, ExternalLink } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -220,62 +221,62 @@ export default function ParticipantDashboard() {
             ? Math.min(100, Math.round(((totalHours - prevGoal) / (next.goal - prevGoal)) * 100))
             : 100;
           const remaining = next ? Math.max(0, next.goal - totalHours) : 0;
+          const tier = totalHours >= 80 ? "gold" : totalHours >= 75 ? "silver" : totalHours >= 40 ? "bronze" : "none";
+          const R = 66;
+          const C = 2 * Math.PI * R;
           return (
-            <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lift overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <div className="p-6 sm:p-7">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div>
-                    <p className="text-sm/none uppercase tracking-wide text-primary-foreground/70 font-medium">
-                      Approved service hours
-                    </p>
-                    <p data-testid="text-approved-hours" className="text-5xl font-bold mt-2 tabular-nums">
-                      {totalHours.toFixed(1)}
-                      <span className="text-2xl font-semibold text-primary-foreground/70">h</span>
-                    </p>
-                    <p className="text-sm text-primary-foreground/80 mt-1">
-                      {dashboard?.approvedCount ?? 0} approved submissions
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2.5 rounded-2xl bg-white/15 backdrop-blur px-3.5 py-2.5">
-                    <MedalBadge
-                      tier={totalHours >= 80 ? "gold" : totalHours >= 75 ? "silver" : totalHours >= 40 ? "bronze" : "none"}
-                      size={34}
+            <div className="relative rounded-3xl bg-gradient-to-br from-primary via-primary to-[hsl(207_60%_36%)] text-primary-foreground shadow-lift overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-70"
+                style={{ backgroundImage: "radial-gradient(30rem 30rem at 95% -20%, rgba(255,255,255,0.16), transparent 60%)" }}
+              />
+              <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-7">
+                {/* Progress ring + medal centerpiece */}
+                <div className="relative shrink-0" style={{ width: 168, height: 168 }}>
+                  <svg width="168" height="168" viewBox="0 0 168 168" className="-rotate-90">
+                    <circle cx="84" cy="84" r={R} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="12" />
+                    <circle
+                      cx="84" cy="84" r={R} fill="none" stroke="white" strokeWidth="12" strokeLinecap="round"
+                      strokeDasharray={C} strokeDashoffset={C - (pct / 100) * C}
+                      style={{ transition: "stroke-dashoffset 900ms ease" }}
                     />
-                    <div className="leading-tight">
-                      <p className="text-[11px] uppercase tracking-wide text-primary-foreground/70">
-                        {totalHours >= 40 ? "Earned" : "Next up"}
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {totalHours >= 80 ? "Gold" : totalHours >= 75 ? "Silver" : totalHours >= 40 ? "Bronze" : next?.label}
-                      </p>
-                    </div>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <MedalBadge tier={tier} size={54} />
+                    <span className="text-xs font-semibold mt-1 text-primary-foreground/90">{pct}%</span>
                   </div>
                 </div>
 
-                <div className="mt-6">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-primary-foreground/80">
-                      {next ? `${remaining.toFixed(1)}h to ${next.label} (${next.goal}h)` : "All milestones complete"}
-                    </span>
-                    <span className="font-semibold">{pct}%</span>
-                  </div>
-                  <div className="w-full bg-white/20 rounded-full h-2.5 overflow-hidden">
-                    <div className="bg-white h-2.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                  <div className="flex justify-between text-[11px] text-primary-foreground/70 mt-1.5">
-                    <span>Bronze 40h</span><span>Silver 75h</span><span>Gold 80h</span>
-                  </div>
-                </div>
+                {/* Figures + actions */}
+                <div className="flex-1 min-w-0 text-center sm:text-left">
+                  <p className="text-xs uppercase tracking-wide text-primary-foreground/70 font-medium">
+                    Approved service hours
+                  </p>
+                  <p data-testid="text-approved-hours" className="text-5xl sm:text-6xl font-bold mt-1 tabular-nums leading-none">
+                    {totalHours.toFixed(1)}
+                    <span className="text-2xl font-semibold text-primary-foreground/70">h</span>
+                  </p>
+                  <p className="text-sm text-primary-foreground/85 mt-2">
+                    {next ? (
+                      <><span className="font-semibold">{remaining.toFixed(1)}h</span> to your {next.label} medal</>
+                    ) : (
+                      <>All medals earned — outstanding! 🎉</>
+                    )}
+                  </p>
 
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm">
-                    <AlertCircle className="w-3.5 h-3.5" /> {dashboard?.pendingCount ?? 0} awaiting review
-                  </span>
-                  {(dashboard?.rejectedCount ?? 0) > 0 && (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm">
-                      <XCircle className="w-3.5 h-3.5" /> {dashboard?.rejectedCount} need attention
-                    </span>
-                  )}
+                  <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
+                    <Link href="/opportunities" className="inline-flex items-center gap-1.5 rounded-xl bg-white text-primary font-semibold px-4 py-2 text-sm shadow-soft hover:bg-white/90 transition-colors">
+                      <Search className="w-4 h-4" /> Find opportunities
+                    </Link>
+                    <Link href="/external" className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 text-primary-foreground font-medium px-4 py-2 text-sm hover:bg-white/25 transition-colors">
+                      <ExternalLink className="w-4 h-4" /> Log external hours
+                    </Link>
+                    {(dashboard?.pendingCount ?? 0) > 0 && (
+                      <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm text-primary-foreground/85">
+                        <AlertCircle className="w-3.5 h-3.5" /> {dashboard?.pendingCount} in review
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

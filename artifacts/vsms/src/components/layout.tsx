@@ -33,15 +33,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ...(role === "org_admin" ? [
       { label: "Pending Reviews", href: "/supervisor/pending", icon: CheckSquare },
       { label: "Reviewed History", href: "/supervisor/history", icon: FileText },
-      { label: "Events", href: "/admin/events", icon: Calendar },
-      { label: "New Event", href: "/admin/events/new", icon: FileText },
+      { label: "My Events", href: "/admin/events", icon: Calendar },
     ] : []),
     ...(role === "admin" ? [
       { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
       { label: "Reports", href: "/admin/reports", icon: TrendingUp },
       { label: "Users", href: "/admin/users", icon: Users },
       { label: "Events", href: "/admin/events", icon: Calendar },
-      { label: "New Event", href: "/admin/events/new", icon: FileText },
       { label: "Organizations", href: "/admin/organizations", icon: Building2 },
     ] : []),
   ];

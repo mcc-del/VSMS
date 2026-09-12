@@ -26,7 +26,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, MapPin, Clock, Calendar } from "lucide-react";
+import { Pencil, Trash2, MapPin, Clock, Calendar, Plus } from "lucide-react";
+import { Link } from "wouter";
 import { AuthenticatedImage } from "@/components/authenticated-image";
 import { calculateEventDuration, formatHours } from "@/lib/event-duration";
 import { ALL_GRADES } from "@/lib/schools";
@@ -191,9 +192,14 @@ export default function AdminEventsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Manage Events</h1>
-          <p className="text-muted-foreground text-sm mt-1">Edit or delete volunteer events</p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">Events</h1>
+            <p className="text-muted-foreground text-sm mt-1">Create, edit, or remove volunteer opportunities</p>
+          </div>
+          <Link href="/admin/events/new">
+            <Button data-testid="button-new-event"><Plus className="w-4 h-4 mr-1" /> New Event</Button>
+          </Link>
         </div>
 
         {isLoading ? (
