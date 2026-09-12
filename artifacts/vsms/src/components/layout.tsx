@@ -63,7 +63,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           key={item.href}
           href={item.href}
           onClick={onNavigate}
-          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${location === item.href ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${location === item.href ? "bg-primary text-primary-foreground shadow-soft" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
         >
           <item.icon className="w-4 h-4" />
           {item.label}
@@ -122,8 +122,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <span className="w-9" />
         </header>
 
-        <div className="flex-1 p-5 sm:p-6 lg:p-8 overflow-y-auto">
-          {children}
+        <div className="flex-1 p-5 sm:p-6 lg:p-8 overflow-y-auto app-surface">
+          <div className="mx-auto w-full max-w-5xl">{children}</div>
         </div>
       </main>
     </div>

@@ -155,7 +155,7 @@ export default function OpportunitiesPage() {
     const isFull = (event.registrationCount ?? 0) >= event.maxCapacity;
 
     return (
-      <Card key={event.eventId} className="overflow-hidden">
+      <Card key={event.eventId} className="overflow-hidden transition-all hover:shadow-lift hover:-translate-y-0.5">
         <div className="flex flex-col md:flex-row">
           {event.imageUrl && (
             <div className="md:w-48 md:shrink-0">

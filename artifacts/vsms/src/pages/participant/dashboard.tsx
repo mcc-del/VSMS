@@ -205,98 +205,71 @@ export default function ParticipantDashboard() {
         </div>
 
         {dashLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {[0,1,2].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <Card className="col-span-2 md:col-span-1">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-primary" /> Approved Hours
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p data-testid="text-approved-hours" className="text-4xl font-bold text-foreground">
-                  {dashboard?.totalApprovedHours?.toFixed(1) ?? "0.0"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  total hours earned &middot; {dashboard?.approvedCount ?? 0} approved
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-yellow-500" /> Awaiting Approval
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p data-testid="text-pending-count" className="text-3xl font-bold">{dashboard?.pendingCount ?? 0}</p>
-                <p className="text-xs text-muted-foreground mt-1">submissions in review</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <XCircle className="w-4 h-4 text-red-500" /> Rejected
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{dashboard?.rejectedCount ?? 0}</p>
-                <p className="text-xs text-muted-foreground mt-1">need attention</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Milestone Progress */}
-        {!dashLoading && (() => {
+          <Skeleton className="h-52 rounded-2xl" />
+        ) : (() => {
           const MILESTONES = [
-            { label: "Bronze Award", goal: 40, color: "bg-amber-600" },
-            { label: "Silver Award", goal: 75, color: "bg-gray-400" },
-            { label: "Gold Award", goal: 80, color: "bg-yellow-400" },
+            { label: "Bronze", goal: 40 },
+            { label: "Silver", goal: 75 },
+            { label: "Gold", goal: 80 },
           ];
           const totalHours = dashboard?.totalApprovedHours ?? 0;
           const next = MILESTONES.find((m) => totalHours < m.goal);
-          if (!next) {
-            return (
-              <Card className="border-yellow-300 bg-yellow-50/50">
-                <CardContent className="py-4 flex items-center gap-3">
-                  <Trophy className="w-6 h-6 text-yellow-500 shrink-0" />
-                  <div>
-                    <p className="font-semibold text-yellow-800">Gold Award Achieved!</p>
-                    <p className="text-xs text-yellow-700">You've reached all milestones. Outstanding work!</p>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          }
-          const prevGoal = MILESTONES[MILESTONES.indexOf(next) - 1]?.goal ?? 0;
-          const pct = Math.min(100, Math.round(((totalHours - prevGoal) / (next.goal - prevGoal)) * 100));
+          const prevGoal = next ? MILESTONES[MILESTONES.indexOf(next) - 1]?.goal ?? 0 : 80;
+          const pct = next
+            ? Math.min(100, Math.round(((totalHours - prevGoal) / (next.goal - prevGoal)) * 100))
+            : 100;
+          const remaining = next ? Math.max(0, next.goal - totalHours) : 0;
           return (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-yellow-500" /> Milestone Progress
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <p className="text-sm font-medium">
-                  {pct}% progress towards {next.label}{" "}
-                  <span className="text-muted-foreground font-normal">(Goal: {next.goal} Hours)</span>
-                </p>
-                <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className={`${next.color} h-2.5 rounded-full transition-all`}
-                    style={{ width: `${pct}%` }}
-                  />
+            <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lift overflow-hidden">
+              <div className="p-6 sm:p-7">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div>
+                    <p className="text-sm/none uppercase tracking-wide text-primary-foreground/70 font-medium">
+                      Approved service hours
+                    </p>
+                    <p data-testid="text-approved-hours" className="text-5xl font-bold mt-2 tabular-nums">
+                      {totalHours.toFixed(1)}
+                      <span className="text-2xl font-semibold text-primary-foreground/70">h</span>
+                    </p>
+                    <p className="text-sm text-primary-foreground/80 mt-1">
+                      {dashboard?.approvedCount ?? 0} approved submissions
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3.5 py-2">
+                    <Trophy className="w-5 h-5" />
+                    <span className="text-sm font-semibold">
+                      {next ? `${next.label} next` : "Gold achieved 🎉"}
+                    </span>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {totalHours.toFixed(1)}h of {next.goal}h completed
-                </p>
-              </CardContent>
-            </Card>
+
+                <div className="mt-6">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-primary-foreground/80">
+                      {next ? `${remaining.toFixed(1)}h to ${next.label} (${next.goal}h)` : "All milestones complete"}
+                    </span>
+                    <span className="font-semibold">{pct}%</span>
+                  </div>
+                  <div className="w-full bg-white/20 rounded-full h-2.5 overflow-hidden">
+                    <div className="bg-white h-2.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-primary-foreground/70 mt-1.5">
+                    <span>Bronze 40h</span><span>Silver 75h</span><span>Gold 80h</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm">
+                    <AlertCircle className="w-3.5 h-3.5" /> {dashboard?.pendingCount ?? 0} awaiting review
+                  </span>
+                  {(dashboard?.rejectedCount ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm">
+                      <XCircle className="w-3.5 h-3.5" /> {dashboard?.rejectedCount} need attention
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           );
         })()}
 

@@ -127,7 +127,17 @@ export default function LeaderboardPage() {
                     data-testid={`leaderboard-row-${e.rank}`}
                     className={`flex items-center gap-3 py-2.5 ${e.isMe ? "bg-primary/5 -mx-2 px-2 rounded-md" : ""}`}
                   >
-                    <span className="w-7 text-center font-bold tabular-nums text-muted-foreground">
+                    <span
+                      className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-bold tabular-nums ${
+                        e.rank === 1
+                          ? "bg-yellow-100 text-yellow-800"
+                          : e.rank === 2
+                            ? "bg-slate-200 text-slate-700"
+                            : e.rank === 3
+                              ? "bg-amber-100 text-amber-800"
+                              : "text-muted-foreground"
+                      }`}
+                    >
                       {e.rank}
                     </span>
                     <div className="flex-1 min-w-0">
