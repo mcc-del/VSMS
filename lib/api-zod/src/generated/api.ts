@@ -746,6 +746,50 @@ export const OverrideSubmissionResponse = zod.object({
 
 
 /**
+ * @summary Aggregated program metrics for the reports view (admin only)
+ */
+export const GetAdminMetricsResponse = zod.object({
+  "participants": zod.number(),
+  "activeVolunteers": zod.number(),
+  "participationRate": zod.number(),
+  "totalApprovedHours": zod.number(),
+  "medalsAwarded": zod.number(),
+  "pendingReviews": zod.number(),
+  "hoursBreakdown": zod.object({
+  "internal": zod.number(),
+  "manual": zod.number(),
+  "external": zod.number()
+}),
+  "medalCounts": zod.object({
+  "gold": zod.number(),
+  "silver": zod.number(),
+  "bronze": zod.number(),
+  "none": zod.number()
+}),
+  "events": zod.object({
+  "total": zod.number(),
+  "upcoming": zod.number(),
+  "upcomingRegistrations": zod.number(),
+  "totalCapacity": zod.number()
+}),
+  "hoursByOrg": zod.array(zod.object({
+  "name": zod.string(),
+  "hours": zod.number()
+})),
+  "hoursBySchool": zod.array(zod.object({
+  "name": zod.string(),
+  "hours": zod.number()
+})),
+  "topVolunteers": zod.array(zod.object({
+  "name": zod.string(),
+  "hours": zod.number(),
+  "org": zod.string(),
+  "medal": zod.string()
+}))
+})
+
+
+/**
  * @summary List approved schools for the enrollment picker
  */
 export const ListSchoolsResponseItem = zod.object({

@@ -5,6 +5,53 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export interface NameHours {
+  name: string;
+  hours: number;
+}
+
+export interface TopVolunteer {
+  name: string;
+  hours: number;
+  org: string;
+  medal: string;
+}
+
+export type AdminMetricsHoursBreakdown = {
+  internal: number;
+  manual: number;
+  external: number;
+};
+
+export type AdminMetricsMedalCounts = {
+  gold: number;
+  silver: number;
+  bronze: number;
+  none: number;
+};
+
+export type AdminMetricsEvents = {
+  total: number;
+  upcoming: number;
+  upcomingRegistrations: number;
+  totalCapacity: number;
+};
+
+export interface AdminMetrics {
+  participants: number;
+  activeVolunteers: number;
+  participationRate: number;
+  totalApprovedHours: number;
+  medalsAwarded: number;
+  pendingReviews: number;
+  hoursBreakdown: AdminMetricsHoursBreakdown;
+  medalCounts: AdminMetricsMedalCounts;
+  events: AdminMetricsEvents;
+  hoursByOrg: NameHours[];
+  hoursBySchool: NameHours[];
+  topVolunteers: TopVolunteer[];
+}
+
 export type SchoolStatus = typeof SchoolStatus[keyof typeof SchoolStatus];
 
 

@@ -8,6 +8,10 @@
 
 export * from './adminCreateUserInput';
 export * from './adminDashboard';
+export * from './adminMetrics';
+export * from './adminMetricsEvents';
+export * from './adminMetricsHoursBreakdown';
+export * from './adminMetricsMedalCounts';
 export * from './authResponse';
 export * from './checkInResponse';
 export * from './childInput';
@@ -37,6 +41,7 @@ export * from './loginInput';
 export * from './managedOrganizations';
 export * from './manualHoursCredit';
 export * from './manualHoursInput';
+export * from './nameHours';
 export * from './organization';
 export * from './organizationInput';
 export * from './overrideInput';
@@ -57,6 +62,7 @@ export * from './submissionDetail';
 export * from './submissionInput';
 export * from './successResponse';
 export * from './supervisorDashboard';
+export * from './topVolunteer';
 export * from './updateUserInput';
 export * from './uploadUrlRequest';
 export * from './uploadUrlResponse';

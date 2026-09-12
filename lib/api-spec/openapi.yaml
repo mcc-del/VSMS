@@ -766,6 +766,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /v1/admin/metrics:
+    get:
+      operationId: getAdminMetrics
+      tags: [admin]
+      summary: Aggregated program metrics for the reports view (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMetrics"
+
   /v1/schools:
     get:
       operationId: listSchools
@@ -1311,6 +1324,63 @@ paths:
 
 components:
   schemas:
+    NameHours:
+      type: object
+      required: [name, hours]
+      properties:
+        name: { type: string }
+        hours: { type: number }
+    TopVolunteer:
+      type: object
+      required: [name, hours, org, medal]
+      properties:
+        name: { type: string }
+        hours: { type: number }
+        org: { type: string }
+        medal: { type: string }
+    AdminMetrics:
+      type: object
+      required: [participants, activeVolunteers, participationRate, totalApprovedHours, hoursBreakdown, medalCounts, medalsAwarded, pendingReviews, events, hoursByOrg, hoursBySchool, topVolunteers]
+      properties:
+        participants: { type: integer }
+        activeVolunteers: { type: integer }
+        participationRate: { type: integer }
+        totalApprovedHours: { type: number }
+        medalsAwarded: { type: integer }
+        pendingReviews: { type: integer }
+        hoursBreakdown:
+          type: object
+          required: [internal, manual, external]
+          properties:
+            internal: { type: number }
+            manual: { type: number }
+            external: { type: number }
+        medalCounts:
+          type: object
+          required: [gold, silver, bronze, none]
+          properties:
+            gold: { type: integer }
+            silver: { type: integer }
+            bronze: { type: integer }
+            none: { type: integer }
+        events:
+          type: object
+          required: [total, upcoming, upcomingRegistrations, totalCapacity]
+          properties:
+            total: { type: integer }
+            upcoming: { type: integer }
+            upcomingRegistrations: { type: integer }
+            totalCapacity: { type: integer }
+        hoursByOrg:
+          type: array
+          items: { $ref: "#/components/schemas/NameHours" }
+        hoursBySchool:
+          type: array
+          items: { $ref: "#/components/schemas/NameHours" }
+        topVolunteers:
+          type: array
+          items: { $ref: "#/components/schemas/TopVolunteer" }
+
     School:
       type: object
       required: [schoolId, name, status, createdAt]

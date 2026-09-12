@@ -12,6 +12,7 @@ import leaderboardRouter from "./leaderboard";
 import organizationsRouter from "./organizations";
 import schoolsRouter from "./schools";
 import profileRouter from "./profile";
+import metricsRouter from "./metrics";
 import storageRouter from "./storage";
 
 const router: IRouter = Router();
@@ -29,6 +30,7 @@ router.use(leaderboardRouter);
 router.use(organizationsRouter);
 router.use(schoolsRouter);
 router.use(profileRouter);
+router.use(metricsRouter);
 router.use(storageRouter);
 
 export default router;

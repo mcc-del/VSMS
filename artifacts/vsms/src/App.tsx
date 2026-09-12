@@ -18,7 +18,7 @@ import AdminUsers from "@/pages/admin/users";
 import AdminNewEvent from "@/pages/admin/new-event";
 import AdminEventsPage from "@/pages/admin/events";
 import AdminOrganizations from "@/pages/admin/organizations";
-import AdminSchools from "@/pages/admin/schools";
+import AdminReports from "@/pages/admin/reports";
 import ExternalSubmissionPage from "@/pages/participant/external-submission";
 import ParentDashboard from "@/pages/parent/dashboard";
 import LeaderboardPage from "@/pages/participant/leaderboard";
@@ -67,8 +67,8 @@ function Router() {
       <ProtectedRoute path="/admin/users" component={AdminUsers} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/events/new" component={AdminNewEvent} allowedRoles={["admin", "org_admin", "supervisor"]} />
       <ProtectedRoute path="/admin/events" component={AdminEventsPage} allowedRoles={["admin", "org_admin", "supervisor"]} />
+      <ProtectedRoute path="/admin/reports" component={AdminReports} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/organizations" component={AdminOrganizations} allowedRoles={["admin"]} />
-      <ProtectedRoute path="/admin/schools" component={AdminSchools} allowedRoles={["admin"]} />
 
       <Route component={NotFound} />
     </Switch>
