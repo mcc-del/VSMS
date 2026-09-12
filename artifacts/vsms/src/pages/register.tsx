@@ -167,7 +167,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-background app-surface px-4 py-8">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <img src="/medinacares-logo.png" alt="MedinaCares" className="w-20 h-20 object-contain mx-auto mb-4" />
@@ -175,7 +175,7 @@ export default function RegisterPage() {
           <p className="text-muted-foreground mt-1 text-sm">Join the MedinaCares Volunteer Service Awards and start logging hours</p>
         </div>
 
-        <div className="bg-card border rounded-xl p-6 shadow-sm">
+        <div className="bg-card border border-card-border/70 rounded-2xl p-6 shadow-soft">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
