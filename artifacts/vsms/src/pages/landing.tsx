@@ -51,18 +51,56 @@ const css = `
 .mc-landing .btn-ghost:hover { border-color: var(--blue); color: var(--blue-deep); }
 .mc-landing .btn-lg { padding: 16px 30px; font-size: 17px; }
 
-.mc-landing .hero { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; padding: 40px 0 64px; }
-.mc-landing .hero h1 { font-size: clamp(38px, 6vw, 62px); font-weight: 800; margin-top: 14px; }
-.mc-landing .hero h1 .gold { color: var(--gold); }
+/* ---- HERO ---- */
+.mc-landing .hero-stage { position: relative; overflow: hidden; }
+.mc-landing .hero-stage::before,
+.mc-landing .hero-stage::after {
+  content: ""; position: absolute; z-index: 0; border-radius: 50%;
+  filter: blur(70px); opacity: 0.55; pointer-events: none;
+}
+.mc-landing .hero-stage::before {
+  width: 520px; height: 520px; top: -160px; left: -120px;
+  background: radial-gradient(circle at 30% 30%, var(--blue), transparent 70%);
+}
+.mc-landing .hero-stage::after {
+  width: 460px; height: 460px; top: -80px; right: -140px;
+  background: radial-gradient(circle at 60% 40%, var(--gold-bright), transparent 70%);
+  opacity: 0.4;
+}
+@media (prefers-color-scheme: dark) {
+  .mc-landing .hero-stage::before { opacity: 0.32; }
+  .mc-landing .hero-stage::after { opacity: 0.24; }
+}
+.mc-landing .hero { position: relative; z-index: 1; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; padding: 32px 0 72px; }
+.mc-landing .hero > div { animation: heroRise .7s cubic-bezier(.16,.84,.44,1) both; }
+.mc-landing .hero > .card { animation-delay: .12s; }
+@keyframes heroRise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+.mc-landing .locpill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brand-ink); background: var(--surface); border: 2px solid var(--line); border-radius: 999px; padding: 7px 15px; box-shadow: 4px 4px 0 rgba(44,65,76,0.05); }
+@media (prefers-color-scheme: dark) { .mc-landing .locpill { color: var(--ink); } }
+.mc-landing .locpill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 26%, transparent); }
+.mc-landing .hero .eyebrow { display: block; margin-top: 22px; }
+.mc-landing .hero h1 { font-size: clamp(40px, 6.4vw, 66px); font-weight: 800; margin-top: 14px; }
+.mc-landing .hero h1 .gold { position: relative; background: linear-gradient(100deg, var(--gold), var(--gold-bright) 45%, var(--gold)); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: goldShine 4.5s ease-in-out infinite; }
+@keyframes goldShine { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 .mc-landing .hero-sub { font-size: clamp(17px, 2vw, 20px); color: var(--ink-soft); margin-top: 20px; max-width: 30em; }
 .mc-landing .hero-cta { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
+.mc-landing .btn-primary { box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--blue-deep) 80%, transparent); }
+.mc-landing .hero-stats { display: flex; flex-wrap: wrap; gap: 26px; margin-top: 34px; padding-top: 26px; border-top: 2px solid var(--line); }
+.mc-landing .hstat b { display: block; font-family: var(--display); font-size: 26px; font-weight: 800; line-height: 1; }
+.mc-landing .hstat span { font-size: 13px; color: var(--ink-soft); }
+.mc-landing .hstat b .gc { color: var(--gold); }
 
 .mc-landing .card { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 26px; }
+.mc-landing .hero .card { position: relative; border-radius: 26px; box-shadow: 22px 22px 0 rgba(44,65,76,0.06), 0 30px 60px -30px rgba(44,65,76,0.35); }
+.mc-landing .hero .card::before { content: ""; position: absolute; inset: -2px; border-radius: 26px; padding: 2px; background: linear-gradient(140deg, color-mix(in srgb, var(--gold) 60%, transparent), transparent 45%, color-mix(in srgb, var(--blue) 55%, transparent)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+.mc-landing .card-badge { position: absolute; top: -16px; right: 22px; z-index: 2; display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #3a2a06; background: linear-gradient(140deg, var(--gold-bright), var(--gold)); border-radius: 999px; padding: 7px 14px; box-shadow: 0 10px 20px -8px color-mix(in srgb, var(--gold) 80%, transparent); }
 .mc-landing .lc-label { font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; color: var(--ink-soft); font-weight: 700; }
 .mc-landing .lc-sub { font-size: 14px; color: var(--ink-soft); margin: 4px 0 16px; }
 .mc-landing .ladder { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .mc-landing .rung { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border: 2px solid var(--line); border-radius: 15px; background: var(--surface-2); }
-.mc-landing .rung.gold { border-color: color-mix(in srgb, var(--gold) 55%, var(--line)); background: color-mix(in srgb, var(--gold) 12%, var(--surface)); }
+.mc-landing .rung.gold { border-color: color-mix(in srgb, var(--gold) 55%, var(--line)); background: color-mix(in srgb, var(--gold) 12%, var(--surface)); box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 45%, transparent); animation: goldPulse 3.2s ease-in-out infinite; }
+@keyframes goldPulse { 0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 40%, transparent); } 50% { box-shadow: 0 0 24px 2px color-mix(in srgb, var(--gold) 34%, transparent); } }
 .mc-landing .rmedal { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: var(--mono); font-weight: 700; color: #fff; }
 .mc-landing .rmedal.b { background: var(--coral); } .mc-landing .rmedal.s { background: var(--teal); }
 .mc-landing .rmedal.g { background: linear-gradient(140deg, var(--gold-bright), var(--gold)); color: #3a2a06; }
@@ -113,31 +151,40 @@ export default function LandingPage() {
         <Link href="/login" className="btn btn-ghost">Log in</Link>
       </nav>
 
-      <header className="wrap hero">
-        <div>
-          <span className="eyebrow">Volunteer Service Awards &middot; 2026&ndash;2027</span>
-          <h1>Turn caring into hours,<br />all the way to <span className="gold">Gold.</span></h1>
-          <p className="hero-sub">
-            Log the volunteer work you do &mdash; at school or in the community &mdash; get it
-            verified by a supervisor, and climb toward Bronze, Silver, and Gold. Recognized at our
-            annual awards ceremony.
-          </p>
-          <div className="hero-cta">
-            <Link href="/register" className="btn btn-primary btn-lg">Create your account</Link>
-            <Link href="/login" className="btn btn-ghost btn-lg">I already have one</Link>
+      <div className="hero-stage">
+        <header className="wrap hero">
+          <div>
+            <span className="locpill"><span className="dot" />Medina Academy &middot; Redmond, WA</span>
+            <span className="eyebrow">Volunteer Service Awards &middot; 2026&ndash;2027</span>
+            <h1>Turn caring into hours,<br />all the way to <span className="gold">Gold.</span></h1>
+            <p className="hero-sub">
+              Log the volunteer work you do &mdash; at school or in the community &mdash; get it
+              verified by a supervisor, and climb toward Bronze, Silver, and Gold. Recognized at our
+              annual awards ceremony.
+            </p>
+            <div className="hero-cta">
+              <Link href="/register" className="btn btn-primary btn-lg">Create your account</Link>
+              <Link href="/login" className="btn btn-ghost btn-lg">I already have one</Link>
+            </div>
+            <div className="hero-stats">
+              <div className="hstat"><b>3</b><span>medals to earn</span></div>
+              <div className="hstat"><b>40&ndash;<span className="gc">80</span></b><span>hours to Gold</span></div>
+              <div className="hstat"><b>100%</b><span>supervisor-verified</span></div>
+            </div>
           </div>
-        </div>
 
-        <div className="card" aria-hidden="true">
-          <div className="lc-label">The awards</div>
-          <div className="lc-sub">Reach the hours, earn the medal.</div>
-          <ol className="ladder">
-            <li className="rung gold"><span className="rmedal g">G</span><span className="rinfo"><b>Gold</b><span>Highest service honor</span></span><span className="rhrs">80h</span></li>
-            <li className="rung"><span className="rmedal s">S</span><span className="rinfo"><b>Silver</b><span>Serious commitment</span></span><span className="rhrs">75h</span></li>
-            <li className="rung"><span className="rmedal b">B</span><span className="rinfo"><b>Bronze</b><span>Your first milestone</span></span><span className="rhrs">40h</span></li>
-          </ol>
-        </div>
-      </header>
+          <div className="card" aria-hidden="true">
+            <span className="card-badge">★ The awards</span>
+            <div className="lc-label">The ladder</div>
+            <div className="lc-sub">Reach the hours, earn the medal.</div>
+            <ol className="ladder">
+              <li className="rung gold"><span className="rmedal g">G</span><span className="rinfo"><b>Gold</b><span>Highest service honor</span></span><span className="rhrs">80h</span></li>
+              <li className="rung"><span className="rmedal s">S</span><span className="rinfo"><b>Silver</b><span>Serious commitment</span></span><span className="rhrs">75h</span></li>
+              <li className="rung"><span className="rmedal b">B</span><span className="rinfo"><b>Bronze</b><span>Your first milestone</span></span><span className="rhrs">40h</span></li>
+            </ol>
+          </div>
+        </header>
+      </div>
 
       <section className="wrap">
         <div className="sec-head">
@@ -184,7 +231,7 @@ export default function LandingPage() {
       </section>
 
       <footer>
-        <div className="wrap">MedinaCares · Medina Academy Volunteer Service Awards · opening to more schools soon</div>
+        <div className="wrap">MedinaCares · Medina Academy Volunteer Service Awards</div>
       </footer>
     </div>
   );
