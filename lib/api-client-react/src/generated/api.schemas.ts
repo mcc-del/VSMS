@@ -5,6 +5,15 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export interface ReportRow {
+  name: string;
+  school: string;
+  organization: string;
+  grade: string;
+  approvedHours: number;
+  medal: string;
+}
+
 export interface NameHours {
   name: string;
   hours: number;

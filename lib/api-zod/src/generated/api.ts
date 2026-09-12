@@ -790,6 +790,20 @@ export const GetAdminMetricsResponse = zod.object({
 
 
 /**
+ * @summary Per-participant rows for drill-down reports + CSV export (admin only)
+ */
+export const GetReportRowsResponseItem = zod.object({
+  "name": zod.string(),
+  "school": zod.string(),
+  "organization": zod.string(),
+  "grade": zod.string(),
+  "approvedHours": zod.number(),
+  "medal": zod.string()
+})
+export const GetReportRowsResponse = zod.array(GetReportRowsResponseItem)
+
+
+/**
  * @summary List approved schools for the enrollment picker
  */
 export const ListSchoolsResponseItem = zod.object({

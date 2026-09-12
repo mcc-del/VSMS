@@ -1,9 +1,35 @@
-import { useGetAdminMetrics } from "@workspace/api-client-react";
+import { useState } from "react";
+import { useGetAdminMetrics, useGetReportRows } from "@workspace/api-client-react";
+import type { ReportRow } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MedalBadge } from "@/components/medal-badge";
-import { Users, Clock, Award, CheckSquare, TrendingUp, CalendarDays } from "lucide-react";
+import { Users, Clock, Award, CheckSquare, TrendingUp, CalendarDays, HeartHandshake, Download, ChevronRight } from "lucide-react";
+
+// Independent Sector estimated value of a volunteer hour (2024, US).
+const HOUR_VALUE = 34;
+
+function downloadCsv(filename: string, rows: ReportRow[]) {
+  const header = ["Name", "School", "Organization", "Grade", "Approved hours", "Medal"];
+  const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  const body = rows.map((r) => [r.name, r.school, r.organization, r.grade, r.approvedHours, r.medal].map(esc).join(","));
+  const csv = [header.map(esc).join(","), ...body].join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
 
 function StatTile({
   icon,
@@ -109,6 +135,27 @@ function BarList({ items, unit = "h" }: { items: { name: string; hours: number }
 
 export default function AdminReports() {
   const { data: m, isLoading } = useGetAdminMetrics();
+  const { data: rows } = useGetReportRows();
+  const [groupBy, setGroupBy] = useState<"school" | "organization">("school");
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+
+  // Group report rows by the chosen dimension.
+  const groups = (() => {
+    const map = new Map<string, ReportRow[]>();
+    for (const r of rows ?? []) {
+      const key = r[groupBy] || "—";
+      const list = map.get(key) ?? [];
+      list.push(r);
+      map.set(key, list);
+    }
+    return [...map.entries()]
+      .map(([name, items]) => ({
+        name,
+        items,
+        totalHours: Math.round(items.reduce((s, x) => s + x.approvedHours, 0) * 10) / 10,
+      }))
+      .sort((a, b) => b.totalHours - a.totalHours);
+  })();
 
   return (
     <AppLayout>
@@ -133,6 +180,7 @@ export default function AdminReports() {
               <StatTile icon={<Award className="w-4 h-4" />} label="Medals earned" value={m.medalsAwarded} sub="Bronze / Silver / Gold" />
               <StatTile icon={<CheckSquare className="w-4 h-4" />} label="Pending reviews" value={m.pendingReviews} sub="awaiting a decision" />
               <StatTile icon={<CalendarDays className="w-4 h-4" />} label="Upcoming events" value={m.events.upcoming} sub={`${m.events.upcomingRegistrations} sign-ups`} />
+              <StatTile icon={<HeartHandshake className="w-4 h-4" />} label="Community impact" value={`$${Math.round(m.totalApprovedHours * HOUR_VALUE).toLocaleString()}`} sub={`≈ $${HOUR_VALUE}/volunteer hour`} />
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
@@ -183,6 +231,82 @@ export default function AdminReports() {
                         <span className="font-semibold tabular-nums text-sm">{v.hours.toFixed(1)}h</span>
                       </div>
                     ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Drill-down by school / organization + CSV export */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <CardTitle className="text-base">Hours by {groupBy}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Select value={groupBy} onValueChange={(v) => { setGroupBy(v as "school" | "organization"); setOpenGroup(null); }}>
+                      <SelectTrigger className="w-[150px]" data-testid="select-group-by">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="school">By school</SelectItem>
+                        <SelectItem value="organization">By organization</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadCsv("service-hours-all.csv", rows ?? [])}
+                      disabled={!rows || rows.length === 0}
+                      data-testid="button-export-all"
+                    >
+                      <Download className="w-4 h-4 mr-1" /> Export all
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {!rows || rows.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4">No participant hours yet.</p>
+                ) : (
+                  <div className="divide-y">
+                    {groups.map((g) => {
+                      const open = openGroup === g.name;
+                      return (
+                        <div key={g.name} className="py-1">
+                          <div className="flex items-center gap-2 py-2">
+                            <button
+                              className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                              onClick={() => setOpenGroup(open ? null : g.name)}
+                              data-testid={`group-${g.name}`}
+                            >
+                              <ChevronRight className={`w-4 h-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`} />
+                              <span className="font-medium truncate">{g.name}</span>
+                              <span className="text-xs text-muted-foreground">({g.items.length})</span>
+                            </button>
+                            <span className="font-semibold tabular-nums text-sm">{g.totalHours.toFixed(1)}h</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => downloadCsv(`service-hours-${g.name.replace(/[^\w]+/g, "_")}.csv`, g.items)}
+                              title={`Export ${g.name}`}
+                            >
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          {open && (
+                            <div className="pl-6 pb-2 space-y-1">
+                              {[...g.items].sort((a, b) => b.approvedHours - a.approvedHours).map((r, i) => (
+                                <div key={`${r.name}-${i}`} className="flex items-center gap-2 text-sm py-1">
+                                  <MedalBadge tier={r.medal as "gold" | "silver" | "bronze" | "none"} size={22} />
+                                  <span className="flex-1 min-w-0 truncate">{r.name}</span>
+                                  <span className="text-xs text-muted-foreground">Gr {r.grade}</span>
+                                  <span className="font-medium tabular-nums w-14 text-right">{r.approvedHours.toFixed(1)}h</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

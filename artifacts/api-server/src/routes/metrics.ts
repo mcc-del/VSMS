@@ -170,4 +170,67 @@ router.get("/v1/admin/metrics", authenticate, requireRole("admin"), async (_req,
   });
 });
 
+// GET /api/v1/admin/report-rows — one row per participant with their approved
+// hours, school, org, grade, and medal — for drill-down reports + CSV export.
+router.get("/v1/admin/report-rows", authenticate, requireRole("admin"), async (_req, res) => {
+  const [internalRows, manualRows, externalRows] = await Promise.all([
+    db
+      .select({
+        userId: volunteerSubmissionsTable.userId,
+        total: sql<string>`sum(coalesce(${volunteerSubmissionsTable.hoursWorked}, ${eventsTable.hoursValue}))`,
+      })
+      .from(volunteerSubmissionsTable)
+      .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
+      .where(eq(volunteerSubmissionsTable.status, "approved"))
+      .groupBy(volunteerSubmissionsTable.userId),
+    db
+      .select({ userId: manualHoursTable.userId, total: sql<string>`sum(${manualHoursTable.hours})` })
+      .from(manualHoursTable)
+      .groupBy(manualHoursTable.userId),
+    db
+      .select({ userId: externalSubmissionsTable.userId, total: sql<string>`sum(${externalSubmissionsTable.hoursWorked})` })
+      .from(externalSubmissionsTable)
+      .where(eq(externalSubmissionsTable.status, "approved"))
+      .groupBy(externalSubmissionsTable.userId),
+  ]);
+  const sum3 = (uid: string) => {
+    const g = (rows: { userId: string; total: string }[]) => Number(rows.find((r) => r.userId === uid)?.total ?? 0);
+    return g(internalRows) + g(manualRows) + g(externalRows);
+  };
+
+  const participants = await db
+    .select({
+      userId: usersTable.userId,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      grade: usersTable.grade,
+      school: usersTable.school,
+      organizationId: usersTable.organizationId,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.role, "participant"));
+
+  const orgs = await db
+    .select({ organizationId: organizationsTable.organizationId, name: organizationsTable.name })
+    .from(organizationsTable);
+  const orgName = new Map(orgs.map((o) => [o.organizationId, o.name]));
+
+  const round = (n: number) => Math.round(n * 10) / 10;
+  const rows = participants
+    .map((p) => {
+      const hours = round(sum3(p.userId));
+      return {
+        name: `${p.firstName} ${p.lastName}`.trim(),
+        school: p.school ?? "—",
+        organization: p.organizationId ? orgName.get(p.organizationId) ?? "Community" : "Community",
+        grade: p.grade ?? "—",
+        approvedHours: hours,
+        medal: medalFor(hours),
+      };
+    })
+    .sort((a, b) => b.approvedHours - a.approvedHours);
+
+  res.json(rows);
+});
+
 export default router;

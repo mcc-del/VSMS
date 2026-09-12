@@ -50,6 +50,7 @@ export * from './parentChildRegistration';
 export * from './participantDashboard';
 export * from './registerInput';
 export * from './registerInputAccountType';
+export * from './reportRow';
 export * from './reviewInput';
 export * from './school';
 export * from './schoolMergeInput';

@@ -54,6 +54,7 @@ import type {
   ParentChildRegistration,
   ParticipantDashboard,
   RegisterInput,
+  ReportRow,
   ReviewInput,
   School,
   SchoolMergeInput,
@@ -2571,6 +2572,83 @@ export function useGetAdminMetrics<TData = Awaited<ReturnType<typeof getAdminMet
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAdminMetricsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetReportRowsUrl = () => {
+
+
+
+
+  return `/api/v1/admin/report-rows`
+}
+
+/**
+ * @summary Per-participant rows for drill-down reports + CSV export (admin only)
+ */
+export const getReportRows = async ( options?: RequestInit): Promise<ReportRow[]> => {
+
+  return customFetch<ReportRow[]>(getGetReportRowsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetReportRowsQueryKey = () => {
+    return [
+    `/api/v1/admin/report-rows`
+    ] as const;
+    }
+
+
+export const getGetReportRowsQueryOptions = <TData = Awaited<ReturnType<typeof getReportRows>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReportRows>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReportRowsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportRows>>> = ({ signal }) => getReportRows({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReportRows>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetReportRowsQueryResult = NonNullable<Awaited<ReturnType<typeof getReportRows>>>
+export type GetReportRowsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Per-participant rows for drill-down reports + CSV export (admin only)
+ */
+
+export function useGetReportRows<TData = Awaited<ReturnType<typeof getReportRows>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getReportRows>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetReportRowsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
