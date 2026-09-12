@@ -1017,6 +1017,56 @@ export const GetLeaderboardResponse = zod.object({
 
 
 /**
+ * @summary My verified service record (approved hours, itemized & attributed)
+ */
+export const GetMyServiceRecordResponse = zod.object({
+  "studentName": zod.string(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "season": zod.string(),
+  "generatedAt": zod.string(),
+  "totalApprovedHours": zod.number(),
+  "medal": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "date": zod.string(),
+  "activity": zod.string(),
+  "organization": zod.string(),
+  "hours": zod.number(),
+  "verifiedBy": zod.string(),
+  "type": zod.enum(['event', 'external', 'manual'])
+}))
+})
+
+
+/**
+ * @summary Verified service record for a participant (admin)
+ */
+export const GetUserServiceRecordParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const GetUserServiceRecordResponse = zod.object({
+  "studentName": zod.string(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "season": zod.string(),
+  "generatedAt": zod.string(),
+  "totalApprovedHours": zod.number(),
+  "medal": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "date": zod.string(),
+  "activity": zod.string(),
+  "organization": zod.string(),
+  "hours": zod.number(),
+  "verifiedBy": zod.string(),
+  "type": zod.enum(['event', 'external', 'manual'])
+}))
+})
+
+
+/**
  * @summary Org IDs the current admin manages (all=true for Super Admin)
  */
 export const GetManagedOrganizationsResponse = zod.object({

@@ -144,6 +144,40 @@ export interface LeaderboardResponse {
   entries: LeaderboardEntry[];
 }
 
+export type ServiceRecordItemType = typeof ServiceRecordItemType[keyof typeof ServiceRecordItemType];
+
+
+export const ServiceRecordItemType = {
+  event: 'event',
+  external: 'external',
+  manual: 'manual',
+} as const;
+
+export interface ServiceRecordItem {
+  date: string;
+  activity: string;
+  organization: string;
+  hours: number;
+  verifiedBy: string;
+  type: ServiceRecordItemType;
+}
+
+export interface ServiceRecord {
+  studentName: string;
+  /** @nullable */
+  grade?: string | null;
+  /** @nullable */
+  school?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
+  season: string;
+  generatedAt: string;
+  totalApprovedHours: number;
+  /** @nullable */
+  medal?: string | null;
+  items: ServiceRecordItem[];
+}
+
 export interface ManagedOrganizations {
   all: boolean;
   organizationIds: string[];

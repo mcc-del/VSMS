@@ -59,6 +59,7 @@ import type {
   School,
   SchoolMergeInput,
   SchoolRequestInput,
+  ServiceRecord,
   SetOrgAdminInput,
   SetOrgAdminResult,
   Submission,
@@ -3467,6 +3468,160 @@ export function useGetLeaderboard<TData = Awaited<ReturnType<typeof getLeaderboa
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetLeaderboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetMyServiceRecordUrl = () => {
+
+
+
+
+  return `/api/v1/me/service-record`
+}
+
+/**
+ * @summary My verified service record (approved hours, itemized & attributed)
+ */
+export const getMyServiceRecord = async ( options?: RequestInit): Promise<ServiceRecord> => {
+
+  return customFetch<ServiceRecord>(getGetMyServiceRecordUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyServiceRecordQueryKey = () => {
+    return [
+    `/api/v1/me/service-record`
+    ] as const;
+    }
+
+
+export const getGetMyServiceRecordQueryOptions = <TData = Awaited<ReturnType<typeof getMyServiceRecord>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyServiceRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyServiceRecordQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyServiceRecord>>> = ({ signal }) => getMyServiceRecord({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyServiceRecord>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyServiceRecordQueryResult = NonNullable<Awaited<ReturnType<typeof getMyServiceRecord>>>
+export type GetMyServiceRecordQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary My verified service record (approved hours, itemized & attributed)
+ */
+
+export function useGetMyServiceRecord<TData = Awaited<ReturnType<typeof getMyServiceRecord>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyServiceRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyServiceRecordQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetUserServiceRecordUrl = (userId: string,) => {
+
+
+
+
+  return `/api/v1/admin/users/${userId}/service-record`
+}
+
+/**
+ * @summary Verified service record for a participant (admin)
+ */
+export const getUserServiceRecord = async (userId: string, options?: RequestInit): Promise<ServiceRecord> => {
+
+  return customFetch<ServiceRecord>(getGetUserServiceRecordUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUserServiceRecordQueryKey = (userId: string,) => {
+    return [
+    `/api/v1/admin/users/${userId}/service-record`
+    ] as const;
+    }
+
+
+export const getGetUserServiceRecordQueryOptions = <TData = Awaited<ReturnType<typeof getUserServiceRecord>>, TError = ErrorType<ErrorResponse>>(userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserServiceRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUserServiceRecordQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserServiceRecord>>> = ({ signal }) => getUserServiceRecord(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(userId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserServiceRecord>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUserServiceRecordQueryResult = NonNullable<Awaited<ReturnType<typeof getUserServiceRecord>>>
+export type GetUserServiceRecordQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Verified service record for a participant (admin)
+ */
+
+export function useGetUserServiceRecord<TData = Awaited<ReturnType<typeof getUserServiceRecord>>, TError = ErrorType<ErrorResponse>>(
+ userId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserServiceRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUserServiceRecordQueryOptions(userId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -15,7 +15,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Clock, Building2, Pencil } from "lucide-react";
+import { Plus, Trash2, Clock, Building2, Pencil, FileText } from "lucide-react";
+import { useLocation } from "wouter";
 
 const schema = z.object({
   firstName: z.string().min(2).max(50),
@@ -56,6 +57,7 @@ export default function AdminUsers() {
   const updateUser = useUpdateUser();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState<{ userId: string; firstName: string; lastName: string; phone: string } | null>(null);
 
@@ -222,6 +224,17 @@ export default function AdminUsers() {
                               className="text-muted-foreground hover:text-primary gap-1"
                             >
                               <Clock className="w-4 h-4" /> Add hours
+                            </Button>
+                          )}
+                          {u.role === "participant" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              data-testid={`button-service-record-${u.userId}`}
+                              onClick={() => setLocation(`/admin/users/${u.userId}/service-record`)}
+                              className="text-muted-foreground hover:text-primary gap-1"
+                            >
+                              <FileText className="w-4 h-4" /> Service record
                             </Button>
                           )}
                           {(u.role === "participant" || u.role === "org_admin" || u.role === "supervisor") && (

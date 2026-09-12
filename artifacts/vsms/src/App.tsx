@@ -22,6 +22,7 @@ import AdminReports from "@/pages/admin/reports";
 import ExternalSubmissionPage from "@/pages/participant/external-submission";
 import ParentDashboard from "@/pages/parent/dashboard";
 import LeaderboardPage from "@/pages/participant/leaderboard";
+import ServiceRecordPage from "@/pages/service-record";
 import { useAuth } from "@/hooks/use-auth";
 
 const queryClient = new QueryClient({
@@ -57,6 +58,7 @@ function Router() {
       <ProtectedRoute path="/external" component={ExternalSubmissionPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/history" component={HistoryPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/leaderboard" component={LeaderboardPage} allowedRoles={["participant"]} />
+      <ProtectedRoute path="/service-record" component={ServiceRecordPage} allowedRoles={["participant"]} />
 
       <ProtectedRoute path="/parent" component={ParentDashboard} allowedRoles={["parent"]} />
 
@@ -69,6 +71,7 @@ function Router() {
       <ProtectedRoute path="/admin/events" component={AdminEventsPage} allowedRoles={["admin", "org_admin", "supervisor"]} />
       <ProtectedRoute path="/admin/reports" component={AdminReports} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/organizations" component={AdminOrganizations} allowedRoles={["admin"]} />
+      <ProtectedRoute path="/admin/users/:userId/service-record" component={ServiceRecordPage} allowedRoles={["admin"]} />
 
       <Route component={NotFound} />
     </Switch>

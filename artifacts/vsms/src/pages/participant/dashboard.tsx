@@ -37,7 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
-import { Clock, AlertCircle, MapPin, CheckCheck, CalendarDays, Search, ExternalLink } from "lucide-react";
+import { Clock, AlertCircle, MapPin, CheckCheck, CalendarDays, Search, ExternalLink, FileText } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -270,6 +270,9 @@ export default function ParticipantDashboard() {
                     </Link>
                     <Link href="/external" className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 text-primary-foreground font-medium px-4 py-2 text-sm hover:bg-white/25 transition-colors">
                       <ExternalLink className="w-4 h-4" /> Log external hours
+                    </Link>
+                    <Link href="/service-record" className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 text-primary-foreground font-medium px-4 py-2 text-sm hover:bg-white/25 transition-colors">
+                      <FileText className="w-4 h-4" /> My service record
                     </Link>
                     {(dashboard?.pendingCount ?? 0) > 0 && (
                       <span className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-sm text-primary-foreground/85">

@@ -1036,6 +1036,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/LeaderboardResponse"
 
+  /v1/me/service-record:
+    get:
+      operationId: getMyServiceRecord
+      tags: [profile]
+      summary: My verified service record (approved hours, itemized & attributed)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRecord"
+
+  /v1/admin/users/{userId}/service-record:
+    get:
+      operationId: getUserServiceRecord
+      tags: [admin]
+      summary: Verified service record for a participant (admin)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/me/managed-organizations:
     get:
       operationId: getManagedOrganizations
@@ -1515,6 +1553,47 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LeaderboardEntry"
+    ServiceRecordItem:
+      type: object
+      required: [date, activity, organization, hours, verifiedBy, type]
+      properties:
+        date:
+          type: string
+        activity:
+          type: string
+        organization:
+          type: string
+        hours:
+          type: number
+        verifiedBy:
+          type: string
+        type:
+          type: string
+          enum: [event, external, manual]
+    ServiceRecord:
+      type: object
+      required: [studentName, season, generatedAt, totalApprovedHours, items]
+      properties:
+        studentName:
+          type: string
+        grade:
+          type: ["string", "null"]
+        school:
+          type: ["string", "null"]
+        organizationName:
+          type: ["string", "null"]
+        season:
+          type: string
+        generatedAt:
+          type: string
+        totalApprovedHours:
+          type: number
+        medal:
+          type: ["string", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceRecordItem"
     ManagedOrganizations:
       type: object
       required: [all, organizationIds]
