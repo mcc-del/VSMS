@@ -211,7 +211,7 @@ export default function ParticipantDashboard() {
         ) : (() => {
           const MILESTONES = [
             { label: "Bronze", goal: 40 },
-            { label: "Silver", goal: 75 },
+            { label: "Silver", goal: 60 },
             { label: "Gold", goal: 80 },
           ];
           const totalHours = dashboard?.totalApprovedHours ?? 0;
@@ -221,7 +221,7 @@ export default function ParticipantDashboard() {
             ? Math.min(100, Math.round(((totalHours - prevGoal) / (next.goal - prevGoal)) * 100))
             : 100;
           const remaining = next ? Math.max(0, next.goal - totalHours) : 0;
-          const tier = totalHours >= 80 ? "gold" : totalHours >= 75 ? "silver" : totalHours >= 40 ? "bronze" : "none";
+          const tier = totalHours >= 80 ? "gold" : totalHours >= 60 ? "silver" : totalHours >= 40 ? "bronze" : "none";
           const R = 66;
           const C = 2 * Math.PI * R;
           return (

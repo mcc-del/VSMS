@@ -6,7 +6,6 @@ import {
   useEditExternalSubmission,
   useWithdrawExternalSubmission,
   useListMyExternalSubmissions,
-  useListMySubmissions,
   getListMyExternalSubmissionsQueryKey,
   getGetParticipantDashboardQueryKey,
   type ExternalSubmission,
@@ -22,7 +21,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Info, X, Pencil, Trash2 } from "lucide-react";
+import { Info, Pencil, Trash2 } from "lucide-react";
 import { ProofUpload } from "@/components/proof-upload";
 import { ProofLink } from "@/components/proof-link";
 import { useState } from "react";
@@ -77,10 +76,8 @@ export default function ExternalSubmissionPage() {
   const editMutation = useEditExternalSubmission();
   const withdrawMutation = useWithdrawExternalSubmission();
   const { data: externals, isLoading } = useListMyExternalSubmissions();
-  const { data: calendarSubs } = useListMySubmissions();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [deferredBanner, setDeferredBanner] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const form = useForm({
@@ -100,29 +97,7 @@ export default function ExternalSubmissionPage() {
     },
   });
 
-  const watchedHours = form.watch("hoursWorked");
   const watchedGuidelines = form.watch("guidelines");
-
-  const approvedCalendarHours = (calendarSubs ?? [])
-    .filter((s) => s.status === "approved")
-    .reduce((sum, s) => sum + (Number(s.hoursWorked) || 0), 0);
-
-  const approvedExternalHours = (externals ?? [])
-    .filter((s) => s.status === "approved")
-    .reduce((sum, s) => sum + (s.hoursWorked || 0), 0);
-
-  const pendingExternalHours = (externals ?? [])
-    .filter((s) => s.status === "pending")
-    .reduce((sum, s) => sum + (s.hoursWorked || 0), 0);
-
-  const maxExternal = approvedCalendarHours * 0.25;
-  const usedExternal = approvedExternalHours + pendingExternalHours;
-  const remainingExternal = Math.max(0, maxExternal - usedExternal);
-
-  const wouldExceedCap =
-    approvedCalendarHours > 0 &&
-    Number(watchedHours) > 0 &&
-    usedExternal + Number(watchedHours) > maxExternal;
 
   const refreshLists = () => {
     queryClient.invalidateQueries({ queryKey: getListMyExternalSubmissionsQueryKey() });
@@ -131,7 +106,6 @@ export default function ExternalSubmissionPage() {
 
   function startEdit(s: ExternalSubmission) {
     setEditingId(s.externalSubmissionId);
-    setDeferredBanner(false);
     form.reset({
       activityName: s.activityName,
       organizationName: s.organizationName,
@@ -200,16 +174,11 @@ export default function ExternalSubmissionPage() {
     submitMutation.mutate(
       { data: rest },
       {
-        onSuccess: (data) => {
-          const isDeferred = data.status === "deferred_overflow";
-          if (isDeferred) {
-            setDeferredBanner(true);
-          } else {
-            toast({
-              title: "Activity submitted",
-              description: "Your external volunteer activity is pending review.",
-            });
-          }
+        onSuccess: () => {
+          toast({
+            title: "Activity submitted",
+            description: "Your external volunteer activity is pending review.",
+          });
           refreshLists();
           form.reset();
         },
@@ -234,42 +203,14 @@ export default function ExternalSubmissionPage() {
           </p>
         </div>
 
-        {deferredBanner && (
-          <div className="flex gap-3 bg-blue-50 border border-blue-300 rounded-xl px-4 py-3">
-            <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-            <div className="flex-1 text-sm text-blue-800">
-              <p className="font-medium">Submission processed</p>
-              <p>
-                This entry has been placed in your Deferred Repository because it exceeds the 25%
-                external hours limit. It will be released once you complete more in-organization
-                volunteer hours.
-              </p>
-            </div>
-            <button
-              className="text-blue-400 hover:text-blue-700"
-              onClick={() => setDeferredBanner(false)}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* 25% Cap Info */}
         <div className="flex gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
           <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
           <div className="text-sm text-blue-800 space-y-1">
-            <p className="font-medium">External hour limit</p>
+            <p className="font-medium">Volunteering beyond Medina counts</p>
             <p>
-              External hours are capped at <strong>25% of your approved calendar hours</strong>.
-              You have {approvedCalendarHours.toFixed(1)}h approved calendar hours, so your external
-              limit is <strong>{maxExternal.toFixed(1)}h</strong>.
+              Report volunteer work you did with any registered non-profit. Once a supervisor
+              verifies it, the hours count toward your Bronze, Silver, or Gold medal.
             </p>
-            {approvedCalendarHours > 0 && (
-              <p>
-                Used (approved + pending): {usedExternal.toFixed(1)}h &nbsp;·&nbsp;
-                Remaining: <strong>{remainingExternal.toFixed(1)}h</strong>
-              </p>
-            )}
           </div>
         </div>
 
@@ -396,17 +337,6 @@ export default function ExternalSubmissionPage() {
                     )}
                   />
                 </div>
-
-                {wouldExceedCap && (
-                  <div className="flex gap-3 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3" data-testid="cap-warning">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                    <p className="text-sm text-amber-800">
-                      <strong>Warning:</strong> This entry exceeds your 25% external hours capacity
-                      limit. If submitted, these hours will be safely held in your Deferred
-                      Repository until you complete more in-organization volunteer hours.
-                    </p>
-                  </div>
-                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <FormField

@@ -17,7 +17,7 @@ const schema = z.object({
 
 const MEDALS = [
   { label: "Bronze", hours: "40h+" },
-  { label: "Silver", hours: "75h+" },
+  { label: "Silver", hours: "60h+" },
   { label: "Gold", hours: "80h+" },
 ];
 

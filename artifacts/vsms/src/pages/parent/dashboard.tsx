@@ -58,7 +58,7 @@ function formatDate(dateStr?: string | null) {
 
 const MILESTONES = [
   { label: "Bronze", goal: 40 },
-  { label: "Silver", goal: 75 },
+  { label: "Silver", goal: 60 },
   { label: "Gold", goal: 80 },
 ];
 

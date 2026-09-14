@@ -14,7 +14,7 @@ const router = Router();
 
 function medalFor(hours: number): string | null {
   if (hours >= 80) return "Gold";
-  if (hours >= 75) return "Silver";
+  if (hours >= 60) return "Silver";
   if (hours >= 40) return "Bronze";
   return null;
 }

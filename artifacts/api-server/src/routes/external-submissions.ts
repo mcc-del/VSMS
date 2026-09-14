@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, externalSubmissionsTable, volunteerSubmissionsTable, eventsTable, usersTable } from "@workspace/db";
-import { eq, and, inArray, sum, sql, ne } from "drizzle-orm";
+import { db, externalSubmissionsTable, usersTable } from "@workspace/db";
+import { eq, and, inArray, ne } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitExternalActivityBody } from "@workspace/api-zod";
 import { isWithinAwardWindow, AWARD_WINDOW_MESSAGE } from "../lib/season";
@@ -54,55 +54,6 @@ function validateExternalFields(data: ExternalFields, selfEmail: string | null):
     return "The supervisor email must belong to someone other than you.";
   }
   return null;
-}
-
-// Recompute whether a submission must be deferred under the 25% external cap.
-// `excludeId` omits an existing submission (used when editing it in place).
-async function computeDeferred(
-  userId: string,
-  hoursWorked: number,
-  excludeId?: string,
-): Promise<boolean> {
-  const [calendarApproved] = await db
-    .select({
-      total: sql<string>`sum(coalesce(${volunteerSubmissionsTable.hoursWorked}, ${eventsTable.hoursValue}))`,
-    })
-    .from(volunteerSubmissionsTable)
-    .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
-    .where(
-      and(
-        eq(volunteerSubmissionsTable.userId, userId),
-        eq(volunteerSubmissionsTable.status, "approved"),
-      ),
-    );
-  const calendarApprovedHours = Number(calendarApproved?.total ?? 0);
-
-  const [externalApproved] = await db
-    .select({ total: sum(externalSubmissionsTable.hoursWorked) })
-    .from(externalSubmissionsTable)
-    .where(
-      and(
-        eq(externalSubmissionsTable.userId, userId),
-        eq(externalSubmissionsTable.status, "approved"),
-      ),
-    );
-  const externalApprovedHours = Number(externalApproved?.total ?? 0);
-
-  const [externalPending] = await db
-    .select({ total: sum(externalSubmissionsTable.hoursWorked) })
-    .from(externalSubmissionsTable)
-    .where(
-      and(
-        eq(externalSubmissionsTable.userId, userId),
-        eq(externalSubmissionsTable.status, "pending"),
-        ...(excludeId ? [ne(externalSubmissionsTable.externalSubmissionId, excludeId)] : []),
-      ),
-    );
-  const externalPendingHours = Number(externalPending?.total ?? 0);
-
-  const totalExternalIfApproved = externalApprovedHours + externalPendingHours + hoursWorked;
-  const maxAllowedExternal = calendarApprovedHours * 0.25;
-  return calendarApprovedHours > 0 && totalExternalIfApproved > maxAllowedExternal;
 }
 
 function formatExternal(r: typeof externalSubmissionsTable.$inferSelect) {
@@ -190,10 +141,6 @@ router.post(
       return;
     }
 
-    // Enforce the 25% external-hours cap. With zero approved internal hours the
-    // cap has no baseline, so the submission is let through as "pending".
-    const isDeferred = await computeDeferred(userId, hoursWorked);
-
     const [submission] = await db
       .insert(externalSubmissionsTable)
       .values({
@@ -208,16 +155,11 @@ router.post(
         isNonprofit: isNonprofit ?? false,
         ein: isNonprofit ? (ein ?? "").replace(/[^0-9]/g, "") : null,
         proofUrl: proofUrl?.trim() || null,
-        status: isDeferred ? "deferred_overflow" : "pending",
+        status: "pending",
       })
       .returning();
 
-    const responseBody: ReturnType<typeof formatExternal> & { message?: string } = formatExternal(submission);
-    if (isDeferred) {
-      responseBody.message =
-        "Your submission exceeds the 25% external hours cap. It has been safely stored in your Deferred Repository and will be released once you complete more in-organization volunteer hours.";
-    }
-    res.status(201).json(responseBody);
+    res.status(201).json(formatExternal(submission));
   },
 );
 
@@ -297,8 +239,6 @@ router.patch(
       return;
     }
 
-    const isDeferred = await computeDeferred(userId, hoursWorked, externalSubmissionId);
-
     const [updated] = await db
       .update(externalSubmissionsTable)
       .set({
@@ -312,7 +252,7 @@ router.patch(
         isNonprofit: isNonprofit ?? false,
         ein: isNonprofit ? (ein ?? "").replace(/[^0-9]/g, "") : null,
         proofUrl: proofUrl?.trim() || null,
-        status: isDeferred ? "deferred_overflow" : "pending",
+        status: "pending",
         supervisorComments: null,
         reviewedAt: null,
       })

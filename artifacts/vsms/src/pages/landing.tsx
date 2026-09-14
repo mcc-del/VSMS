@@ -180,7 +180,7 @@ export default function LandingPage() {
             <div className="lc-sub">Reach the hours, earn the medal.</div>
             <ol className="ladder">
               <li className="rung gold"><span className="rmedal g">G</span><span className="rinfo"><b>Gold</b><span>Highest service honor</span></span><span className="rhrs">80h+</span></li>
-              <li className="rung"><span className="rmedal s">S</span><span className="rinfo"><b>Silver</b><span>Serious commitment</span></span><span className="rhrs">75h+</span></li>
+              <li className="rung"><span className="rmedal s">S</span><span className="rinfo"><b>Silver</b><span>Serious commitment</span></span><span className="rhrs">60h+</span></li>
               <li className="rung"><span className="rmedal b">B</span><span className="rinfo"><b>Bronze</b><span>Your first milestone</span></span><span className="rhrs">40h+</span></li>
             </ol>
           </div>
@@ -206,7 +206,7 @@ export default function LandingPage() {
           <h2>Something to aim for.</h2>
           <div className="tiers">
             <div className="tier"><h3>Bronze</h3><div className="hrs">40+ hrs</div><p>Your first big milestone — the habit is real.</p></div>
-            <div className="tier"><h3>Silver</h3><div className="hrs">75+ hrs</div><p>Serious commitment to service.</p></div>
+            <div className="tier"><h3>Silver</h3><div className="hrs">60+ hrs</div><p>Serious commitment to service.</p></div>
             <div className="tier"><h3>Gold</h3><div className="hrs">80+ hrs</div><p>The highest honor — recognized leadership.</p></div>
           </div>
         </div>

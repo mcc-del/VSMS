@@ -142,7 +142,7 @@ function Document({ rec }: { rec: ServiceRecord }) {
       <p className="sr-attest">
         The hours listed above were logged by the participant and independently reviewed and
         approved by the named supervisor or verifier for each activity. Medina Academy accredits
-        these hours toward its Volunteer Service Awards (Bronze 40+, Silver 75+, Gold 80+).
+        these hours toward its Volunteer Service Awards (Bronze 40+, Silver 60+, Gold 80+).
       </p>
 
       <div className="sr-sign">

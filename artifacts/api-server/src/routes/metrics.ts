@@ -16,7 +16,7 @@ const router = Router();
 
 function medalFor(h: number): "gold" | "silver" | "bronze" | "none" {
   if (h >= 80) return "gold";
-  if (h >= 75) return "silver";
+  if (h >= 60) return "silver";
   if (h >= 40) return "bronze";
   return "none";
 }
