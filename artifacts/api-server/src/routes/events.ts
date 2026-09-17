@@ -946,6 +946,20 @@ router.delete(
       }
     }
 
+    // Safety: never destroy accredited hours. Block deletion if any participant
+    // has approved hours for this event (deleting would cascade them away).
+    const [approved] = await db
+      .select({ c: count() })
+      .from(volunteerSubmissionsTable)
+      .where(and(eq(volunteerSubmissionsTable.eventId, eventId), eq(volunteerSubmissionsTable.status, "approved")));
+    if (Number(approved?.c ?? 0) > 0) {
+      res.status(400).json({
+        error:
+          "This event can't be deleted because participants have approved hours for it. Those hours must be preserved.",
+      });
+      return;
+    }
+
     await db.delete(eventsTable).where(eq(eventsTable.eventId, eventId));
     res.json({ status: "success", message: "Event deleted" });
   },
