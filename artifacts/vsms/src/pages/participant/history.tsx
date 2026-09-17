@@ -23,12 +23,40 @@ export default function HistoryPage() {
     (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
   );
 
+  // Snapshot across internal + external claims.
+  const combined = [
+    ...sorted.map((s) => ({ status: s.status, hours: Number(s.hoursWorked ?? 0) })),
+    ...sortedExternal.map((s) => ({ status: s.status, hours: Number(s.hoursWorked ?? 0) })),
+  ];
+  const approvedCount = combined.filter((s) => s.status === "approved").length;
+  const approvedHours = combined.filter((s) => s.status === "approved").reduce((n, s) => n + s.hours, 0);
+  const pendingCount = combined.filter((s) => s.status === "pending" || s.status === "deferred_overflow").length;
+  const rejectedCount = combined.filter((s) => s.status === "rejected").length;
+
+  const tiles = [
+    { label: "Approved hours", value: approvedHours.toFixed(1), sub: `${approvedCount} approved`, cls: "text-green-600" },
+    { label: "Waiting", value: pendingCount, sub: "in review", cls: "text-yellow-600" },
+    { label: "Rejected", value: rejectedCount, sub: "not counted", cls: "text-red-600" },
+  ];
+
   return (
     <AppLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Submission History</h1>
-          <p className="text-muted-foreground text-sm mt-1">All your volunteer hour claims</p>
+          <h1 className="text-2xl font-bold">My Hours</h1>
+          <p className="text-muted-foreground text-sm mt-1">Your approved, waiting, and rejected volunteer hours — all in one place.</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          {tiles.map((t) => (
+            <Card key={t.label}>
+              <CardContent className="p-4">
+                <p className={`text-2xl font-bold tabular-nums ${t.cls}`}>{t.value}</p>
+                <p className="text-xs font-medium mt-0.5">{t.label}</p>
+                <p className="text-xs text-muted-foreground">{t.sub}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <Card>

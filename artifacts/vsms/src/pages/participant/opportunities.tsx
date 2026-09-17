@@ -85,6 +85,11 @@ export default function OpportunitiesPage() {
     .filter((e) => e.eventDate < today && matches(e) && e.eligibleForMe !== false)
     .sort((a, b) => (a.eventDate > b.eventDate ? -1 : 1));
 
+  // My sign-ups (folds in the old Calendar page): events I'm registered for.
+  const mine = [...(events ?? [])]
+    .filter((e) => !!(myRegMap[e.eventId] ?? e.myRegistrationStatus) && matches(e))
+    .sort((a, b) => (a.eventDate < b.eventDate ? -1 : 1));
+
   function handleSignUp(eventId: string) {
     registerMutation.mutate(
       { eventId },
@@ -390,7 +395,10 @@ export default function OpportunitiesPage() {
           <Tabs defaultValue="upcoming">
             <TabsList>
               <TabsTrigger value="upcoming" data-testid="tab-upcoming">
-                Upcoming ({upcoming.length})
+                Browse ({upcoming.length})
+              </TabsTrigger>
+              <TabsTrigger value="mine" data-testid="tab-mine">
+                My sign-ups ({mine.length})
               </TabsTrigger>
               <TabsTrigger value="past" data-testid="tab-past">
                 Past ({past.length})
@@ -406,6 +414,18 @@ export default function OpportunitiesPage() {
                 </Card>
               ) : (
                 <div className="space-y-4">{upcoming.map((e) => renderEvent(e, true))}</div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="mine" className="mt-4">
+              {mine.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-muted-foreground">
+                    You haven't signed up for anything yet. Browse opportunities and sign up — they'll show here.
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">{mine.map((e) => renderEvent(e, e.eventDate >= today))}</div>
               )}
             </TabsContent>
 

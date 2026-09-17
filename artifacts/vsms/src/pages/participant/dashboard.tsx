@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import {
   useGetParticipantDashboard,
   useListMySubmissions,
+  useListMyExternalSubmissions,
   useListMyRegistrations,
   useCheckInToEvent,
   useSubmitInternalHours,
@@ -58,6 +59,7 @@ function formatTime(t: string) {
 
 export default function ParticipantDashboard() {
   const { data: dashboard, isLoading: dashLoading } = useGetParticipantDashboard();
+  const { data: externalSubs } = useListMyExternalSubmissions();
   const { data: submissions, isLoading: subLoading } = useListMySubmissions();
   const { data: registrations, isLoading: registrationsLoading } = useListMyRegistrations();
   const checkIn = useCheckInToEvent();
@@ -293,6 +295,42 @@ export default function ParticipantDashboard() {
             </div>
           );
         })()}
+
+        {/* External submissions snapshot */}
+        {externalSubs && externalSubs.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ExternalLink className="w-4 h-4 text-muted-foreground" /> Your external submissions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {[...externalSubs]
+                  .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
+                  .slice(0, 4)
+                  .map((s) => (
+                    <div key={s.externalSubmissionId} className="flex items-center justify-between gap-3 text-sm border-b last:border-0 pb-2 last:pb-0">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{s.activityName}</p>
+                        <p className="text-xs text-muted-foreground">{s.organizationName} · {s.volunteerDate} · {s.hoursWorked}h</p>
+                      </div>
+                      <Badge className={
+                        s.status === "approved" ? "bg-green-100 text-green-700 border-0" :
+                        s.status === "rejected" ? "bg-red-100 text-red-700 border-0" :
+                        "bg-yellow-100 text-yellow-700 border-0"
+                      }>
+                        {s.status === "approved" ? "Approved" : s.status === "rejected" ? "Rejected" : "Pending"}
+                      </Badge>
+                    </div>
+                  ))}
+              </div>
+              <Link href="/external" className="inline-flex items-center gap-1 text-sm text-primary font-medium mt-3 hover:underline">
+                <ExternalLink className="w-3.5 h-3.5" /> Log or manage external hours
+              </Link>
+            </CardContent>
+          </Card>
+        )}
 
         {/* My Schedule */}
         <Card id="my-schedule" className="scroll-mt-6">
