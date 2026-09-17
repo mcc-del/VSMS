@@ -49,6 +49,7 @@ import type {
   ManagedOrganizations,
   ManualHoursCredit,
   ManualHoursInput,
+  OkResponse,
   Organization,
   OrganizationInput,
   OverrideInput,
@@ -905,6 +906,76 @@ export const useRegisterForEvent = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getRegisterForEventMutationOptions(options));
+    }
+
+export const getWithdrawFromEventUrl = (eventId: string,) => {
+
+
+
+
+  return `/api/v1/events/${eventId}/register`
+}
+
+/**
+ * @summary Withdraw your own sign-up (participant)
+ */
+export const withdrawFromEvent = async (eventId: string, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getWithdrawFromEventUrl(eventId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getWithdrawFromEventMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawFromEvent>>, TError,{eventId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof withdrawFromEvent>>, TError,{eventId: string}, TContext> => {
+
+const mutationKey = ['withdrawFromEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof withdrawFromEvent>>, {eventId: string}> = (props) => {
+          const {eventId} = props ?? {};
+
+          return  withdrawFromEvent(eventId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type WithdrawFromEventMutationResult = NonNullable<Awaited<ReturnType<typeof withdrawFromEvent>>>
+
+    export type WithdrawFromEventMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Withdraw your own sign-up (participant)
+ */
+export const useWithdrawFromEvent = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawFromEvent>>, TError,{eventId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof withdrawFromEvent>>,
+        TError,
+        {eventId: string},
+        TContext
+      > => {
+      return useMutation(getWithdrawFromEventMutationOptions(options));
     }
 
 export const getCheckInToEventUrl = (eventId: string,) => {

@@ -263,6 +263,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: withdrawFromEvent
+      tags: [events]
+      summary: Withdraw your own sign-up (participant)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Withdrawn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Cannot withdraw
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/events/{eventId}/checkin:
     post:
@@ -1670,6 +1699,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ServiceRecordItem"
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
     TestEmailBody:
       type: object
       required: [to]

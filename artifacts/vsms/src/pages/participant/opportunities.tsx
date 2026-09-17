@@ -3,6 +3,7 @@ import {
   useListEvents,
   useListMyRegistrations,
   useRegisterForEvent,
+  useWithdrawFromEvent,
   getListMyRegistrationsQueryKey,
   getListEventsQueryKey,
 } from "@workspace/api-client-react";
@@ -56,6 +57,7 @@ export default function OpportunitiesPage() {
   const { data: events, isLoading } = useListEvents();
   const { data: myRegistrations } = useListMyRegistrations();
   const registerMutation = useRegisterForEvent();
+  const withdrawMutation = useWithdrawFromEvent();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -148,6 +150,22 @@ export default function OpportunitiesPage() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function withdraw(event: Event) {
+    if (!window.confirm(`Withdraw from "${event.title}"? You can sign up again later if there's room.`)) return;
+    withdrawMutation.mutate(
+      { eventId: event.eventId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListMyRegistrationsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
+          toast({ title: "Withdrawn", description: `You're no longer signed up for ${event.title}.` });
+        },
+        onError: (err: any) =>
+          toast({ title: "Couldn't withdraw", description: err?.data?.error ?? "Try again.", variant: "destructive" }),
+      },
+    );
   }
 
   function renderEvent(event: Event, isUpcoming: boolean) {
@@ -293,9 +311,32 @@ export default function OpportunitiesPage() {
               {!isUpcoming ? (
                 <Badge className="bg-muted text-muted-foreground border-0">Event has passed</Badge>
               ) : myStatus ? (
-                <Badge className="bg-primary text-primary-foreground border-0 text-sm px-3 py-1">
-                  ✓ Registered
-                </Badge>
+                <>
+                  <Badge className="bg-primary text-primary-foreground border-0 text-sm px-3 py-1">
+                    ✓ Registered
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid={`button-add-calendar-${event.eventId}`}
+                    onClick={() => downloadICS(event)}
+                    className="gap-1"
+                  >
+                    <CalendarPlus className="w-4 h-4" /> Add to calendar
+                  </Button>
+                  {myStatus === "registered" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      data-testid={`button-withdraw-${event.eventId}`}
+                      onClick={() => withdraw(event)}
+                      disabled={withdrawMutation.isPending}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      Withdraw
+                    </Button>
+                  )}
+                </>
               ) : isFull ? (
                 <p className="text-sm text-destructive font-medium">
                   This event has reached its maximum registration limit.
@@ -308,17 +349,6 @@ export default function OpportunitiesPage() {
                   disabled={registerMutation.isPending}
                 >
                   Sign Up
-                </Button>
-              )}
-              {isUpcoming && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  data-testid={`button-add-calendar-${event.eventId}`}
-                  onClick={() => downloadICS(event)}
-                  className="gap-1"
-                >
-                  <CalendarPlus className="w-4 h-4" /> Add to calendar
                 </Button>
               )}
             </div>

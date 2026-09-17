@@ -44,6 +44,7 @@ export * from './managedOrganizations';
 export * from './manualHoursCredit';
 export * from './manualHoursInput';
 export * from './nameHours';
+export * from './okResponse';
 export * from './organization';
 export * from './organizationInput';
 export * from './overrideInput';

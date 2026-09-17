@@ -285,6 +285,18 @@ export const RegisterForEventParams = zod.object({
 
 
 /**
+ * @summary Withdraw your own sign-up (participant)
+ */
+export const WithdrawFromEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const WithdrawFromEventResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Check in to a day-of event (participant)
  */
 export const CheckInToEventParams = zod.object({

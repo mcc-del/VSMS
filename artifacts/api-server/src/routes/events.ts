@@ -497,6 +497,39 @@ router.post(
   },
 );
 
+// DELETE /api/v1/events/:eventId/register — participant withdraws their own
+// sign-up (only while still "registered"; not after check-in / hours submitted).
+router.delete(
+  "/v1/events/:eventId/register",
+  authenticate,
+  requireRole("participant"),
+  async (req, res) => {
+    const { eventId } = req.params as { eventId: string };
+    const userId = req.auth!.userId;
+
+    const [existing] = await db
+      .select({ id: eventRegistrationsTable.registrationId, status: eventRegistrationsTable.status })
+      .from(eventRegistrationsTable)
+      .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, userId)))
+      .limit(1);
+
+    if (!existing) {
+      res.status(404).json({ error: "You're not signed up for this opportunity." });
+      return;
+    }
+    if (existing.status !== "registered") {
+      res.status(400).json({ error: "You can't withdraw after checking in or submitting hours." });
+      return;
+    }
+
+    await db
+      .delete(eventRegistrationsTable)
+      .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, userId)));
+
+    res.json({ ok: true });
+  },
+);
+
 // POST /api/v1/events/:eventId/checkin
 router.post(
   "/v1/events/:eventId/checkin",

@@ -178,6 +178,10 @@ export interface ServiceRecord {
   items: ServiceRecordItem[];
 }
 
+export interface OkResponse {
+  ok: boolean;
+}
+
 export interface TestEmailBody {
   to: string;
 }
