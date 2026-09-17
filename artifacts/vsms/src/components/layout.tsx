@@ -17,9 +17,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ...(role === "participant" ? [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Sign Up", href: "/opportunities", icon: Calendar },
-      { label: "External Activity", href: "/external", icon: ExternalLink },
+      { label: "Submit My Hours", href: "/external", icon: Clock },
       { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
-      { label: "My Hours", href: "/history", icon: Clock },
       { label: "My Profile", href: "/profile", icon: Settings },
     ] : []),
     ...(role === "parent" ? [

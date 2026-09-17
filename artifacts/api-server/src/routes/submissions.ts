@@ -151,8 +151,10 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     )
     .limit(1);
 
-  if (existing.length > 0 && existing[0].hoursWorked !== null) {
-    res.status(409).json({ error: "You have already submitted hours for this event." });
+  // Block re-submission only once the hours are APPROVED; a pending or rejected
+  // submission can be corrected and re-submitted (goes back to pending).
+  if (existing.length > 0 && existing[0].hoursWorked !== null && existing[0].status === "approved") {
+    res.status(409).json({ error: "These hours are already approved and can't be changed." });
     return;
   }
 

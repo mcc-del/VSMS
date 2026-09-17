@@ -6,6 +6,7 @@ import {
   useEditExternalSubmission,
   useWithdrawExternalSubmission,
   useListMyExternalSubmissions,
+  useListMySubmissions,
   getListMyExternalSubmissionsQueryKey,
   getGetParticipantDashboardQueryKey,
   type ExternalSubmission,
@@ -24,6 +25,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Info, Pencil, Trash2 } from "lucide-react";
 import { ProofUpload } from "@/components/proof-upload";
 import { ProofLink } from "@/components/proof-link";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PostEventHours } from "@/components/post-event-hours";
 import { useState } from "react";
 
 const GUIDELINES = [
@@ -79,6 +82,18 @@ export default function ExternalSubmissionPage() {
   const editMutation = useEditExternalSubmission();
   const withdrawMutation = useWithdrawExternalSubmission();
   const { data: externals, isLoading } = useListMyExternalSubmissions();
+  const { data: internalSubs } = useListMySubmissions();
+
+  // Snapshot across internal + external claims.
+  const _all = [
+    ...(internalSubs ?? []).filter((s) => s.hoursWorked != null).map((s) => ({ status: s.status, hours: Number(s.hoursWorked ?? 0) })),
+    ...(externals ?? []).map((s) => ({ status: s.status, hours: Number(s.hoursWorked ?? 0) })),
+  ];
+  const snap = {
+    approvedHours: _all.filter((s) => s.status === "approved").reduce((n, s) => n + s.hours, 0),
+    waiting: _all.filter((s) => s.status === "pending" || s.status === "deferred_overflow").length,
+    rejected: _all.filter((s) => s.status === "rejected").length,
+  };
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -200,11 +215,29 @@ export default function ExternalSubmissionPage() {
     <AppLayout>
       <div className="space-y-6 max-w-2xl">
         <div>
-          <h1 className="text-2xl font-bold">External Volunteer Activity</h1>
+          <h1 className="text-2xl font-bold">Submit My Hours</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Report volunteer work you completed on your own, outside the program's opportunities
+            Submit hours for events you attended, or report volunteering you did on your own.
           </p>
         </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <Card><CardContent className="p-4"><p className="text-2xl font-bold tabular-nums text-green-600">{snap.approvedHours.toFixed(1)}</p><p className="text-xs font-medium mt-0.5">Approved hours</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-2xl font-bold tabular-nums text-yellow-600">{snap.waiting}</p><p className="text-xs font-medium mt-0.5">Waiting</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-2xl font-bold tabular-nums text-red-600">{snap.rejected}</p><p className="text-xs font-medium mt-0.5">Rejected</p></CardContent></Card>
+        </div>
+
+        <Tabs defaultValue="postevent">
+          <TabsList>
+            <TabsTrigger value="postevent" data-testid="tab-postevent">Post-event hours</TabsTrigger>
+            <TabsTrigger value="external" data-testid="tab-external">External hours</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="postevent" className="mt-4">
+            <PostEventHours />
+          </TabsContent>
+
+          <TabsContent value="external" className="mt-4 space-y-6">
 
         <div className="flex gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
           <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
@@ -567,6 +600,8 @@ export default function ExternalSubmissionPage() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );
