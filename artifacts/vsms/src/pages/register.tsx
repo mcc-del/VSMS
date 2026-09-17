@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { GRADES } from "@/lib/schools";
-import { SchoolSelect } from "@/components/school-select";
 import { GraduationCap, Users, Eye } from "lucide-react";
 
 // Three guided sign-up paths. "student" and the two parent kinds all map to the
@@ -40,7 +39,7 @@ const SIGNUP_OPTIONS: { value: SignupType; title: string; blurb: string; icon: t
   },
 ];
 
-const MEDINA_SCHOOL = "Medina Academy";
+const MEDINA_SCHOOL = "Medina Academy Redmond";
 
 const schema = z
   .object({
@@ -75,6 +74,8 @@ export default function RegisterPage() {
   const { data: orgs } = useListOrganizations();
 
   const [signupType, setSignupType] = useState<SignupType>("student");
+  const [affiliation, setAffiliation] = useState<string>("medina");
+  const [otherSchool, setOtherSchool] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -109,17 +110,14 @@ export default function RegisterPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStudent, medinaOrg?.organizationId]);
 
-  const currentAffiliation = (() => {
-    const id = form.watch("organizationId");
-    if (medinaOrg && id === medinaOrg.organizationId) return "medina";
-    if (efOrg && id === efOrg.organizationId) return "ef";
-    return "none";
-  })();
-
   function onAffiliationChange(v: string) {
-    if (v === "medina") {
+    setAffiliation(v);
+    // Single org per student: "both" is primarily a Medina student (sees Medina +
+    // Open), "neither" is Community. EF Hygiene Champions pick "ef".
+    if (v === "medina" || v === "both") {
       form.setValue("organizationId", medinaOrg?.organizationId ?? "");
       form.setValue("school", MEDINA_SCHOOL);
+      setOtherSchool(false);
     } else if (v === "ef") {
       form.setValue("organizationId", efOrg?.organizationId ?? "");
       if (form.getValues("school") === MEDINA_SCHOOL) form.setValue("school", "");
@@ -284,14 +282,15 @@ export default function RegisterPage() {
               {isStudent && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Program / affiliation</label>
-                  <Select value={currentAffiliation} onValueChange={onAffiliationChange}>
+                  <Select value={affiliation} onValueChange={onAffiliationChange}>
                     <SelectTrigger data-testid="select-organization">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="medina">I'm enrolled at Medina Academy</SelectItem>
-                      <SelectItem value="ef">I'm enrolled in Essentials First</SelectItem>
-                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="medina">I'm a current Medina student</SelectItem>
+                      <SelectItem value="ef">I'm an Essentials First Hygiene Champion</SelectItem>
+                      <SelectItem value="both">I'm both!</SelectItem>
+                      <SelectItem value="neither">I'm neither</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">This decides which opportunities you see.</p>
@@ -329,14 +328,28 @@ export default function RegisterPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>School</FormLabel>
-                        <FormControl>
-                          <SchoolSelect
+                        <Select
+                          value={otherSchool ? "__other__" : (field.value === MEDINA_SCHOOL ? MEDINA_SCHOOL : (field.value ? "__other__" : ""))}
+                          onValueChange={(v) => {
+                            if (v === "__other__") { setOtherSchool(true); field.onChange(""); }
+                            else { setOtherSchool(false); field.onChange(v); }
+                          }}
+                        >
+                          <SelectTrigger data-testid="select-school"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={MEDINA_SCHOOL}>Medina Academy Redmond</SelectItem>
+                            <SelectItem value="__other__">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {otherSchool && (
+                          <Input
+                            className="mt-2"
+                            placeholder="Enter your school"
                             value={field.value ?? ""}
-                            onValueChange={field.onChange}
-                            placeholder="Select"
-                            testId="select-school"
+                            onChange={(e) => field.onChange(e.target.value)}
+                            data-testid="input-other-school"
                           />
-                        </FormControl>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}

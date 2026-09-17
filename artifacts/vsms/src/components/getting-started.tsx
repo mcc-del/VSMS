@@ -45,7 +45,6 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
     title: "Welcome, admin — start here",
     steps: [
       { label: "Set up organizations & join codes", href: "/admin/organizations", hint: "Add partners; generate a join code per org." },
-      { label: "Approve requested schools", href: "/admin/schools", hint: "Keep the school list clean — approve or merge." },
       { label: "Create events", href: "/admin/events/new", hint: "Post opportunities, with multiple time slots if needed." },
       { label: "Manage users & assign org admins", href: "/admin/users", hint: "Add supervisors (with phone), promote org admins, grant hours." },
     ],
@@ -97,18 +96,16 @@ export function GettingStarted({ role }: { role: string | null | undefined }) {
             <li key={s.label}>
               <Link
                 href={s.href}
-                className="flex items-start gap-3 rounded-lg border bg-card p-3 hover:border-primary/50 transition-colors group"
+                className="flex items-center gap-3 rounded-lg border bg-card p-3 cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors group"
               >
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
                   {i + 1}
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="text-sm font-medium flex items-center gap-1">
-                    {s.label}
-                    <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </span>
+                  <span className="text-sm font-medium text-primary">{s.label}</span>
                   {s.hint && <span className="block text-xs text-muted-foreground mt-0.5">{s.hint}</span>}
                 </span>
+                <ArrowRight className="w-4 h-4 text-primary shrink-0" />
               </Link>
             </li>
           ))}

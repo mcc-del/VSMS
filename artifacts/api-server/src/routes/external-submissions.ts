@@ -123,6 +123,12 @@ router.post(
       return;
     }
 
+    // Proof is mandatory above 5 hours (integrity for larger claims).
+    if (hoursWorked > 5 && !(proofUrl && proofUrl.trim())) {
+      res.status(400).json({ error: "Proof is required for submissions over 5 hours." });
+      return;
+    }
+
     // Prevent duplicate submissions of the same activity/org/date.
     const [dupe] = await db
       .select({ status: externalSubmissionsTable.status })

@@ -28,7 +28,7 @@ import { useState } from "react";
 
 const GUIDELINES = [
   { id: "g1", label: "Helping individuals or families" },
-  { id: "g2", label: "Supporting Medina Academy" },
+  { id: "g2", label: "Supporting a school or place of worship" },
   { id: "g3", label: "Strengthening the community" },
   { id: "g4", label: "Supporting a registered nonprofit organization" },
 ] as const;
@@ -48,6 +48,9 @@ const schema = z.object({
 }).refine(
   (v) => !v.isNonprofit || ((v.ein ?? "").replace(/[^0-9]/g, "").length === 9),
   { message: "Enter the 9-digit EIN (e.g. 12-3456789)", path: ["ein"] },
+).refine(
+  (v) => v.hoursWorked <= 5 || !!(v.proofUrl && v.proofUrl.length > 0),
+  { message: "Proof (a photo or letter) is required for submissions over 5 hours.", path: ["proofUrl"] },
 ).refine(
   (v) => !v.volunteerDate || v.volunteerDate <= new Date().toISOString().split("T")[0],
   { message: "The date can't be in the future — log hours after you've volunteered.", path: ["volunteerDate"] },
@@ -199,14 +202,14 @@ export default function ExternalSubmissionPage() {
         <div>
           <h1 className="text-2xl font-bold">External Volunteer Activity</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Report volunteer work completed outside Medina Academy
+            Report volunteer work you completed on your own, outside the program's opportunities
           </p>
         </div>
 
         <div className="flex gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
           <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
           <div className="text-sm text-blue-800 space-y-1">
-            <p className="font-medium">Volunteering beyond Medina counts</p>
+            <p className="font-medium">Volunteering on your own counts too</p>
             <p>
               Report volunteer work you did with any registered non-profit. Once a supervisor
               verifies it, the hours count toward your Bronze, Silver, or Gold medal.
@@ -294,7 +297,9 @@ export default function ExternalSubmissionPage() {
                           <Input data-testid="input-ein" placeholder="12-3456789" {...field} />
                         </FormControl>
                         <FormDescription>
-                          The IRS Employer Identification Number of the non-profit (9 digits).
+                          The non-profit's 9-digit IRS Employer Identification Number. You can
+                          usually find it on the organization's website (often in the footer or a
+                          "donate"/"about" page) — ask them if it's not listed.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -395,13 +400,17 @@ export default function ExternalSubmissionPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Proof <span className="text-muted-foreground font-normal">(optional)</span>
+                        Proof{" "}
+                        <span className="text-muted-foreground font-normal">
+                          {form.watch("hoursWorked") > 5 ? "(required over 5 hours)" : "(optional)"}
+                        </span>
                       </FormLabel>
                       <FormControl>
                         <ProofUpload value={field.value ?? null} onChange={field.onChange} />
                       </FormControl>
                       <FormDescription>
-                        A photo or a letter (PDF) confirming your volunteering helps the supervisor approve faster.
+                        A photo or a letter (PDF) confirming your volunteering. Required for any
+                        submission over 5 hours; recommended otherwise.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

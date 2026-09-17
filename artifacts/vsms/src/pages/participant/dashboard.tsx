@@ -222,10 +222,18 @@ export default function ParticipantDashboard() {
             : 100;
           const remaining = next ? Math.max(0, next.goal - totalHours) : 0;
           const tier = totalHours >= 80 ? "gold" : totalHours >= 60 ? "silver" : totalHours >= 40 ? "bronze" : "none";
+          // Hero colour reflects the tier you're working toward: bronze first,
+          // silver once Bronze (40) is crossed, gold once Silver (60) is crossed.
+          const heroTier = totalHours >= 60 ? "gold" : totalHours >= 40 ? "silver" : "bronze";
+          const heroBg = {
+            bronze: "linear-gradient(135deg,#a5652f,#7c4a24)",
+            silver: "linear-gradient(135deg,#6f7a80,#515a60)",
+            gold: "linear-gradient(135deg,#c08f14,#8f6a0b)",
+          }[heroTier];
           const R = 66;
           const C = 2 * Math.PI * R;
           return (
-            <div className="relative rounded-3xl bg-gradient-to-br from-primary via-primary to-[hsl(207_60%_36%)] text-primary-foreground shadow-lift overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="relative rounded-3xl text-primary-foreground shadow-lift overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ background: heroBg }}>
               <div
                 className="pointer-events-none absolute inset-0 opacity-70"
                 style={{ backgroundImage: "radial-gradient(30rem 30rem at 95% -20%, rgba(255,255,255,0.16), transparent 60%)" }}
