@@ -5,6 +5,7 @@ import {
   usersTable,
   eventRegistrationsTable,
   organizationsTable,
+  guardianshipsTable,
 } from "@workspace/db";
 import { eq, count, sql, and } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
@@ -97,7 +98,30 @@ router.get("/v1/events", authenticate, async (req, res) => {
   let viewerIsParticipant = false;
   let viewerOrgId: string | null = null;
   let viewerGrade: number | null = null;
-  if (userId) {
+  // A parent browsing on behalf of a managed child passes ?childId=... — we then
+  // filter opportunities by the CHILD's org/grade and show the child's sign-ups.
+  const childId = typeof req.query.childId === "string" ? req.query.childId : null;
+  let effectiveUserId = userId; // whose registrations to reflect
+
+  if (childId && userId) {
+    const [link] = await db
+      .select({ id: guardianshipsTable.guardianshipId })
+      .from(guardianshipsTable)
+      .where(and(eq(guardianshipsTable.guardianUserId, userId), eq(guardianshipsTable.childUserId, childId)))
+      .limit(1);
+    if (link) {
+      const [child] = await db
+        .select({ grade: usersTable.grade, organizationId: usersTable.organizationId })
+        .from(usersTable)
+        .where(eq(usersTable.userId, childId))
+        .limit(1);
+      viewerIsParticipant = true;
+      viewerLevel = gradeToLevel(child?.grade);
+      viewerOrgId = child?.organizationId ?? null;
+      viewerGrade = child?.grade ? Number(child.grade) : null;
+      effectiveUserId = childId;
+    }
+  } else if (userId) {
     const [viewer] = await db
       .select({
         role: usersTable.role,
@@ -162,13 +186,13 @@ router.get("/v1/events", authenticate, async (req, res) => {
     });
   }
 
-  // Fetch current user's registrations if participant
+  // Fetch registrations for the effective user (the child when a parent browses)
   const myRegMap: Record<string, string> = {};
-  if (userId) {
+  if (effectiveUserId) {
     const myRegs = await db
       .select()
       .from(eventRegistrationsTable)
-      .where(eq(eventRegistrationsTable.userId, userId));
+      .where(eq(eventRegistrationsTable.userId, effectiveUserId));
     myRegs.forEach((r) => {
       myRegMap[r.eventId] = r.status;
     });

@@ -112,6 +112,13 @@ paths:
       operationId: listEvents
       tags: [events]
       summary: List all calendar events
+      parameters:
+        - name: childId
+          in: query
+          required: false
+          description: When a parent browses on behalf of a managed child, filter eligibility and sign-ups by that child.
+          schema:
+            type: string
       responses:
         "200":
           description: OK

@@ -37,6 +37,7 @@ export * from './leaderboardPreferencesInput';
 export * from './leaderboardResponse';
 export * from './listAllSchoolsParams';
 export * from './listAllSchoolsStatus';
+export * from './listEventsParams';
 export * from './logBinBody';
 export * from './loginInput';
 export * from './managedOrganizations';

@@ -77,6 +77,10 @@ export const GetMeResponse = zod.object({
 /**
  * @summary List all calendar events
  */
+export const ListEventsQueryParams = zod.object({
+  "childId": zod.coerce.string().optional().describe('When a parent browses on behalf of a managed child, filter eligibility and sign-ups by that child.')
+})
+
 export const ListEventsResponseItem = zod.object({
   "eventId": zod.string(),
   "title": zod.string(),

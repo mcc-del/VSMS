@@ -21,6 +21,7 @@ import AdminOrganizations from "@/pages/admin/organizations";
 import AdminReports from "@/pages/admin/reports";
 import ExternalSubmissionPage from "@/pages/participant/external-submission";
 import ParentDashboard from "@/pages/parent/dashboard";
+import ParentOpportunities from "@/pages/parent/opportunities";
 import LeaderboardPage from "@/pages/participant/leaderboard";
 import ServiceRecordPage from "@/pages/service-record";
 import { useAuth } from "@/hooks/use-auth";
@@ -61,6 +62,7 @@ function Router() {
       <ProtectedRoute path="/service-record" component={ServiceRecordPage} allowedRoles={["participant"]} />
 
       <ProtectedRoute path="/parent" component={ParentDashboard} allowedRoles={["parent"]} />
+      <ProtectedRoute path="/parent/opportunities" component={ParentOpportunities} allowedRoles={["parent"]} />
 
       <ProtectedRoute path="/supervisor/pending" component={SupervisorPending} allowedRoles={["supervisor", "admin", "org_admin"]} />
       <ProtectedRoute path="/supervisor/history" component={SupervisorHistory} allowedRoles={["supervisor", "admin", "org_admin"]} />

@@ -766,6 +766,13 @@ export interface UploadUrlResponse {
   objectPath: string;
 }
 
+export type ListEventsParams = {
+/**
+ * When a parent browses on behalf of a managed child, filter eligibility and sign-ups by that child.
+ */
+childId?: string;
+};
+
 export type ListAllSchoolsParams = {
 status?: ListAllSchoolsStatus;
 };

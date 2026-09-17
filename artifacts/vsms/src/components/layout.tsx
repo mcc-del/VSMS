@@ -24,6 +24,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ] : []),
     ...(role === "parent" ? [
       { label: "Dashboard", href: "/parent", icon: LayoutDashboard },
+      { label: "Find Opportunities", href: "/parent/opportunities", icon: Calendar },
     ] : []),
     ...(role === "supervisor" ? [
       { label: "Pending Reviews", href: "/supervisor/pending", icon: CheckSquare },

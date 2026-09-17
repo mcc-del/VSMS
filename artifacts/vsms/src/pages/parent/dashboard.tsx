@@ -37,7 +37,8 @@ import { useToast } from "@/hooks/use-toast";
 import { SchoolSelect } from "@/components/school-select";
 import { GettingStarted } from "@/components/getting-started";
 import { ALL_GRADES } from "@/lib/schools";
-import { Clock, MapPin, CalendarDays, Trophy, Users, Plus, Pencil, UserPlus, Mail } from "lucide-react";
+import { Clock, MapPin, CalendarDays, Trophy, Users, Plus, Pencil, UserPlus, Mail, CalendarPlus } from "lucide-react";
+import { downloadEventIcs } from "@/lib/calendar";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -315,6 +316,25 @@ export default function ParentDashboard() {
                               {r.isNew && (
                                 <Badge className="bg-accent text-accent-foreground border-0 shrink-0">New</Badge>
                               )}
+                            </div>
+                            <div className="mt-2 flex justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 h-8"
+                                onClick={() =>
+                                  downloadEventIcs({
+                                    eventId: r.eventId,
+                                    title: r.eventTitle ?? "Volunteer event",
+                                    eventDate: r.eventDate ?? "",
+                                    startTime: r.startTime,
+                                    endTime: r.endTime,
+                                    location: r.location,
+                                  })
+                                }
+                              >
+                                <CalendarPlus className="w-3.5 h-3.5" /> Add to calendar
+                              </Button>
                             </div>
                           </div>
                         ))}
