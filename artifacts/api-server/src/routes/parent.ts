@@ -12,6 +12,7 @@ import {
 } from "@workspace/db";
 import { eq, and, inArray, gte, sum, sql, asc } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
+import { sendCoGuardianInvite } from "../lib/email";
 
 interface ChildFields {
   firstName: string;
@@ -490,6 +491,16 @@ router.post("/v1/parent/co-guardians", authenticate, requireRole("parent"), asyn
     .insert(guardianInvitesTable)
     .values({ email, inviterUserId: req.auth!.userId })
     .onConflictDoNothing();
+
+  // Email the co-guardian with join instructions.
+  const [inviter] = await db
+    .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
+    .from(usersTable)
+    .where(eq(usersTable.userId, req.auth!.userId))
+    .limit(1);
+  const inviterName = [inviter?.firstName, inviter?.lastName].filter(Boolean).join(" ") || "A parent";
+  sendCoGuardianInvite(email, inviterName).catch((err) => req.log.error({ err }, "co-guardian email failed"));
+
   res.status(201).json({ status: "invited" });
 });
 

@@ -7,6 +7,8 @@ import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
+import ForgotPasswordPage from "@/pages/forgot-password";
+import ResetPasswordPage from "@/pages/reset-password";
 import ParticipantDashboard from "@/pages/participant/dashboard";
 import CalendarPage from "@/pages/participant/calendar";
 import HistoryPage from "@/pages/participant/history";
@@ -53,6 +55,8 @@ function Router() {
       <Route path="/" component={RootRedirect} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
 
       <ProtectedRoute path="/dashboard" component={ParticipantDashboard} allowedRoles={["participant"]} />
       <ProtectedRoute path="/opportunities" component={OpportunitiesPage} allowedRoles={["participant"]} />

@@ -4,6 +4,7 @@ import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitInternalHoursBody, ReviewSubmissionBody, OverrideSubmissionBody } from "@workspace/api-zod";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
+import { sendHoursForReview } from "../lib/email";
 
 const router = Router();
 
@@ -185,6 +186,25 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     hoursWorked: Number(submission.hoursWorked),
     plannedHours: calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue),
   });
+
+  // Notify the event's supervisor that hours are waiting for review.
+  const [sup] = await db
+    .select({ email: usersTable.email, firstName: usersTable.firstName, lastName: usersTable.lastName })
+    .from(usersTable)
+    .where(eq(usersTable.userId, event.supervisorId))
+    .limit(1);
+  const [participant] = await db
+    .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
+    .from(usersTable)
+    .where(eq(usersTable.userId, userId))
+    .limit(1);
+  if (sup?.email) {
+    const supName = [sup.firstName, sup.lastName].filter(Boolean).join(" ") || "Supervisor";
+    const partName = [participant?.firstName, participant?.lastName].filter(Boolean).join(" ") || "A participant";
+    sendHoursForReview(sup.email, supName, partName, event.title).catch((err) =>
+      req.log.error({ err }, "hours-for-review email failed"),
+    );
+  }
 });
 
 // GET /api/v1/supervisor/submissions — pending queue

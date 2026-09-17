@@ -8,6 +8,68 @@ import { logger } from "./logger";
 const FROM_ADDRESS =
   process.env["EMAIL_FROM"] || "MedinaCares <onboarding@resend.dev>";
 
+// Public app URL used to build links inside emails.
+const APP_URL = (process.env["APP_URL"] || "https://vsa.medinaacademy.org").replace(/\/$/, "");
+
+// Password reset link.
+export async function sendPasswordReset(toEmail: string, token: string): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const link = `${APP_URL}/reset-password?token=${encodeURIComponent(token)}`;
+  const text = [
+    "We received a request to reset your MedinaCares password.",
+    "",
+    `Reset it here (link expires in 1 hour): ${link}`,
+    "",
+    "If you didn't request this, you can ignore this email.",
+    "— MedinaCares Volunteer Service Awards",
+  ].join("\n");
+  try {
+    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: "Reset your MedinaCares password", text });
+  } catch (err) {
+    logger.error({ err, toEmail }, "Failed to send password reset");
+  }
+}
+
+// Co-guardian invitation.
+export async function sendCoGuardianInvite(toEmail: string, inviterName: string): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const text = [
+    `${inviterName} has invited you as a co-guardian on MedinaCares, so you can help manage and track your children's volunteering.`,
+    "",
+    `Create your account with THIS email address (${toEmail}) to be linked automatically: ${APP_URL}/register`,
+    "Choose \"I'm a parent\" when you sign up.",
+    "",
+    "— MedinaCares Volunteer Service Awards",
+  ].join("\n");
+  try {
+    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: "You've been invited as a co-guardian on MedinaCares", text });
+  } catch (err) {
+    logger.error({ err, toEmail }, "Failed to send co-guardian invite");
+  }
+}
+
+// Notify a supervisor that hours are waiting for their review.
+export async function sendHoursForReview(toEmail: string, supervisorName: string, participantName: string, eventTitle: string): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const text = [
+    `Hi ${supervisorName},`,
+    "",
+    `${participantName} submitted volunteer hours for "${eventTitle}" and they're waiting for your review.`,
+    "",
+    `Review and approve or reject here: ${APP_URL}/supervisor/pending`,
+    "",
+    "— MedinaCares Volunteer Service Awards",
+  ].join("\n");
+  try {
+    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: `Hours to review: ${eventTitle}`, text });
+  } catch (err) {
+    logger.error({ err, toEmail }, "Failed to send hours-for-review email");
+  }
+}
+
 function getClient(): Resend | null {
   const apiKey = process.env["RESEND_API_KEY"];
   if (!apiKey) {

@@ -182,6 +182,15 @@ export interface OkResponse {
   ok: boolean;
 }
 
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+export interface ResetPasswordInput {
+  token: string;
+  password: string;
+}
+
 export interface MyProfile {
   firstName: string;
   lastName: string;

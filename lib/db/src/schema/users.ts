@@ -41,6 +41,9 @@ export const usersTable = pgTable("users", {
   // as "Anonymous" to everyone but themselves.
   displayAlias: varchar("display_alias", { length: 40 }),
   hideFromLeaderboard: boolean("hide_from_leaderboard").notNull().default(false),
+  // Password reset: a one-time token and its expiry (both cleared after use).
+  resetToken: varchar("reset_token", { length: 100 }),
+  resetTokenExpiresAt: timestamp("reset_token_expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

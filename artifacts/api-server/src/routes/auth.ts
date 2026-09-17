@@ -1,10 +1,12 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 import { db, usersTable, guardianInvitesTable, organizationsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { authenticate, signToken } from "../middlewares/auth";
 import { RegisterBody, LoginBody } from "@workspace/api-zod";
 import { linkGuardianToInviterChildren } from "./parent";
+import { sendPasswordReset } from "../lib/email";
 
 const router = Router();
 
@@ -149,6 +151,43 @@ router.post("/v1/auth/login", async (req, res) => {
     firstName: user.firstName,
     userId: user.userId,
   });
+});
+
+// POST /api/v1/auth/forgot-password — email a reset link. Always returns ok so
+// we never reveal whether an email is registered.
+router.post("/v1/auth/forgot-password", async (req, res) => {
+  const email = typeof (req.body as { email?: unknown })?.email === "string"
+    ? (req.body as { email: string }).email.trim().toLowerCase()
+    : "";
+  if (email) {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+    if (user && user.passwordHash) {
+      const token = randomBytes(24).toString("hex");
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await db.update(usersTable).set({ resetToken: token, resetTokenExpiresAt: expires }).where(eq(usersTable.userId, user.userId));
+      sendPasswordReset(email, token).catch((err) => req.log.error({ err }, "reset email failed"));
+    }
+  }
+  res.json({ ok: true });
+});
+
+// POST /api/v1/auth/reset-password — set a new password using a valid token.
+router.post("/v1/auth/reset-password", async (req, res) => {
+  const body = (req.body ?? {}) as { token?: unknown; password?: unknown };
+  const token = typeof body.token === "string" ? body.token : "";
+  const password = typeof body.password === "string" ? body.password : "";
+  if (!token || password.length < 8) {
+    res.status(400).json({ error: "A valid reset link and a password of at least 8 characters are required." });
+    return;
+  }
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.resetToken, token)).limit(1);
+  if (!user || !user.resetTokenExpiresAt || user.resetTokenExpiresAt.getTime() < Date.now()) {
+    res.status(400).json({ error: "This reset link is invalid or has expired. Request a new one." });
+    return;
+  }
+  const passwordHash = await bcrypt.hash(password, 12);
+  await db.update(usersTable).set({ passwordHash, resetToken: null, resetTokenExpiresAt: null }).where(eq(usersTable.userId, user.userId));
+  res.json({ ok: true });
 });
 
 // GET /api/v1/auth/me
