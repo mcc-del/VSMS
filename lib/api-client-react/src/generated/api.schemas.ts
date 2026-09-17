@@ -178,6 +178,24 @@ export interface ServiceRecord {
   items: ServiceRecordItem[];
 }
 
+export interface TopGrade {
+  grade: string;
+  cans: number;
+}
+
+export interface RecyclingSummary {
+  name: string;
+  goal: number;
+  binSize: number;
+  totalCans: number;
+  topGrades: TopGrade[];
+}
+
+export interface LogBinBody {
+  grade: string;
+  cans?: number;
+}
+
 export interface ManagedOrganizations {
   all: boolean;
   organizationIds: string[];

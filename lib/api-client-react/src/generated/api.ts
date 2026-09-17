@@ -43,6 +43,7 @@ import type {
   LeaderboardPreferencesInput,
   LeaderboardResponse,
   ListAllSchoolsParams,
+  LogBinBody,
   LoginInput,
   ManagedOrganizations,
   ManualHoursCredit,
@@ -53,6 +54,7 @@ import type {
   ParentChild,
   ParentChildRegistration,
   ParticipantDashboard,
+  RecyclingSummary,
   RegisterInput,
   ReportRow,
   ReviewInput,
@@ -3479,6 +3481,154 @@ export function useGetLeaderboard<TData = Awaited<ReturnType<typeof getLeaderboa
 
 
 
+
+export const getGetRecyclingSummaryUrl = () => {
+
+
+
+
+  return `/api/v1/recycling/summary`
+}
+
+/**
+ * @summary Public totals for the Million Cans Recycling Competition
+ */
+export const getRecyclingSummary = async ( options?: RequestInit): Promise<RecyclingSummary> => {
+
+  return customFetch<RecyclingSummary>(getGetRecyclingSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRecyclingSummaryQueryKey = () => {
+    return [
+    `/api/v1/recycling/summary`
+    ] as const;
+    }
+
+
+export const getGetRecyclingSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getRecyclingSummary>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRecyclingSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRecyclingSummaryQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRecyclingSummary>>> = ({ signal }) => getRecyclingSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRecyclingSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRecyclingSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getRecyclingSummary>>>
+export type GetRecyclingSummaryQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public totals for the Million Cans Recycling Competition
+ */
+
+export function useGetRecyclingSummary<TData = Awaited<ReturnType<typeof getRecyclingSummary>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRecyclingSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRecyclingSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getLogRecyclingBinUrl = () => {
+
+
+
+
+  return `/api/v1/recycling/bins`
+}
+
+/**
+ * @summary Log one collected bin toward the total (admin/supervisor)
+ */
+export const logRecyclingBin = async (logBinBody: LogBinBody, options?: RequestInit): Promise<RecyclingSummary> => {
+
+  return customFetch<RecyclingSummary>(getLogRecyclingBinUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      logBinBody,)
+  }
+);}
+
+
+
+
+export const getLogRecyclingBinMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logRecyclingBin>>, TError,{data: BodyType<LogBinBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logRecyclingBin>>, TError,{data: BodyType<LogBinBody>}, TContext> => {
+
+const mutationKey = ['logRecyclingBin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logRecyclingBin>>, {data: BodyType<LogBinBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  logRecyclingBin(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogRecyclingBinMutationResult = NonNullable<Awaited<ReturnType<typeof logRecyclingBin>>>
+    export type LogRecyclingBinMutationBody = BodyType<LogBinBody>
+    export type LogRecyclingBinMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Log one collected bin toward the total (admin/supervisor)
+ */
+export const useLogRecyclingBin = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logRecyclingBin>>, TError,{data: BodyType<LogBinBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof logRecyclingBin>>,
+        TError,
+        {data: BodyType<LogBinBody>},
+        TContext
+      > => {
+      return useMutation(getLogRecyclingBinMutationOptions(options));
+    }
 
 export const getGetMyServiceRecordUrl = () => {
 

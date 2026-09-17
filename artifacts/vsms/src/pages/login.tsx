@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Award, HandHeart, Users } from "lucide-react";
+import { RecyclingRibbon } from "@/components/recycling-ribbon";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -43,7 +44,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-2">
+    <div className="min-h-screen flex flex-col">
+      <RecyclingRibbon />
+      <div className="flex-1 lg:grid lg:grid-cols-2">
       {/* Brand panel */}
       <div className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-gradient-to-br from-primary via-primary to-[hsl(207_60%_36%)] text-primary-foreground p-12">
         <div
@@ -141,6 +144,7 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

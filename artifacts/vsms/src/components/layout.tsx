@@ -4,6 +4,7 @@ import { LogOut, Calendar, Clock, CheckSquare, Users, FileText, LayoutDashboard,
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { RecyclingRibbon } from "@/components/recycling-ribbon";
 
 type NavItem = { label: string; href: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -86,7 +87,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen flex bg-background w-full">
+    <div className="min-h-screen flex flex-col bg-background w-full">
+      <RecyclingRibbon />
+      <div className="flex flex-1 min-h-0 w-full">
       {/* Desktop sidebar */}
       <aside className="w-64 border-r bg-card flex flex-col hidden md:flex shrink-0">
         <div className="h-16 flex items-center px-5 border-b shrink-0">{brand}</div>
@@ -124,6 +127,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="mx-auto w-full max-w-5xl">{children}</div>
         </div>
       </main>
+      </div>
     </div>
   );
 }

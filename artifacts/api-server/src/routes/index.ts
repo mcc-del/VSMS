@@ -15,6 +15,7 @@ import profileRouter from "./profile";
 import metricsRouter from "./metrics";
 import storageRouter from "./storage";
 import serviceRecordRouter from "./service-record";
+import recyclingRouter from "./recycling";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(profileRouter);
 router.use(metricsRouter);
 router.use(storageRouter);
 router.use(serviceRecordRouter);
+router.use(recyclingRouter);
 
 export default router;

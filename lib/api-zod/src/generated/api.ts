@@ -1017,6 +1017,30 @@ export const GetLeaderboardResponse = zod.object({
 
 
 /**
+ * @summary Public totals for the Million Cans Recycling Competition
+ */
+export const GetRecyclingSummaryResponse = zod.object({
+  "name": zod.string(),
+  "goal": zod.number(),
+  "binSize": zod.number(),
+  "totalCans": zod.number(),
+  "topGrades": zod.array(zod.object({
+  "grade": zod.string(),
+  "cans": zod.number()
+}))
+})
+
+
+/**
+ * @summary Log one collected bin toward the total (admin/supervisor)
+ */
+export const LogRecyclingBinBody = zod.object({
+  "grade": zod.string(),
+  "cans": zod.number().optional()
+})
+
+
+/**
  * @summary My verified service record (approved hours, itemized & attributed)
  */
 export const GetMyServiceRecordResponse = zod.object({

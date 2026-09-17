@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { RecyclingRibbon } from "@/components/recycling-ribbon";
 
 const css = `
 .mc-landing {
@@ -142,6 +143,8 @@ export default function LandingPage() {
   return (
     <div className="mc-landing">
       <style dangerouslySetInnerHTML={{ __html: css }} />
+
+      <RecyclingRibbon />
 
       <nav>
         <img className="logo-img" src="/medinacares-logo.png" alt="MedinaCares" />
