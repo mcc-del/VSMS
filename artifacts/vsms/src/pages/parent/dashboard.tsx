@@ -77,9 +77,10 @@ interface ChildForm {
   grade: string;
   school: string;
   organizationId: string; // "" = none / Community
+  joinCode: string;
 }
 
-const EMPTY_FORM: ChildForm = { firstName: "", lastName: "", grade: "", school: "", organizationId: "" };
+const EMPTY_FORM: ChildForm = { firstName: "", lastName: "", grade: "", school: "", organizationId: "", joinCode: "" };
 
 export default function ParentDashboard() {
   const { data: children, isLoading } = useGetParentChildren();
@@ -142,6 +143,7 @@ export default function ParentDashboard() {
       grade: child.grade ?? "",
       school: child.school ?? "",
       organizationId: "",
+      joinCode: "",
     });
     setDialogOpen(true);
   };
@@ -163,6 +165,7 @@ export default function ParentDashboard() {
       grade: form.grade,
       school: form.school,
       organizationId: form.organizationId || null,
+      ...(form.joinCode ? { joinCode: form.joinCode } : {}),
     };
     try {
       if (editing) {
@@ -504,6 +507,23 @@ export default function ParentDashboard() {
                 </SelectContent>
               </Select>
             </div>
+
+            {(() => {
+              const selOrg = (orgs ?? []).find((o) => o.organizationId === form.organizationId);
+              if (!selOrg?.requiresJoinCode) return null;
+              return (
+                <div className="space-y-1.5">
+                  <Label>{selOrg.name} join code</Label>
+                  <Input
+                    value={form.joinCode}
+                    onChange={(e) => setForm({ ...form, joinCode: e.target.value })}
+                    placeholder="Enter the code from the program"
+                    data-testid="input-child-join-code"
+                  />
+                  <p className="text-xs text-muted-foreground">Required to place your child in {selOrg.name}.</p>
+                </div>
+              );
+            })()}
           </div>
 
           <DialogFooter>

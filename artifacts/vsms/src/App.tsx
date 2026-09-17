@@ -24,6 +24,7 @@ import ParentDashboard from "@/pages/parent/dashboard";
 import ParentOpportunities from "@/pages/parent/opportunities";
 import LeaderboardPage from "@/pages/participant/leaderboard";
 import ServiceRecordPage from "@/pages/service-record";
+import ProfilePage from "@/pages/participant/profile";
 import { useAuth } from "@/hooks/use-auth";
 
 const queryClient = new QueryClient({
@@ -60,6 +61,7 @@ function Router() {
       <ProtectedRoute path="/history" component={HistoryPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/leaderboard" component={LeaderboardPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/service-record" component={ServiceRecordPage} allowedRoles={["participant"]} />
+      <ProtectedRoute path="/profile" component={ProfilePage} allowedRoles={["participant"]} />
 
       <ProtectedRoute path="/parent" component={ParentDashboard} allowedRoles={["parent"]} />
       <ProtectedRoute path="/parent/opportunities" component={ParentOpportunities} allowedRoles={["parent"]} />

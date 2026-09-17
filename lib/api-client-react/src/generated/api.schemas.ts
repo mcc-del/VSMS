@@ -182,6 +182,31 @@ export interface OkResponse {
   ok: boolean;
 }
 
+export interface MyProfile {
+  firstName: string;
+  lastName: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  grade?: string | null;
+  /** @nullable */
+  school?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
+}
+
+export interface MyProfileInput {
+  firstName?: string;
+  lastName?: string;
+  /** @nullable */
+  phone?: string | null;
+  grade?: string;
+  school?: string;
+  /** @nullable */
+  organizationId?: string | null;
+  joinCode?: string;
+}
+
 export interface TestEmailBody {
   to: string;
 }
@@ -283,6 +308,7 @@ export interface ChildInput {
   school: string;
   /** @nullable */
   organizationId?: string | null;
+  joinCode?: string;
 }
 
 export interface ChildRegisterInput {

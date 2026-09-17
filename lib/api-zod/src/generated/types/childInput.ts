@@ -29,4 +29,5 @@ export interface ChildInput {
   school: string;
   /** @nullable */
   organizationId?: string | null;
+  joinCode?: string;
 }

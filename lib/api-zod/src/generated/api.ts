@@ -1121,6 +1121,37 @@ export const GetUserServiceRecordResponse = zod.object({
 
 
 /**
+ * @summary The current participant's editable profile
+ */
+export const GetMyProfileResponse = zod.object({
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullish(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "organizationId": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update own name, phone, grade, school, affiliation
+ */
+export const UpdateMyProfileBody = zod.object({
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
+  "phone": zod.string().nullish(),
+  "grade": zod.string().optional(),
+  "school": zod.string().optional(),
+  "organizationId": zod.string().nullish(),
+  "joinCode": zod.string().optional()
+})
+
+export const UpdateMyProfileResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Org IDs the current admin manages (all=true for Super Admin)
  */
 export const GetManagedOrganizationsResponse = zod.object({
@@ -1197,7 +1228,8 @@ export const AddParentChildBody = zod.object({
   "lastName": zod.string().min(1).max(addParentChildBodyLastNameMax),
   "grade": zod.string().min(1).max(addParentChildBodyGradeMax),
   "school": zod.string().min(1).max(addParentChildBodySchoolMax),
-  "organizationId": zod.string().nullish()
+  "organizationId": zod.string().nullish(),
+  "joinCode": zod.string().optional()
 })
 
 
@@ -1223,7 +1255,8 @@ export const UpdateParentChildBody = zod.object({
   "lastName": zod.string().min(1).max(updateParentChildBodyLastNameMax),
   "grade": zod.string().min(1).max(updateParentChildBodyGradeMax),
   "school": zod.string().min(1).max(updateParentChildBodySchoolMax),
-  "organizationId": zod.string().nullish()
+  "organizationId": zod.string().nullish(),
+  "joinCode": zod.string().optional()
 })
 
 export const UpdateParentChildResponse = zod.object({

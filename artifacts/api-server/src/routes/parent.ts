@@ -8,6 +8,7 @@ import {
   manualHoursTable,
   guardianshipsTable,
   guardianInvitesTable,
+  organizationsTable,
 } from "@workspace/db";
 import { eq, and, inArray, gte, sum, sql, asc } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
@@ -212,6 +213,25 @@ router.post("/v1/parent/children", authenticate, requireRole("parent"), async (r
     return;
   }
   const { firstName, lastName, grade, school, organizationId } = parsed.value;
+
+  // If the chosen org has a join code, the parent must supply it (same rule as
+  // student self-signup — keeps org membership honest).
+  if (organizationId) {
+    const [org] = await db
+      .select({ joinCode: organizationsTable.joinCode, name: organizationsTable.name })
+      .from(organizationsTable)
+      .where(eq(organizationsTable.organizationId, organizationId))
+      .limit(1);
+    if (org?.joinCode) {
+      const code = typeof (req.body as { joinCode?: unknown })?.joinCode === "string"
+        ? (req.body as { joinCode: string }).joinCode.trim()
+        : "";
+      if (code.toLowerCase() !== org.joinCode.toLowerCase()) {
+        res.status(400).json({ error: `Incorrect join code for ${org.name}. Ask the program for the code.` });
+        return;
+      }
+    }
+  }
 
   const [child] = await db
     .insert(usersTable)

@@ -1179,6 +1179,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/me/profile:
+    get:
+      operationId: getMyProfile
+      tags: [profile]
+      summary: The current participant's editable profile
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyProfile"
+    patch:
+      operationId: updateMyProfile
+      tags: [profile]
+      summary: Update own name, phone, grade, school, affiliation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MyProfileInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/me/managed-organizations:
     get:
       operationId: getManagedOrganizations
@@ -1705,6 +1741,39 @@ components:
       properties:
         ok:
           type: boolean
+    MyProfile:
+      type: object
+      required: [firstName, lastName]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: ["string", "null"]
+        grade:
+          type: ["string", "null"]
+        school:
+          type: ["string", "null"]
+        organizationId:
+          type: ["string", "null"]
+    MyProfileInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: ["string", "null"]
+        grade:
+          type: string
+        school:
+          type: string
+        organizationId:
+          type: ["string", "null"]
+        joinCode:
+          type: string
     TestEmailBody:
       type: object
       required: [to]
@@ -1848,6 +1917,8 @@ components:
           maxLength: 120
         organizationId:
           type: ["string", "null"]
+        joinCode:
+          type: string
     ChildRegisterInput:
       type: object
       required: [eventId]
