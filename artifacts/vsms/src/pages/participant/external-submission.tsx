@@ -55,11 +55,11 @@ const schema = z.object({
   (v) => {
     if (!v.volunteerDate) return true;
     const md = Number(v.volunteerDate.slice(5, 7)) * 100 + Number(v.volunteerDate.slice(8, 10));
-    // Award season runs Sept 15 – Jun 15; the summer gap is outside any window.
-    return md >= 915 || md <= 615;
+    // Award season runs Sept 23 – Jun 22; the summer gap is outside any window.
+    return md >= 923 || md <= 622;
   },
   {
-    message: "That date is outside the award season (Sept 15 – Jun 15).",
+    message: "That date is outside the award season (Sept 23 – Jun 22).",
     path: ["volunteerDate"],
   },
 );
