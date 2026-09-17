@@ -76,20 +76,16 @@ const css = `
 .mc-landing .hero > .card { animation-delay: .12s; }
 @keyframes heroRise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
-.mc-landing .locpill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brand-ink); background: var(--surface); border: 2px solid var(--line); border-radius: 999px; padding: 7px 15px; box-shadow: 4px 4px 0 rgba(44,65,76,0.05); }
-@media (prefers-color-scheme: dark) { .mc-landing .locpill { color: var(--ink); } }
-.mc-landing .locpill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 26%, transparent); }
-.mc-landing .hero .eyebrow { display: block; margin-top: 22px; }
+.mc-landing .hero .eyebrow { display: block; }
 .mc-landing .hero h1 { font-size: clamp(40px, 6.4vw, 66px); font-weight: 800; margin-top: 14px; }
 .mc-landing .hero h1 .gold { position: relative; background: linear-gradient(100deg, var(--gold), var(--gold-bright) 45%, var(--gold)); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: goldShine 4.5s ease-in-out infinite; }
 @keyframes goldShine { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 .mc-landing .hero-sub { font-size: clamp(17px, 2vw, 20px); color: var(--ink-soft); margin-top: 20px; max-width: 30em; }
 .mc-landing .hero-cta { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
 .mc-landing .btn-primary { box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--blue-deep) 80%, transparent); }
-.mc-landing .hero-stats { display: flex; flex-wrap: wrap; gap: 26px; margin-top: 34px; padding-top: 26px; border-top: 2px solid var(--line); }
-.mc-landing .hstat b { display: block; font-family: var(--display); font-size: 26px; font-weight: 800; line-height: 1; }
-.mc-landing .hstat span { font-size: 13px; color: var(--ink-soft); }
-.mc-landing .hstat b .gc { color: var(--gold); font-size: inherit; font-weight: inherit; }
+.mc-landing .hero-elig { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; padding-top: 26px; border-top: 2px solid var(--line); }
+.mc-landing .eb { background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 10px 16px; font-size: 15px; font-weight: 700; color: var(--ink); box-shadow: var(--shadow); }
+.mc-landing .eb b { display: block; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--blue-deep); margin-bottom: 2px; }
 
 .mc-landing .card { background: var(--surface); border: 2px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 26px; }
 .mc-landing .hero .card { position: relative; border-radius: 26px; box-shadow: 22px 22px 0 rgba(44,65,76,0.06), 0 30px 60px -30px rgba(44,65,76,0.35); }
@@ -155,7 +151,6 @@ export default function LandingPage() {
       <div className="hero-stage">
         <header className="wrap hero">
           <div>
-            <span className="locpill"><span className="dot" />Medina Academy &middot; Redmond, WA</span>
             <span className="eyebrow">Volunteer Service Awards &middot; 2026&ndash;2027</span>
             <h1>Turn caring into hours,<br />all the way to <span className="gold">Gold.</span></h1>
             <p className="hero-sub">
@@ -167,10 +162,9 @@ export default function LandingPage() {
               <Link href="/register" className="btn btn-primary btn-lg">Create your account</Link>
               <Link href="/login" className="btn btn-ghost btn-lg">I already have one</Link>
             </div>
-            <div className="hero-stats">
-              <div className="hstat"><b>3</b><span>medals to earn</span></div>
-              <div className="hstat"><b><span className="gc">80+</span></b><span>hours to Gold</span></div>
-              <div className="hstat"><b>100%</b><span>supervisor-verified</span></div>
+            <div className="hero-elig">
+              <span className="eb"><b>Medina students</b>Grades 2&ndash;9</span>
+              <span className="eb"><b>Alumni &amp; community</b>Grades 2&ndash;12</span>
             </div>
           </div>
 
