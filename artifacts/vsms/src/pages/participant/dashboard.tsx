@@ -224,18 +224,12 @@ export default function ParticipantDashboard() {
             : 100;
           const remaining = next ? Math.max(0, next.goal - totalHours) : 0;
           const tier = totalHours >= 80 ? "gold" : totalHours >= 60 ? "silver" : totalHours >= 40 ? "bronze" : "none";
-          // Hero colour reflects the tier you're working toward: bronze first,
-          // silver once Bronze (40) is crossed, gold once Silver (60) is crossed.
-          const heroTier = totalHours >= 60 ? "gold" : totalHours >= 40 ? "silver" : "bronze";
-          const heroBg = {
-            bronze: "linear-gradient(135deg,#a5652f,#7c4a24)",
-            silver: "linear-gradient(135deg,#6f7a80,#515a60)",
-            gold: "linear-gradient(135deg,#c08f14,#8f6a0b)",
-          }[heroTier];
+          // Next medal to aim for (shown as a goal badge alongside the ring).
+          const goalTier = totalHours >= 80 ? "gold" : totalHours >= 60 ? "gold" : totalHours >= 40 ? "silver" : "bronze";
           const R = 66;
           const C = 2 * Math.PI * R;
           return (
-            <div className="relative rounded-3xl text-primary-foreground shadow-lift overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500" style={{ background: heroBg }}>
+            <div className="relative rounded-3xl bg-gradient-to-br from-primary via-primary to-[hsl(207_60%_36%)] text-primary-foreground shadow-lift overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500">
               <div
                 className="pointer-events-none absolute inset-0 opacity-70"
                 style={{ backgroundImage: "radial-gradient(30rem 30rem at 95% -20%, rgba(255,255,255,0.16), transparent 60%)" }}
@@ -266,9 +260,12 @@ export default function ParticipantDashboard() {
                     {totalHours.toFixed(1)}
                     <span className="text-2xl font-semibold text-primary-foreground/70">h</span>
                   </p>
-                  <p className="text-sm text-primary-foreground/85 mt-2">
+                  <p className="text-sm text-primary-foreground/85 mt-2 flex items-center gap-2 justify-center sm:justify-start">
                     {next ? (
-                      <><span className="font-semibold">{remaining.toFixed(1)}h</span> to your {next.label} medal</>
+                      <>
+                        <MedalBadge tier={goalTier} size={22} />
+                        <span><span className="font-semibold">{remaining.toFixed(1)}h</span> to your {next.label} medal</span>
+                      </>
                     ) : (
                       <>All medals earned — outstanding! 🎉</>
                     )}

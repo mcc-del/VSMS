@@ -78,7 +78,8 @@ export default function OpportunitiesPage() {
     (e.location ?? "").toLowerCase().includes(q);
 
   const upcoming = [...(events ?? [])]
-    .filter((e) => e.eventDate >= today && matches(e) && e.eligibleForMe !== false)
+    .filter((e) => e.eventDate >= today && matches(e) && e.eligibleForMe !== false
+      && !(myRegMap[e.eventId] ?? e.myRegistrationStatus)) // signed-up ones live under "My sign-ups"
     .sort((a, b) => (a.eventDate < b.eventDate ? -1 : 1));
 
   const past = [...(events ?? [])]
@@ -336,7 +337,7 @@ export default function OpportunitiesPage() {
                       data-testid={`button-withdraw-${event.eventId}`}
                       onClick={() => withdraw(event)}
                       disabled={withdrawMutation.isPending}
-                      className="text-destructive hover:text-destructive"
+                      className="rounded-full bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800 border-0"
                     >
                       Withdraw
                     </Button>
@@ -395,7 +396,7 @@ export default function OpportunitiesPage() {
           <Tabs defaultValue="upcoming">
             <TabsList>
               <TabsTrigger value="upcoming" data-testid="tab-upcoming">
-                Browse ({upcoming.length})
+                Upcoming events ({upcoming.length})
               </TabsTrigger>
               <TabsTrigger value="mine" data-testid="tab-mine">
                 My sign-ups ({mine.length})

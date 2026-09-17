@@ -10,8 +10,7 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
   participant: {
     title: "Welcome! Here's how to get started",
     steps: [
-      { label: "Browse opportunities", href: "/opportunities", hint: "Find volunteering that fits — see the hours each one is worth." },
-      { label: "Sign up for one", href: "/opportunities", hint: "Pick a time slot; add it to your phone calendar." },
+      { label: "Find & sign up for an opportunity", href: "/opportunities", hint: "Browse events that fit, pick a time slot, and add it to your calendar." },
       { label: "Log your hours after you volunteer", href: "/dashboard", hint: "Check in and submit the actual hours you worked." },
       { label: "Add outside volunteering", href: "/external", hint: "Volunteered elsewhere? Submit external hours (with proof)." },
       { label: "See the leaderboard", href: "/leaderboard", hint: "Track your progress toward Bronze, Silver, Gold." },

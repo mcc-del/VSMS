@@ -16,7 +16,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems: NavItem[] = [
     ...(role === "participant" ? [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Opportunities", href: "/opportunities", icon: Calendar },
+      { label: "Sign Up", href: "/opportunities", icon: Calendar },
       { label: "External Activity", href: "/external", icon: ExternalLink },
       { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
       { label: "My Hours", href: "/history", icon: Clock },
