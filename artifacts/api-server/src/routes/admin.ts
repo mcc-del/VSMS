@@ -5,8 +5,24 @@ import { eq, desc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
+import { sendTestEmail } from "../lib/email";
 
 const router = Router();
+
+// POST /api/v1/admin/test-email — send a test email to confirm sending works.
+router.post("/v1/admin/test-email", authenticate, requireRole("admin"), async (req, res) => {
+  const to = typeof (req.body as { to?: unknown })?.to === "string" ? (req.body as { to: string }).to.trim() : "";
+  if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+    res.status(400).json({ error: "Enter a valid email address." });
+    return;
+  }
+  const result = await sendTestEmail(to);
+  if (!result.ok) {
+    res.status(502).json({ error: result.error ?? "Failed to send." });
+    return;
+  }
+  res.json({ ok: true, id: result.id ?? null, to });
+});
 
 // GET /api/v1/admin/users
 router.get("/v1/admin/users", authenticate, requireRole("admin"), async (req, res) => {

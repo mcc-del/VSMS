@@ -68,6 +68,8 @@ export * from './submissionDetail';
 export * from './submissionInput';
 export * from './successResponse';
 export * from './supervisorDashboard';
+export * from './testEmailBody';
+export * from './testEmailResult';
 export * from './topGrade';
 export * from './topVolunteer';
 export * from './updateUserInput';

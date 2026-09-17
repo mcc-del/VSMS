@@ -1017,6 +1017,20 @@ export const GetLeaderboardResponse = zod.object({
 
 
 /**
+ * @summary Send a test email to confirm sending works
+ */
+export const SendTestEmailBody = zod.object({
+  "to": zod.string()
+})
+
+export const SendTestEmailResponse = zod.object({
+  "ok": zod.boolean(),
+  "id": zod.string().nullish(),
+  "to": zod.string().optional()
+})
+
+
+/**
  * @summary Public totals for the Million Cans Recycling Competition
  */
 export const GetRecyclingSummaryResponse = zod.object({

@@ -17,6 +17,42 @@ function getClient(): Resend | null {
   return new Resend(apiKey);
 }
 
+// Sends a simple test email so an admin can confirm the sending domain works.
+// Returns { ok, id?, error? } so the caller can surface the result in the UI.
+export async function sendTestEmail(
+  toEmail: string,
+): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const client = getClient();
+  if (!client) return { ok: false, error: "RESEND_API_KEY is not set on the server." };
+
+  const subject = "MedinaCares — test email ✅";
+  const text = [
+    "This is a test email from the MedinaCares platform.",
+    "",
+    `If you can read this, email sending is working and the sender is: ${FROM_ADDRESS}.`,
+    "",
+    "— MedinaCares Volunteer Service Awards",
+  ].join("\n");
+
+  try {
+    const { data, error } = await client.emails.send({
+      from: FROM_ADDRESS,
+      to: toEmail,
+      subject,
+      text,
+    });
+    if (error) {
+      logger.error({ error, toEmail }, "Test email failed");
+      return { ok: false, error: typeof error === "string" ? error : (error as { message?: string }).message ?? "Send failed" };
+    }
+    logger.info({ emailId: data?.id, toEmail }, "Test email sent");
+    return { ok: true, id: data?.id };
+  } catch (err) {
+    logger.error({ err, toEmail }, "Test email failed");
+    return { ok: false, error: err instanceof Error ? err.message : "Send failed" };
+  }
+}
+
 export interface EventDetails {
   title: string;
   eventDate: string;

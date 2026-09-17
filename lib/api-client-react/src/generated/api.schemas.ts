@@ -178,6 +178,17 @@ export interface ServiceRecord {
   items: ServiceRecordItem[];
 }
 
+export interface TestEmailBody {
+  to: string;
+}
+
+export interface TestEmailResult {
+  ok: boolean;
+  /** @nullable */
+  id?: string | null;
+  to?: string;
+}
+
 export interface TopGrade {
   grade: string;
   cans: number;

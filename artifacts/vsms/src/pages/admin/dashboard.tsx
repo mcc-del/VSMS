@@ -1,6 +1,7 @@
 import { useGetAdminDashboard } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { RecyclingLogCard } from "@/components/recycling-log-card";
+import { EmailTestCard } from "@/components/email-test-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Calendar, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
@@ -75,6 +76,7 @@ export default function AdminDashboard() {
         )}
 
         <RecyclingLogCard />
+        <EmailTestCard />
       </div>
     </AppLayout>
   );

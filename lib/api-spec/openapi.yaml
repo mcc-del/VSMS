@@ -1036,6 +1036,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/LeaderboardResponse"
 
+  /v1/admin/test-email:
+    post:
+      operationId: sendTestEmail
+      tags: [admin]
+      summary: Send a test email to confirm sending works
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestEmailBody"
+      responses:
+        "200":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestEmailResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Send failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/recycling/summary:
     get:
       operationId: getRecyclingSummary
@@ -1632,6 +1663,22 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ServiceRecordItem"
+    TestEmailBody:
+      type: object
+      required: [to]
+      properties:
+        to:
+          type: string
+    TestEmailResult:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+        id:
+          type: ["string", "null"]
+        to:
+          type: string
     TopGrade:
       type: object
       required: [grade, cans]

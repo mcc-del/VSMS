@@ -69,6 +69,8 @@ import type {
   SubmissionInput,
   SuccessResponse,
   SupervisorDashboard,
+  TestEmailBody,
+  TestEmailResult,
   UpdateUserInput,
   UploadUrlRequest,
   UploadUrlResponse,
@@ -3481,6 +3483,77 @@ export function useGetLeaderboard<TData = Awaited<ReturnType<typeof getLeaderboa
 
 
 
+
+export const getSendTestEmailUrl = () => {
+
+
+
+
+  return `/api/v1/admin/test-email`
+}
+
+/**
+ * @summary Send a test email to confirm sending works
+ */
+export const sendTestEmail = async (testEmailBody: TestEmailBody, options?: RequestInit): Promise<TestEmailResult> => {
+
+  return customFetch<TestEmailResult>(getSendTestEmailUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      testEmailBody,)
+  }
+);}
+
+
+
+
+export const getSendTestEmailMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendTestEmail>>, TError,{data: BodyType<TestEmailBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendTestEmail>>, TError,{data: BodyType<TestEmailBody>}, TContext> => {
+
+const mutationKey = ['sendTestEmail'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendTestEmail>>, {data: BodyType<TestEmailBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendTestEmail(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendTestEmailMutationResult = NonNullable<Awaited<ReturnType<typeof sendTestEmail>>>
+    export type SendTestEmailMutationBody = BodyType<TestEmailBody>
+    export type SendTestEmailMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Send a test email to confirm sending works
+ */
+export const useSendTestEmail = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendTestEmail>>, TError,{data: BodyType<TestEmailBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendTestEmail>>,
+        TError,
+        {data: BodyType<TestEmailBody>},
+        TContext
+      > => {
+      return useMutation(getSendTestEmailMutationOptions(options));
+    }
 
 export const getGetRecyclingSummaryUrl = () => {
 
