@@ -6,6 +6,7 @@ import {
   eventRegistrationsTable,
   organizationsTable,
   guardianshipsTable,
+  volunteerSubmissionsTable,
 } from "@workspace/db";
 import { eq, count, sql, and } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
@@ -527,6 +528,97 @@ router.delete(
       .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, userId)));
 
     res.json({ ok: true });
+  },
+);
+
+// Can the current supervisor/admin/org-admin manage this event's roster?
+async function canManageEvent(
+  role: string,
+  userId: string,
+  event: { supervisorId: string; organizationId: string | null },
+): Promise<boolean> {
+  if (role === "admin") return true;
+  if (role === "supervisor") return event.supervisorId === userId;
+  if (role === "org_admin") {
+    const managed = await managedOrgIds(userId, role);
+    return canManageOrg(managed, event.organizationId);
+  }
+  return false;
+}
+
+// GET /api/v1/events/:eventId/roster — who signed up, with attendance + hours status.
+router.get(
+  "/v1/events/:eventId/roster",
+  authenticate,
+  requireRole("supervisor", "admin", "org_admin"),
+  async (req, res) => {
+    const { eventId } = req.params as { eventId: string };
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
+    if (!event) { res.status(404).json({ error: "Event not found" }); return; }
+    if (!(await canManageEvent(req.auth!.role, req.auth!.userId, event))) {
+      res.status(403).json({ error: "You can only manage events you supervise." });
+      return;
+    }
+    const rows = await db
+      .select({
+        userId: eventRegistrationsTable.userId,
+        status: eventRegistrationsTable.status,
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+        grade: usersTable.grade,
+      })
+      .from(eventRegistrationsTable)
+      .leftJoin(usersTable, eq(eventRegistrationsTable.userId, usersTable.userId))
+      .where(eq(eventRegistrationsTable.eventId, eventId));
+
+    const subs = await db
+      .select({ userId: volunteerSubmissionsTable.userId, status: volunteerSubmissionsTable.status })
+      .from(volunteerSubmissionsTable)
+      .where(eq(volunteerSubmissionsTable.eventId, eventId));
+    const subMap = new Map(subs.map((s) => [s.userId, s.status]));
+
+    res.json({
+      eventId,
+      eventTitle: event.title,
+      participants: rows.map((r) => ({
+        userId: r.userId,
+        name: [r.firstName, r.lastName].filter(Boolean).join(" "),
+        grade: r.grade ?? null,
+        status: r.status,
+        hoursStatus: subMap.get(r.userId) ?? null,
+      })),
+    });
+  },
+);
+
+// POST /api/v1/events/:eventId/attendance — supervisor sets a participant's
+// attendance (check-in = attended; also no_show / registered).
+router.post(
+  "/v1/events/:eventId/attendance",
+  authenticate,
+  requireRole("supervisor", "admin", "org_admin"),
+  async (req, res) => {
+    const { eventId } = req.params as { eventId: string };
+    const body = (req.body ?? {}) as { userId?: unknown; status?: unknown };
+    const targetUserId = typeof body.userId === "string" ? body.userId : "";
+    const status = body.status;
+    if (!targetUserId || (status !== "attended" && status !== "no_show" && status !== "registered")) {
+      res.status(400).json({ error: "userId and a valid status are required." });
+      return;
+    }
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
+    if (!event) { res.status(404).json({ error: "Event not found" }); return; }
+    if (!(await canManageEvent(req.auth!.role, req.auth!.userId, event))) {
+      res.status(403).json({ error: "You can only manage events you supervise." });
+      return;
+    }
+    const result = await db
+      .update(eventRegistrationsTable)
+      .set({ status })
+      .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, targetUserId)))
+      .returning();
+    if (result.length === 0) { res.status(404).json({ error: "That participant isn't registered." }); return; }
+    res.json({ ok: true, status });
   },
 );
 

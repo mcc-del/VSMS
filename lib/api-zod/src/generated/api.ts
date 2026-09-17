@@ -335,6 +335,43 @@ export const CheckInToEventResponse = zod.object({
 
 
 /**
+ * @summary Participants signed up for an event (supervisor)
+ */
+export const GetEventRosterParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const GetEventRosterResponse = zod.object({
+  "eventId": zod.string(),
+  "eventTitle": zod.string(),
+  "participants": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "grade": zod.string().nullish(),
+  "status": zod.string(),
+  "hoursStatus": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Supervisor sets a participant's attendance
+ */
+export const SetAttendanceParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const SetAttendanceBody = zod.object({
+  "userId": zod.string(),
+  "status": zod.enum(['registered', 'attended', 'no_show'])
+})
+
+export const SetAttendanceResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary List the current participant's submissions
  */
 export const ListMySubmissionsResponseItem = zod.object({

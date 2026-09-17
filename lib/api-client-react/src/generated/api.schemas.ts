@@ -182,6 +182,36 @@ export interface OkResponse {
   ok: boolean;
 }
 
+export interface RosterParticipant {
+  userId: string;
+  name: string;
+  /** @nullable */
+  grade?: string | null;
+  status: string;
+  /** @nullable */
+  hoursStatus?: string | null;
+}
+
+export interface EventRoster {
+  eventId: string;
+  eventTitle: string;
+  participants: RosterParticipant[];
+}
+
+export type AttendanceInputStatus = typeof AttendanceInputStatus[keyof typeof AttendanceInputStatus];
+
+
+export const AttendanceInputStatus = {
+  registered: 'registered',
+  attended: 'attended',
+  no_show: 'no_show',
+} as const;
+
+export interface AttendanceInput {
+  userId: string;
+  status: AttendanceInputStatus;
+}
+
 export interface ForgotPasswordInput {
   email: string;
 }

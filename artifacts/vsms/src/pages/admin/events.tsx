@@ -26,7 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, MapPin, Clock, Calendar, Plus } from "lucide-react";
+import { Pencil, Trash2, MapPin, Clock, Calendar, Plus, Users } from "lucide-react";
 import { Link } from "wouter";
 import { AuthenticatedImage } from "@/components/authenticated-image";
 import { calculateEventDuration, formatHours } from "@/lib/event-duration";
@@ -248,6 +248,11 @@ export default function AdminEventsPage() {
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
+                      <Link href={`/supervisor/roster/${event.eventId}`}>
+                        <Button size="sm" variant="outline" data-testid={`button-roster-${event.eventId}`}>
+                          <Users className="w-3.5 h-3.5 mr-1" /> Roster
+                        </Button>
+                      </Link>
                       <Button
                         size="sm"
                         variant="outline"

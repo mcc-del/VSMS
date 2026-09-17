@@ -23,6 +23,7 @@ import type {
   AdminCreateUserInput,
   AdminDashboard,
   AdminMetrics,
+  AttendanceInput,
   AuthResponse,
   CheckInResponse,
   ChildInput,
@@ -34,6 +35,7 @@ import type {
   Event,
   EventInput,
   EventRegistration,
+  EventRoster,
   EventUpdateInput,
   ExternalSubmission,
   ExternalSubmissionDetail,
@@ -1192,6 +1194,155 @@ export const useCheckInToEvent = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getCheckInToEventMutationOptions(options));
+    }
+
+export const getGetEventRosterUrl = (eventId: string,) => {
+
+
+
+
+  return `/api/v1/events/${eventId}/roster`
+}
+
+/**
+ * @summary Participants signed up for an event (supervisor)
+ */
+export const getEventRoster = async (eventId: string, options?: RequestInit): Promise<EventRoster> => {
+
+  return customFetch<EventRoster>(getGetEventRosterUrl(eventId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEventRosterQueryKey = (eventId: string,) => {
+    return [
+    `/api/v1/events/${eventId}/roster`
+    ] as const;
+    }
+
+
+export const getGetEventRosterQueryOptions = <TData = Awaited<ReturnType<typeof getEventRoster>>, TError = ErrorType<ErrorResponse>>(eventId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEventRoster>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEventRosterQueryKey(eventId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEventRoster>>> = ({ signal }) => getEventRoster(eventId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(eventId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEventRoster>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEventRosterQueryResult = NonNullable<Awaited<ReturnType<typeof getEventRoster>>>
+export type GetEventRosterQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Participants signed up for an event (supervisor)
+ */
+
+export function useGetEventRoster<TData = Awaited<ReturnType<typeof getEventRoster>>, TError = ErrorType<ErrorResponse>>(
+ eventId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEventRoster>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEventRosterQueryOptions(eventId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSetAttendanceUrl = (eventId: string,) => {
+
+
+
+
+  return `/api/v1/events/${eventId}/attendance`
+}
+
+/**
+ * @summary Supervisor sets a participant's attendance
+ */
+export const setAttendance = async (eventId: string,
+    attendanceInput: AttendanceInput, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getSetAttendanceUrl(eventId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      attendanceInput,)
+  }
+);}
+
+
+
+
+export const getSetAttendanceMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAttendance>>, TError,{eventId: string;data: BodyType<AttendanceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setAttendance>>, TError,{eventId: string;data: BodyType<AttendanceInput>}, TContext> => {
+
+const mutationKey = ['setAttendance'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setAttendance>>, {eventId: string;data: BodyType<AttendanceInput>}> = (props) => {
+          const {eventId,data} = props ?? {};
+
+          return  setAttendance(eventId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetAttendanceMutationResult = NonNullable<Awaited<ReturnType<typeof setAttendance>>>
+    export type SetAttendanceMutationBody = BodyType<AttendanceInput>
+    export type SetAttendanceMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Supervisor sets a participant's attendance
+ */
+export const useSetAttendance = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAttendance>>, TError,{eventId: string;data: BodyType<AttendanceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setAttendance>>,
+        TError,
+        {eventId: string;data: BodyType<AttendanceInput>},
+        TContext
+      > => {
+      return useMutation(getSetAttendanceMutationOptions(options));
     }
 
 export const getListMySubmissionsUrl = () => {

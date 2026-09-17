@@ -362,6 +362,68 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/events/{eventId}/roster:
+    get:
+      operationId: getEventRoster
+      tags: [events]
+      summary: Participants signed up for an event (supervisor)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventRoster"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/events/{eventId}/attendance:
+    post:
+      operationId: setAttendance
+      tags: [events]
+      summary: Supervisor sets a participant's attendance
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttendanceInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/submissions:
     get:
       operationId: listMySubmissions
@@ -1785,6 +1847,41 @@ components:
       properties:
         ok:
           type: boolean
+    RosterParticipant:
+      type: object
+      required: [userId, name, status]
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        grade:
+          type: ["string", "null"]
+        status:
+          type: string
+        hoursStatus:
+          type: ["string", "null"]
+    EventRoster:
+      type: object
+      required: [eventId, eventTitle, participants]
+      properties:
+        eventId:
+          type: string
+        eventTitle:
+          type: string
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/RosterParticipant"
+    AttendanceInput:
+      type: object
+      required: [userId, status]
+      properties:
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [registered, attended, no_show]
     ForgotPasswordInput:
       type: object
       required: [email]

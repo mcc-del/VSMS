@@ -15,6 +15,7 @@ import HistoryPage from "@/pages/participant/history";
 import OpportunitiesPage from "@/pages/participant/opportunities";
 import SupervisorPending from "@/pages/supervisor/pending";
 import SupervisorHistory from "@/pages/supervisor/history";
+import RosterPage from "@/pages/supervisor/roster";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminNewEvent from "@/pages/admin/new-event";
@@ -72,6 +73,7 @@ function Router() {
 
       <ProtectedRoute path="/supervisor/pending" component={SupervisorPending} allowedRoles={["supervisor", "admin", "org_admin"]} />
       <ProtectedRoute path="/supervisor/history" component={SupervisorHistory} allowedRoles={["supervisor", "admin", "org_admin"]} />
+      <ProtectedRoute path="/supervisor/roster/:eventId" component={RosterPage} allowedRoles={["supervisor", "admin", "org_admin"]} />
 
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/users" component={AdminUsers} allowedRoles={["admin"]} />
