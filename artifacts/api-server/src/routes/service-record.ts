@@ -12,6 +12,8 @@ import { eq, and, asc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
+import { guardianshipsTable } from "@workspace/db";
+import { or } from "drizzle-orm";
 
 const router = Router();
 
@@ -211,6 +213,43 @@ router.get(
       }
     }
     const record = await buildRecord(userId);
+    if (!record) {
+      res.status(404).json({ error: "Record not found." });
+      return;
+    }
+    res.json(record);
+  },
+);
+
+// GET /api/v1/parent/children/:childId/service-record — a parent views a
+// managed child's verified record (guardianship-checked).
+router.get(
+  "/v1/parent/children/:childId/service-record",
+  authenticate,
+  requireRole("parent"),
+  async (req: Request, res: Response) => {
+    const { childId } = req.params as { childId: string };
+    const parentEmail = req.auth!.email.toLowerCase();
+    const [guarded] = await db
+      .select({ userId: usersTable.userId })
+      .from(usersTable)
+      .leftJoin(
+        guardianshipsTable,
+        and(eq(guardianshipsTable.childUserId, usersTable.userId), eq(guardianshipsTable.guardianUserId, req.auth!.userId)),
+      )
+      .where(
+        and(
+          eq(usersTable.userId, childId),
+          eq(usersTable.role, "participant"),
+          or(eq(guardianshipsTable.guardianUserId, req.auth!.userId), eq(usersTable.parentEmail, parentEmail)),
+        ),
+      )
+      .limit(1);
+    if (!guarded) {
+      res.status(404).json({ error: "Child not found." });
+      return;
+    }
+    const record = await buildRecord(childId);
     if (!record) {
       res.status(404).json({ error: "Record not found." });
       return;

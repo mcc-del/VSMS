@@ -8,6 +8,7 @@ import {
   useListCoGuardians,
   useInviteCoGuardian,
   useSubmitChildHours,
+  useSubmitChildExternalHours,
   getGetParentChildrenQueryKey,
   getListCoGuardiansQueryKey,
   type ParentChild,
@@ -34,6 +35,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { SchoolSelect } from "@/components/school-select";
 import { GettingStarted } from "@/components/getting-started";
@@ -89,7 +93,42 @@ export default function ParentDashboard() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const submitChildHours = useSubmitChildHours();
+  const submitChildExternal = useSubmitChildExternalHours();
   const [hoursDraft, setHoursDraft] = useState<Record<string, string>>({});
+
+  const emptyExt = { activityName: "", organizationName: "", isNonprofit: false, ein: "", volunteerDate: "", hoursWorked: "", extSupervisorName: "", extSupervisorEmail: "", description: "" };
+  const [extChild, setExtChild] = useState<{ userId: string; name: string } | null>(null);
+  const [ext, setExt] = useState({ ...emptyExt });
+
+  function submitExternal() {
+    if (!extChild) return;
+    const hrs = Number(ext.hoursWorked);
+    if (ext.activityName.trim().length < 2 || ext.organizationName.trim().length < 2) {
+      toast({ title: "Add the activity and organization", variant: "destructive" }); return;
+    }
+    if (!ext.volunteerDate) { toast({ title: "Pick the date", variant: "destructive" }); return; }
+    if (!Number.isFinite(hrs) || hrs < 0.5 || hrs > 24) { toast({ title: "Enter valid hours (0.5–24)", variant: "destructive" }); return; }
+    if (!ext.extSupervisorName.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ext.extSupervisorEmail.trim())) {
+      toast({ title: "Add a supervisor name and valid email", variant: "destructive" }); return;
+    }
+    submitChildExternal.mutate(
+      { childId: extChild.userId, data: {
+        activityName: ext.activityName.trim(), organizationName: ext.organizationName.trim(),
+        isNonprofit: ext.isNonprofit, ein: ext.isNonprofit ? ext.ein : undefined,
+        volunteerDate: ext.volunteerDate, hoursWorked: hrs,
+        extSupervisorName: ext.extSupervisorName.trim(), extSupervisorEmail: ext.extSupervisorEmail.trim(),
+        description: ext.description.trim() || undefined,
+      } as any },
+      {
+        onSuccess: () => {
+          toast({ title: "Outside hours submitted", description: "Sent for supervisor review." });
+          qc.invalidateQueries({ queryKey: getGetParentChildrenQueryKey() });
+          setExtChild(null); setExt({ ...emptyExt });
+        },
+        onError: (err: any) => toast({ title: "Couldn't submit", description: err?.data?.error ?? "Try again.", variant: "destructive" }),
+      },
+    );
+  }
 
   function submitHours(childId: string, eventId: string) {
     const val = Number(hoursDraft[eventId]);
@@ -276,6 +315,22 @@ export default function ParentDashboard() {
                         >
                           <Pencil className="w-4 h-4 mr-1" /> Edit
                         </Button>
+                      )}
+                      {child.isManaged && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setExtChild({ userId: child.userId, name: `${child.firstName} ${child.lastName}` }); setExt({ ...emptyExt }); }}
+                        >
+                          <Clock className="w-4 h-4 mr-1" /> Outside hours
+                        </Button>
+                      )}
+                      {child.isManaged && (
+                        <Link href={`/parent/children/${child.userId}/service-record`}>
+                          <Button variant="ghost" size="sm">
+                            <Trophy className="w-4 h-4 mr-1" /> Service record
+                          </Button>
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -601,6 +656,33 @@ export default function ParentDashboard() {
             <Button onClick={handleSave} disabled={saving} data-testid="button-save-child">
               {saving ? "Saving…" : editing ? "Save changes" : "Add child"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={extChild !== null} onOpenChange={(o) => !o && setExtChild(null)}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Log outside volunteering{extChild ? ` — ${extChild.name}` : ""}</DialogTitle>
+            <DialogDescription>Volunteering your child did on their own with another nonprofit. It goes to a supervisor for approval.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><Label className="text-xs">What did they do?</Label><Input value={ext.activityName} onChange={(e) => setExt({ ...ext, activityName: e.target.value })} placeholder="e.g. Food bank sorting" /></div>
+            <div><Label className="text-xs">Organization</Label><Input value={ext.organizationName} onChange={(e) => setExt({ ...ext, organizationName: e.target.value })} placeholder="e.g. Hopelink" /></div>
+            <label className="flex items-center gap-2 text-sm"><Checkbox checked={ext.isNonprofit} onCheckedChange={(v) => setExt({ ...ext, isNonprofit: v === true })} /> Registered non-profit (501c3)</label>
+            {ext.isNonprofit && <div><Label className="text-xs">EIN (9 digits)</Label><Input value={ext.ein} onChange={(e) => setExt({ ...ext, ein: e.target.value })} placeholder="12-3456789" /></div>}
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">Date</Label><Input type="date" value={ext.volunteerDate} onChange={(e) => setExt({ ...ext, volunteerDate: e.target.value })} /></div>
+              <div><Label className="text-xs">Hours</Label><Input type="number" min="0.5" max="24" step="0.5" value={ext.hoursWorked} onChange={(e) => setExt({ ...ext, hoursWorked: e.target.value })} placeholder="e.g. 3" /></div>
+            </div>
+            <div><Label className="text-xs">Supervisor name</Label><Input value={ext.extSupervisorName} onChange={(e) => setExt({ ...ext, extSupervisorName: e.target.value })} placeholder="Who supervised them" /></div>
+            <div><Label className="text-xs">Supervisor email</Label><Input type="email" value={ext.extSupervisorEmail} onChange={(e) => setExt({ ...ext, extSupervisorEmail: e.target.value })} placeholder="supervisor@org.org" /></div>
+            <div><Label className="text-xs">Notes (optional)</Label><Textarea rows={2} value={ext.description} onChange={(e) => setExt({ ...ext, description: e.target.value })} /></div>
+            <p className="text-xs text-muted-foreground">Proof is required over 5 hours — for larger claims, submit with a supervisor who can verify, or keep entries at 5h or under here.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExtChild(null)}>Cancel</Button>
+            <Button onClick={submitExternal} disabled={submitChildExternal.isPending}>{submitChildExternal.isPending ? "Submitting…" : "Submit"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

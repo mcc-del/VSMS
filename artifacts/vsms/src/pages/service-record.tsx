@@ -2,8 +2,10 @@ import { useRoute, useLocation } from "wouter";
 import {
   useGetMyServiceRecord,
   useGetUserServiceRecord,
+  useGetChildServiceRecord,
   getGetMyServiceRecordQueryKey,
   getGetUserServiceRecordQueryKey,
+  getGetChildServiceRecordQueryKey,
 } from "@workspace/api-client-react";
 import type { ServiceRecord } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -161,23 +163,30 @@ export default function ServiceRecordPage() {
   const { role } = useAuth();
   const [, setLocation] = useLocation();
   const [isAdminRoute, params] = useRoute("/admin/users/:userId/service-record");
+  const [isParentRoute, pParams] = useRoute("/parent/children/:childId/service-record");
   const userId = isAdminRoute ? (params?.userId ?? "") : "";
+  const childId = isParentRoute ? (pParams?.childId ?? "") : "";
 
   const mine = useGetMyServiceRecord({
-    query: { enabled: !isAdminRoute, queryKey: getGetMyServiceRecordQueryKey() },
+    query: { enabled: !isAdminRoute && !isParentRoute, queryKey: getGetMyServiceRecordQueryKey() },
   });
   const forUser = useGetUserServiceRecord(userId, {
     query: { enabled: isAdminRoute && !!userId, queryKey: getGetUserServiceRecordQueryKey(userId) },
   });
+  const forChild = useGetChildServiceRecord(childId, {
+    query: { enabled: isParentRoute && !!childId, queryKey: getGetChildServiceRecordQueryKey(childId) },
+  });
 
-  const q = isAdminRoute ? forUser : mine;
+  const q = isAdminRoute ? forUser : isParentRoute ? forChild : mine;
   const rec = q.data;
 
   const backTo = isAdminRoute
     ? "/admin/users"
-    : role === "participant"
-      ? "/dashboard"
-      : "/login";
+    : isParentRoute
+      ? "/parent"
+      : role === "participant"
+        ? "/dashboard"
+        : "/login";
 
   return (
     <div className="sr-screen">

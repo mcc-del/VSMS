@@ -1449,6 +1449,68 @@ export const SubmitChildHoursBody = zod.object({
 
 
 /**
+ * @summary Submit a managed child's external/outside volunteer hours
+ */
+export const SubmitChildExternalHoursParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const submitChildExternalHoursBodyActivityNameMin = 2;
+export const submitChildExternalHoursBodyActivityNameMax = 200;
+
+export const submitChildExternalHoursBodyOrganizationNameMin = 2;
+export const submitChildExternalHoursBodyOrganizationNameMax = 200;
+
+export const submitChildExternalHoursBodyHoursWorkedMin = 0.5;
+export const submitChildExternalHoursBodyHoursWorkedMax = 24;
+
+export const submitChildExternalHoursBodyExtSupervisorNameMin = 2;
+export const submitChildExternalHoursBodyExtSupervisorNameMax = 100;
+
+
+
+export const SubmitChildExternalHoursBody = zod.object({
+  "activityName": zod.string().min(submitChildExternalHoursBodyActivityNameMin).max(submitChildExternalHoursBodyActivityNameMax),
+  "organizationName": zod.string().min(submitChildExternalHoursBodyOrganizationNameMin).max(submitChildExternalHoursBodyOrganizationNameMax),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number().min(submitChildExternalHoursBodyHoursWorkedMin).max(submitChildExternalHoursBodyHoursWorkedMax),
+  "extSupervisorName": zod.string().min(submitChildExternalHoursBodyExtSupervisorNameMin).max(submitChildExternalHoursBodyExtSupervisorNameMax),
+  "extSupervisorEmail": zod.string().email(),
+  "description": zod.string().optional(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().optional(),
+  "proofUrl": zod.string().nullish()
+})
+
+
+/**
+ * @summary A managed child's verified service record (parent view)
+ */
+export const GetChildServiceRecordParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const GetChildServiceRecordResponse = zod.object({
+  "studentName": zod.string(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "season": zod.string(),
+  "generatedAt": zod.string(),
+  "totalApprovedHours": zod.number(),
+  "medal": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "date": zod.string(),
+  "activity": zod.string(),
+  "organization": zod.string(),
+  "hours": zod.number(),
+  "verifiedBy": zod.string(),
+  "type": zod.enum(['event', 'external', 'manual'])
+}))
+})
+
+
+/**
  * @summary List linked co-guardians and pending invites
  */
 export const ListCoGuardiansResponse = zod.object({

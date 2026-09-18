@@ -78,6 +78,7 @@ function Router() {
 
       <ProtectedRoute path="/parent" component={ParentDashboard} allowedRoles={["parent"]} />
       <ProtectedRoute path="/parent/opportunities" component={ParentOpportunities} allowedRoles={["parent"]} />
+      <ProtectedRoute path="/parent/children/:childId/service-record" component={ServiceRecordPage} allowedRoles={["parent"]} />
 
       <ProtectedRoute path="/supervisor/dashboard" component={SupervisorDashboard} allowedRoles={["supervisor", "org_admin"]} />
       <ProtectedRoute path="/supervisor/pending" component={SupervisorPending} allowedRoles={["supervisor", "admin", "org_admin"]} />

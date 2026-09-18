@@ -5265,6 +5265,155 @@ export const useSubmitChildHours = <TError = ErrorType<ErrorResponse>,
       return useMutation(getSubmitChildHoursMutationOptions(options));
     }
 
+export const getSubmitChildExternalHoursUrl = (childId: string,) => {
+
+
+
+
+  return `/api/v1/parent/children/${childId}/external-hours`
+}
+
+/**
+ * @summary Submit a managed child's external/outside volunteer hours
+ */
+export const submitChildExternalHours = async (childId: string,
+    externalSubmissionInput: ExternalSubmissionInput, options?: RequestInit): Promise<ExternalSubmission> => {
+
+  return customFetch<ExternalSubmission>(getSubmitChildExternalHoursUrl(childId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      externalSubmissionInput,)
+  }
+);}
+
+
+
+
+export const getSubmitChildExternalHoursMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitChildExternalHours>>, TError,{childId: string;data: BodyType<ExternalSubmissionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitChildExternalHours>>, TError,{childId: string;data: BodyType<ExternalSubmissionInput>}, TContext> => {
+
+const mutationKey = ['submitChildExternalHours'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitChildExternalHours>>, {childId: string;data: BodyType<ExternalSubmissionInput>}> = (props) => {
+          const {childId,data} = props ?? {};
+
+          return  submitChildExternalHours(childId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitChildExternalHoursMutationResult = NonNullable<Awaited<ReturnType<typeof submitChildExternalHours>>>
+    export type SubmitChildExternalHoursMutationBody = BodyType<ExternalSubmissionInput>
+    export type SubmitChildExternalHoursMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Submit a managed child's external/outside volunteer hours
+ */
+export const useSubmitChildExternalHours = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitChildExternalHours>>, TError,{childId: string;data: BodyType<ExternalSubmissionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitChildExternalHours>>,
+        TError,
+        {childId: string;data: BodyType<ExternalSubmissionInput>},
+        TContext
+      > => {
+      return useMutation(getSubmitChildExternalHoursMutationOptions(options));
+    }
+
+export const getGetChildServiceRecordUrl = (childId: string,) => {
+
+
+
+
+  return `/api/v1/parent/children/${childId}/service-record`
+}
+
+/**
+ * @summary A managed child's verified service record (parent view)
+ */
+export const getChildServiceRecord = async (childId: string, options?: RequestInit): Promise<ServiceRecord> => {
+
+  return customFetch<ServiceRecord>(getGetChildServiceRecordUrl(childId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetChildServiceRecordQueryKey = (childId: string,) => {
+    return [
+    `/api/v1/parent/children/${childId}/service-record`
+    ] as const;
+    }
+
+
+export const getGetChildServiceRecordQueryOptions = <TData = Awaited<ReturnType<typeof getChildServiceRecord>>, TError = ErrorType<ErrorResponse>>(childId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getChildServiceRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetChildServiceRecordQueryKey(childId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getChildServiceRecord>>> = ({ signal }) => getChildServiceRecord(childId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(childId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getChildServiceRecord>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetChildServiceRecordQueryResult = NonNullable<Awaited<ReturnType<typeof getChildServiceRecord>>>
+export type GetChildServiceRecordQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary A managed child's verified service record (parent view)
+ */
+
+export function useGetChildServiceRecord<TData = Awaited<ReturnType<typeof getChildServiceRecord>>, TError = ErrorType<ErrorResponse>>(
+ childId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getChildServiceRecord>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetChildServiceRecordQueryOptions(childId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getListCoGuardiansUrl = () => {
 
 

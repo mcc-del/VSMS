@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, externalSubmissionsTable, usersTable } from "@workspace/db";
-import { eq, and, inArray, ne } from "drizzle-orm";
+import { db, externalSubmissionsTable, usersTable, guardianshipsTable } from "@workspace/db";
+import { eq, and, inArray, ne, or } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitExternalActivityBody } from "@workspace/api-zod";
 import { isWithinAwardWindow, AWARD_WINDOW_MESSAGE } from "../lib/season";
@@ -478,6 +478,99 @@ router.get(
         participantEmail: r.participantEmail ?? null,
       })),
     );
+  },
+);
+
+// Whether the acting parent guards this child (explicit guardianship, or the
+// child lists this parent's email as their parent email).
+async function parentGuardsChild(parentUserId: string, parentEmail: string, childId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ userId: usersTable.userId })
+    .from(usersTable)
+    .leftJoin(
+      guardianshipsTable,
+      and(eq(guardianshipsTable.childUserId, usersTable.userId), eq(guardianshipsTable.guardianUserId, parentUserId)),
+    )
+    .where(
+      and(
+        eq(usersTable.userId, childId),
+        eq(usersTable.role, "participant"),
+        or(
+          eq(guardianshipsTable.guardianUserId, parentUserId),
+          eq(usersTable.parentEmail, parentEmail.toLowerCase()),
+        ),
+      ),
+    )
+    .limit(1);
+  return !!row;
+}
+
+// POST /v1/parent/children/:childId/external-hours — a parent logs a managed
+// child's outside/external volunteering, on the child's behalf.
+router.post(
+  "/v1/parent/children/:childId/external-hours",
+  authenticate,
+  requireRole("parent"),
+  async (req, res) => {
+    const { childId } = req.params as { childId: string };
+    if (!(await parentGuardsChild(req.auth!.userId, req.auth!.email, childId))) {
+      res.status(404).json({ error: "Child not found." });
+      return;
+    }
+
+    const parsed = SubmitExternalActivityBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });
+      return;
+    }
+    const { activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail, description, isNonprofit, ein, proofUrl } = parsed.data;
+
+    // The external supervisor must not be the parent submitting on behalf.
+    const fieldError = validateExternalFields(parsed.data, req.auth!.email);
+    if (fieldError) {
+      res.status(400).json({ error: fieldError });
+      return;
+    }
+    if (hoursWorked > 5 && !(proofUrl && proofUrl.trim())) {
+      res.status(400).json({ error: "Proof is required for submissions over 5 hours." });
+      return;
+    }
+
+    const [dupe] = await db
+      .select({ status: externalSubmissionsTable.status })
+      .from(externalSubmissionsTable)
+      .where(
+        and(
+          eq(externalSubmissionsTable.userId, childId),
+          eq(externalSubmissionsTable.activityName, activityName.trim()),
+          eq(externalSubmissionsTable.organizationName, organizationName.trim()),
+          eq(externalSubmissionsTable.volunteerDate, volunteerDate),
+        ),
+      )
+      .limit(1);
+    if (dupe && dupe.status !== "rejected") {
+      res.status(409).json({ error: "This activity is already submitted for this date." });
+      return;
+    }
+
+    const [submission] = await db
+      .insert(externalSubmissionsTable)
+      .values({
+        userId: childId,
+        activityName: activityName.trim(),
+        organizationName: organizationName.trim(),
+        volunteerDate,
+        hoursWorked: String(hoursWorked),
+        extSupervisorName: extSupervisorName.trim(),
+        extSupervisorEmail: extSupervisorEmail.trim().toLowerCase(),
+        description: description?.trim() || null,
+        isNonprofit: isNonprofit ?? false,
+        ein: isNonprofit ? (ein ?? "").replace(/[^0-9]/g, "") : null,
+        proofUrl: proofUrl?.trim() || null,
+        status: "pending",
+      })
+      .returning();
+    res.status(201).json(formatExternal(submission));
   },
 );
 

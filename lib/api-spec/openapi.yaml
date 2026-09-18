@@ -1625,6 +1625,68 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/parent/children/{childId}/external-hours:
+    post:
+      operationId: submitChildExternalHours
+      tags: [parent]
+      summary: Submit a managed child's external/outside volunteer hours
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExternalSubmissionInput"
+      responses:
+        "201":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalSubmission"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/parent/children/{childId}/service-record:
+    get:
+      operationId: getChildServiceRecord
+      tags: [parent]
+      summary: A managed child's verified service record (parent view)
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/parent/co-guardians:
     get:
       operationId: listCoGuardians
