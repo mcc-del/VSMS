@@ -28,17 +28,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Find Opportunities", href: "/parent/opportunities", icon: Calendar },
     ] : []),
     ...(role === "supervisor" ? [
+      { label: "Dashboard", href: "/supervisor/dashboard", icon: LayoutDashboard },
       { label: "Pending Reviews", href: "/supervisor/pending", icon: CheckSquare },
       { label: "Reviewed History", href: "/supervisor/history", icon: FileText },
       { label: "My Events", href: "/admin/events", icon: Calendar },
-      { label: "New Event", href: "/admin/events/new", icon: FileText },
       { label: "All Opportunities", href: "/supervisor/opportunities", icon: Calendar },
+      { label: "Help", href: "/help", icon: HelpCircle },
     ] : []),
     ...(role === "org_admin" ? [
+      { label: "Dashboard", href: "/supervisor/dashboard", icon: LayoutDashboard },
       { label: "Pending Reviews", href: "/supervisor/pending", icon: CheckSquare },
       { label: "Reviewed History", href: "/supervisor/history", icon: FileText },
       { label: "My Events", href: "/admin/events", icon: Calendar },
       { label: "All Opportunities", href: "/supervisor/opportunities", icon: Calendar },
+      { label: "Help", href: "/help", icon: HelpCircle },
     ] : []),
     ...(role === "admin" ? [
       { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },

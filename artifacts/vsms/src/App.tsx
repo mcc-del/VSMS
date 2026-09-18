@@ -17,6 +17,7 @@ import SupervisorPending from "@/pages/supervisor/pending";
 import SupervisorHistory from "@/pages/supervisor/history";
 import RosterPage from "@/pages/supervisor/roster";
 import SupervisorAllOpportunities from "@/pages/supervisor/all-opportunities";
+import SupervisorDashboard from "@/pages/supervisor/dashboard";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminNewEvent from "@/pages/admin/new-event";
@@ -48,7 +49,8 @@ function RootRedirect() {
   // go straight to their role's home.
   if (!token) return <LandingPage />;
   if (role === "admin") return <Redirect to="/admin/dashboard" />;
-  if (role === "supervisor") return <Redirect to="/supervisor/pending" />;
+  if (role === "supervisor") return <Redirect to="/supervisor/dashboard" />;
+  if (role === "org_admin") return <Redirect to="/supervisor/dashboard" />;
   if (role === "parent") return <Redirect to="/parent" />;
   return <Redirect to="/dashboard" />;
 }
@@ -76,6 +78,7 @@ function Router() {
       <ProtectedRoute path="/parent" component={ParentDashboard} allowedRoles={["parent"]} />
       <ProtectedRoute path="/parent/opportunities" component={ParentOpportunities} allowedRoles={["parent"]} />
 
+      <ProtectedRoute path="/supervisor/dashboard" component={SupervisorDashboard} allowedRoles={["supervisor", "org_admin"]} />
       <ProtectedRoute path="/supervisor/pending" component={SupervisorPending} allowedRoles={["supervisor", "admin", "org_admin"]} />
       <ProtectedRoute path="/supervisor/history" component={SupervisorHistory} allowedRoles={["supervisor", "admin", "org_admin"]} />
       <ProtectedRoute path="/supervisor/roster/:eventId" component={RosterPage} allowedRoles={["supervisor", "admin", "org_admin"]} />

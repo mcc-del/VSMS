@@ -8,8 +8,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Award, HandHeart, Users } from "lucide-react";
+import { Award, HandHeart, Users, Eye, EyeOff } from "lucide-react";
 import { RecyclingRibbon } from "@/components/recycling-ribbon";
+import { useState } from "react";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const { login } = useAuth();
   const { toast } = useToast();
   const loginMutation = useLogin();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
 
@@ -124,7 +126,24 @@ export default function LoginPage() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input data-testid="input-password" type="password" placeholder="••••••••" {...field} />
+                        <div className="relative">
+                          <Input
+                            data-testid="input-password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            className="pr-10"
+                            {...field}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((v) => !v)}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                            tabIndex={-1}
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

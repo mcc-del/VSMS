@@ -52,6 +52,18 @@ const SECTIONS: { title: string; items: QA[] }[] = [
       { q: "Can another parent help?", a: "Yes — invite a co-guardian from your dashboard; they get the same access to your children." },
     ],
   },
+  {
+    title: "Supervisors & organizers",
+    items: [
+      { q: "How do I get a supervisor account?", a: "Supervisors are created by an administrator — you can't self-register as a supervisor. If you need an account, email mcc@medinaacademy.org and an admin will set you up." },
+      { q: "Where do I start?", a: "Your Dashboard is home base — it shows submissions waiting for your review, your upcoming events, how many volunteers are registered, and the hours you've approved." },
+      { q: "How do I approve or reject hours?", a: "Go to Pending Reviews. Open a submission, check the details, and Approve or Reject. Rejecting requires a short reason so the student knows what to fix." },
+      { q: "How do I create or edit an event?", a: "Open My Events and use New Event, or edit/cancel any event you run from that same page. Service credit is calculated automatically from the start and end times." },
+      { q: "How do I take attendance / check people in?", a: "Open the event's Roster (from My Events or your Dashboard) to see who signed up and mark who actually attended. Supervisors don't manage user accounts — the roster is where you confirm your volunteers." },
+      { q: "What reports can I see?", a: "Your Dashboard summarizes pending, approved, and rejected counts plus volunteers and approved hours. Reviewed History is your full, itemized log of every submission you've approved or rejected." },
+      { q: "Can I see events I don't run?", a: "Yes — All Opportunities lists every event across the program, view-only. You can only edit events you supervise." },
+    ],
+  },
 ];
 
 export default function HelpPage() {
