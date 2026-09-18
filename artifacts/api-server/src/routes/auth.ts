@@ -35,18 +35,41 @@ router.post("/v1/auth/register", async (req, res) => {
     return;
   }
 
-  // If the chosen organization has a join code, the student must supply it.
-  // This keeps org-gated visibility honest (e.g. only real Medina students
-  // land in the Medina org and can see on-site events).
-  if (!isParent && organizationId) {
-    const [org] = await db
-      .select({ joinCode: organizationsTable.joinCode, name: organizationsTable.name })
-      .from(organizationsTable)
-      .where(eq(organizationsTable.organizationId, organizationId))
-      .limit(1);
-    if (org?.joinCode) {
-      if (!joinCode || joinCode.trim().toLowerCase() !== org.joinCode.toLowerCase()) {
-        res.status(400).json({ error: `Incorrect join code for ${org.name}. Ask the program for the code.` });
+  // Resolve which organization this student joins, honoring join codes.
+  //  - If they selected an org that HAS a code, they must supply the right code.
+  //  - If they entered a code (for any org, including one not shown in the
+  //    affiliation picker such as a partner nonprofit), we resolve it to that
+  //    org and enroll them there.
+  // This keeps org-gated visibility honest (only real members land in an org).
+  let finalOrganizationId: string | null = isParent ? null : (organizationId || null);
+  if (!isParent) {
+    const code = joinCode?.trim();
+    if (organizationId) {
+      const [org] = await db
+        .select({ joinCode: organizationsTable.joinCode, name: organizationsTable.name })
+        .from(organizationsTable)
+        .where(eq(organizationsTable.organizationId, organizationId))
+        .limit(1);
+      if (org?.joinCode) {
+        if (!code || code.toLowerCase() !== org.joinCode.toLowerCase()) {
+          res.status(400).json({ error: `Incorrect join code for ${org.name}. Ask the program for the code.` });
+          return;
+        }
+      }
+    }
+    // A code was entered — match it to an organization (case-insensitive).
+    if (code) {
+      const withCodes = await db
+        .select({ organizationId: organizationsTable.organizationId, joinCode: organizationsTable.joinCode })
+        .from(organizationsTable);
+      const match = withCodes.find(
+        (o) => o.joinCode && o.joinCode.toLowerCase() === code.toLowerCase(),
+      );
+      if (match) {
+        finalOrganizationId = match.organizationId;
+      } else if (!organizationId) {
+        // They typed a code but it matches nothing and they picked no org.
+        res.status(400).json({ error: "That code didn't match any organization. Check it with your school or program, or leave it blank." });
         return;
       }
     }
@@ -75,7 +98,7 @@ router.post("/v1/auth/register", async (req, res) => {
       parentEmail: isParent ? null : parentEmail!.toLowerCase(),
       school: isParent ? null : school!.trim(),
       grade: isParent ? null : (grade?.trim() || null),
-      organizationId: isParent ? null : (organizationId || null),
+      organizationId: finalOrganizationId,
     })
     .returning();
 

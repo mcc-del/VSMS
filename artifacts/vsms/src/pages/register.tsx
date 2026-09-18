@@ -299,19 +299,26 @@ export default function RegisterPage() {
 
               {isStudent && (() => {
                 const selectedOrg = (orgs ?? []).find((o) => o.organizationId === form.watch("organizationId"));
-                if (!selectedOrg?.requiresJoinCode) return null;
+                const required = !!selectedOrg?.requiresJoinCode;
                 return (
                   <FormField
                     control={form.control}
                     name="joinCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{selectedOrg.name} join code</FormLabel>
+                        <FormLabel>
+                          {required
+                            ? `${selectedOrg?.name} join code`
+                            : "Organization code"}{" "}
+                          {!required && <span className="text-muted-foreground font-normal">(optional)</span>}
+                        </FormLabel>
                         <FormControl>
-                          <Input data-testid="input-join-code" placeholder="Enter the code from your program" {...field} />
+                          <Input data-testid="input-join-code" placeholder="Enter the code from your school or program" {...field} />
                         </FormControl>
                         <FormDescription>
-                          {selectedOrg.name} gives this code to its students. It confirms you're really enrolled.
+                          {required
+                            ? `${selectedOrg?.name} gives this code to its students — it confirms you're really enrolled.`
+                            : "If your school or program gave you a code, enter it to join them and see their events. Leave blank if you don't have one."}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
