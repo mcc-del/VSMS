@@ -70,6 +70,43 @@ export async function sendHoursForReview(toEmail: string, supervisorName: string
   }
 }
 
+// Supervisor → all registered volunteers for an event. Sends an individual
+// email to each recipient (no shared To/CC) so addresses stay private.
+// Returns how many messages were actually sent.
+export async function sendEventBroadcast(
+  recipients: string[],
+  eventTitle: string,
+  senderName: string,
+  subject: string,
+  message: string,
+): Promise<number> {
+  const client = getClient();
+  if (!client) return 0;
+  const body = [
+    message,
+    "",
+    "————",
+    `About the event: ${eventTitle}`,
+    `Sent by ${senderName} via MedinaCares.`,
+    `Sign in for details: ${APP_URL}`,
+  ].join("\n");
+  let sent = 0;
+  for (const to of recipients) {
+    try {
+      await client.emails.send({
+        from: FROM_ADDRESS,
+        to,
+        subject: `[${eventTitle}] ${subject}`,
+        text: body,
+      });
+      sent += 1;
+    } catch (err) {
+      logger.error({ err, to }, "Failed to send event broadcast email");
+    }
+  }
+  return sent;
+}
+
 function getClient(): Resend | null {
   const apiKey = process.env["RESEND_API_KEY"];
   if (!apiKey) {

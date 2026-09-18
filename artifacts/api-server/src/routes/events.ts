@@ -8,10 +8,10 @@ import {
   guardianshipsTable,
   volunteerSubmissionsTable,
 } from "@workspace/db";
-import { eq, count, sql, and } from "drizzle-orm";
+import { eq, count, sql, and, inArray } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
-import { sendRegistrationConfirmation } from "../lib/email";
+import { sendRegistrationConfirmation, sendEventBroadcast } from "../lib/email";
 import { gradeToLevel, orgAllowsLevel, type SchoolLevel } from "../lib/levels";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
@@ -619,6 +619,75 @@ router.post(
       .returning();
     if (result.length === 0) { res.status(404).json({ error: "That participant isn't registered." }); return; }
     res.json({ ok: true, status });
+  },
+);
+
+// POST /api/v1/events/:eventId/broadcast — supervisor emails everyone who is
+// registered for the event (and optionally the guardians of managed children).
+router.post(
+  "/v1/events/:eventId/broadcast",
+  authenticate,
+  requireRole("supervisor", "admin", "org_admin"),
+  async (req, res) => {
+    const { eventId } = req.params as { eventId: string };
+    const body = (req.body ?? {}) as { subject?: unknown; message?: unknown; includeGuardians?: unknown };
+    const subject = typeof body.subject === "string" ? body.subject.trim() : "";
+    const message = typeof body.message === "string" ? body.message.trim() : "";
+    const includeGuardians = body.includeGuardians !== false; // default on
+    if (subject.length < 2 || message.length < 2) {
+      res.status(400).json({ error: "A subject and a message are both required." });
+      return;
+    }
+
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
+    if (!event) { res.status(404).json({ error: "Event not found" }); return; }
+    if (!(await canManageEvent(req.auth!.role, req.auth!.userId, event))) {
+      res.status(403).json({ error: "You can only message events you supervise." });
+      return;
+    }
+
+    // Registered participants (skip no-shows), with their own email + parentEmail.
+    const regs = await db
+      .select({
+        userId: eventRegistrationsTable.userId,
+        status: eventRegistrationsTable.status,
+        email: usersTable.email,
+        parentEmail: usersTable.parentEmail,
+        isManaged: usersTable.isManaged,
+      })
+      .from(eventRegistrationsTable)
+      .leftJoin(usersTable, eq(eventRegistrationsTable.userId, usersTable.userId))
+      .where(eq(eventRegistrationsTable.eventId, eventId));
+
+    const emails = new Set<string>();
+    const childIds: string[] = [];
+    for (const r of regs) {
+      if (r.status === "no_show") continue;
+      if (r.email) emails.add(r.email.toLowerCase());
+      if (includeGuardians && r.parentEmail) emails.add(r.parentEmail.toLowerCase());
+      if (includeGuardians && r.isManaged && r.userId) childIds.push(r.userId);
+    }
+
+    // Guardians of managed (elementary) children have no email on the child row.
+    if (includeGuardians && childIds.length > 0) {
+      const guardians = await db
+        .select({ email: usersTable.email })
+        .from(guardianshipsTable)
+        .leftJoin(usersTable, eq(guardianshipsTable.guardianUserId, usersTable.userId))
+        .where(inArray(guardianshipsTable.childUserId, childIds));
+      for (const g of guardians) if (g.email) emails.add(g.email.toLowerCase());
+    }
+
+    const [sender] = await db
+      .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
+      .from(usersTable)
+      .where(eq(usersTable.userId, req.auth!.userId))
+      .limit(1);
+    const senderName = sender ? `${sender.firstName} ${sender.lastName}`.trim() : "your supervisor";
+
+    const list = [...emails];
+    const sent = await sendEventBroadcast(list, event.title, senderName, subject, message);
+    res.json({ recipients: sent, emailConfigured: list.length === 0 ? true : sent > 0 });
   },
 );
 

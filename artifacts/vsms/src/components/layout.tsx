@@ -33,6 +33,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Reviewed History", href: "/supervisor/history", icon: FileText },
       { label: "My Events", href: "/admin/events", icon: Calendar },
       { label: "All Opportunities", href: "/supervisor/opportunities", icon: Calendar },
+      { label: "My Hours", href: "/supervisor/my-hours", icon: Clock },
       { label: "Help", href: "/help", icon: HelpCircle },
     ] : []),
     ...(role === "org_admin" ? [
@@ -41,6 +42,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Reviewed History", href: "/supervisor/history", icon: FileText },
       { label: "My Events", href: "/admin/events", icon: Calendar },
       { label: "All Opportunities", href: "/supervisor/opportunities", icon: Calendar },
+      { label: "My Hours", href: "/supervisor/my-hours", icon: Clock },
       { label: "Help", href: "/help", icon: HelpCircle },
     ] : []),
     ...(role === "admin" ? [

@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import {
   useGetEventRoster,
   useSetAttendance,
+  useBroadcastToEvent,
   getGetEventRosterQueryKey,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
@@ -9,9 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { ArrowLeft, Check, X, Mail } from "lucide-react";
 
 function statusBadge(s: string) {
   if (s === "attended") return <Badge className="bg-green-100 text-green-700 border-0">Checked in</Badge>;
@@ -27,8 +33,37 @@ export default function RosterPage() {
     query: { enabled: !!eventId, queryKey: getGetEventRosterQueryKey(eventId) },
   });
   const setAttendance = useSetAttendance();
+  const broadcast = useBroadcastToEvent();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const [msgOpen, setMsgOpen] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [includeGuardians, setIncludeGuardians] = useState(true);
+
+  function sendMessage() {
+    if (subject.trim().length < 2 || message.trim().length < 2) {
+      toast({ title: "Add a subject and message", variant: "destructive" });
+      return;
+    }
+    broadcast.mutate(
+      { eventId, data: { subject: subject.trim(), message: message.trim(), includeGuardians } },
+      {
+        onSuccess: (res) => {
+          if (!res.emailConfigured) {
+            toast({ title: "Email isn't set up yet", description: "The server has no email provider configured, so nothing was sent.", variant: "destructive" });
+            return;
+          }
+          toast({ title: "Message sent", description: `Delivered to ${res.recipients} recipient${res.recipients === 1 ? "" : "s"}.` });
+          setMsgOpen(false);
+          setSubject("");
+          setMessage("");
+        },
+        onError: (err: any) => toast({ title: "Couldn't send", description: err?.data?.error ?? "Try again.", variant: "destructive" }),
+      },
+    );
+  }
 
   function mark(userId: string, status: "attended" | "no_show" | "registered") {
     setAttendance.mutate(
@@ -49,11 +84,16 @@ export default function RosterPage() {
         <button onClick={() => setLocation("/admin/events")} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="w-4 h-4" /> Back to events
         </button>
-        <div>
-          <h1 className="text-2xl font-bold">{data?.eventTitle ?? "Roster"}</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {participants.length} signed up · {checkedIn} checked in. Tap ✓ to check a student in at the event.
-          </p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">{data?.eventTitle ?? "Roster"}</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {participants.length} signed up · {checkedIn} checked in. Tap ✓ to check a student in at the event.
+            </p>
+          </div>
+          <Button variant="outline" className="gap-1.5 shrink-0" disabled={participants.length === 0} onClick={() => setMsgOpen(true)}>
+            <Mail className="w-4 h-4" /> Message attendees
+          </Button>
         </div>
 
         <Card>
@@ -103,6 +143,37 @@ export default function RosterPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={msgOpen} onOpenChange={setMsgOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Message attendees</DialogTitle>
+            <DialogDescription>
+              Email everyone signed up for “{data?.eventTitle ?? "this event"}”. Recipients are emailed individually — they won't see each other's addresses.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Subject</label>
+              <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Parking & check-in details" maxLength={150} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Message</label>
+              <Textarea rows={6} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Write your update to attendees…" maxLength={4000} />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={includeGuardians} onCheckedChange={(v) => setIncludeGuardians(v === true)} />
+              Also email parents/guardians (recommended for younger volunteers)
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMsgOpen(false)}>Cancel</Button>
+            <Button onClick={sendMessage} disabled={broadcast.isPending}>
+              {broadcast.isPending ? "Sending…" : "Send message"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

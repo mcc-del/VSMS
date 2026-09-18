@@ -1246,6 +1246,84 @@ export const UpdateLeaderboardPreferencesResponse = zod.object({
 
 
 /**
+ * @summary List my self-logged adult volunteer hours (no approval; not competitive)
+ */
+export const ListMyAdultHoursResponseItem = zod.object({
+  "adultHoursId": zod.string(),
+  "activityName": zod.string(),
+  "organizationName": zod.string().nullish(),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListMyAdultHoursResponse = zod.array(ListMyAdultHoursResponseItem)
+
+
+/**
+ * @summary Log my own adult volunteer hours (auto-recorded, no review)
+ */
+export const logMyAdultHoursBodyActivityNameMin = 2;
+export const logMyAdultHoursBodyActivityNameMax = 200;
+
+export const logMyAdultHoursBodyOrganizationNameMax = 200;
+
+export const logMyAdultHoursBodyHoursWorkedMin = 0.25;
+export const logMyAdultHoursBodyHoursWorkedMax = 24;
+
+export const logMyAdultHoursBodyNotesMax = 500;
+
+
+
+export const LogMyAdultHoursBody = zod.object({
+  "activityName": zod.string().min(logMyAdultHoursBodyActivityNameMin).max(logMyAdultHoursBodyActivityNameMax),
+  "organizationName": zod.string().max(logMyAdultHoursBodyOrganizationNameMax).nullish(),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number().min(logMyAdultHoursBodyHoursWorkedMin).max(logMyAdultHoursBodyHoursWorkedMax),
+  "notes": zod.string().max(logMyAdultHoursBodyNotesMax).nullish()
+})
+
+
+/**
+ * @summary Delete one of my self-logged adult volunteer hour entries
+ */
+export const DeleteMyAdultHoursParams = zod.object({
+  "adultHoursId": zod.coerce.string()
+})
+
+export const DeleteMyAdultHoursResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Email everyone registered for an event (supervisor/org-admin/admin)
+ */
+export const BroadcastToEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const broadcastToEventBodySubjectMin = 2;
+export const broadcastToEventBodySubjectMax = 150;
+
+export const broadcastToEventBodyMessageMin = 2;
+export const broadcastToEventBodyMessageMax = 4000;
+
+
+
+export const BroadcastToEventBody = zod.object({
+  "subject": zod.string().min(broadcastToEventBodySubjectMin).max(broadcastToEventBodySubjectMax),
+  "message": zod.string().min(broadcastToEventBodyMessageMin).max(broadcastToEventBodyMessageMax),
+  "includeGuardians": zod.boolean().optional().describe('Also email the guardians of managed (elementary) children.')
+})
+
+export const BroadcastToEventResponse = zod.object({
+  "recipients": zod.number().describe('How many email addresses the message was sent to.'),
+  "emailConfigured": zod.boolean().optional().describe('False when the server has no email provider configured.')
+})
+
+
+/**
  * @summary List a parent's linked children with schedule and progress
  */
 export const GetParentChildrenResponseItem = zod.object({

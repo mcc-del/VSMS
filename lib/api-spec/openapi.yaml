@@ -1370,6 +1370,106 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/me/adult-hours:
+    get:
+      operationId: listMyAdultHours
+      tags: [profile]
+      summary: List my self-logged adult volunteer hours (no approval; not competitive)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdultHoursEntry"
+    post:
+      operationId: logMyAdultHours
+      tags: [profile]
+      summary: Log my own adult volunteer hours (auto-recorded, no review)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdultHoursInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdultHoursEntry"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/me/adult-hours/{adultHoursId}:
+    delete:
+      operationId: deleteMyAdultHours
+      tags: [profile]
+      summary: Delete one of my self-logged adult volunteer hour entries
+      parameters:
+        - name: adultHoursId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/events/{eventId}/broadcast:
+    post:
+      operationId: broadcastToEvent
+      tags: [events]
+      summary: Email everyone registered for an event (supervisor/org-admin/admin)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventBroadcastInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BroadcastResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/parent/children:
     get:
       operationId: getParentChildren
@@ -2705,6 +2805,77 @@ components:
           type: integer
         rejectedCount:
           type: integer
+
+    AdultHoursEntry:
+      type: object
+      required: [adultHoursId, activityName, volunteerDate, hoursWorked, createdAt]
+      properties:
+        adultHoursId:
+          type: string
+        activityName:
+          type: string
+        organizationName:
+          type: string
+          nullable: true
+        volunteerDate:
+          type: string
+        hoursWorked:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+
+    AdultHoursInput:
+      type: object
+      required: [activityName, volunteerDate, hoursWorked]
+      properties:
+        activityName:
+          type: string
+          minLength: 2
+          maxLength: 200
+        organizationName:
+          type: string
+          maxLength: 200
+          nullable: true
+        volunteerDate:
+          type: string
+        hoursWorked:
+          type: number
+          minimum: 0.25
+          maximum: 24
+        notes:
+          type: string
+          maxLength: 500
+          nullable: true
+
+    EventBroadcastInput:
+      type: object
+      required: [subject, message]
+      properties:
+        subject:
+          type: string
+          minLength: 2
+          maxLength: 150
+        message:
+          type: string
+          minLength: 2
+          maxLength: 4000
+        includeGuardians:
+          type: boolean
+          description: Also email the guardians of managed (elementary) children.
+
+    BroadcastResult:
+      type: object
+      required: [recipients]
+      properties:
+        recipients:
+          type: integer
+          description: How many email addresses the message was sent to.
+        emailConfigured:
+          type: boolean
+          description: False when the server has no email provider configured.
 
     SupervisorDashboard:
       type: object

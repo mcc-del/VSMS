@@ -23,8 +23,11 @@ import type {
   AdminCreateUserInput,
   AdminDashboard,
   AdminMetrics,
+  AdultHoursEntry,
+  AdultHoursInput,
   AttendanceInput,
   AuthResponse,
+  BroadcastResult,
   CheckInResponse,
   ChildInput,
   ChildRegisterInput,
@@ -33,6 +36,7 @@ import type {
   CoGuardiansResponse,
   ErrorResponse,
   Event,
+  EventBroadcastInput,
   EventInput,
   EventRegistration,
   EventRoster,
@@ -4604,6 +4608,296 @@ export const useUpdateLeaderboardPreferences = <TError = ErrorType<ErrorResponse
         TContext
       > => {
       return useMutation(getUpdateLeaderboardPreferencesMutationOptions(options));
+    }
+
+export const getListMyAdultHoursUrl = () => {
+
+
+
+
+  return `/api/v1/me/adult-hours`
+}
+
+/**
+ * @summary List my self-logged adult volunteer hours (no approval; not competitive)
+ */
+export const listMyAdultHours = async ( options?: RequestInit): Promise<AdultHoursEntry[]> => {
+
+  return customFetch<AdultHoursEntry[]>(getListMyAdultHoursUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyAdultHoursQueryKey = () => {
+    return [
+    `/api/v1/me/adult-hours`
+    ] as const;
+    }
+
+
+export const getListMyAdultHoursQueryOptions = <TData = Awaited<ReturnType<typeof listMyAdultHours>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyAdultHours>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyAdultHoursQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyAdultHours>>> = ({ signal }) => listMyAdultHours({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyAdultHours>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyAdultHoursQueryResult = NonNullable<Awaited<ReturnType<typeof listMyAdultHours>>>
+export type ListMyAdultHoursQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List my self-logged adult volunteer hours (no approval; not competitive)
+ */
+
+export function useListMyAdultHours<TData = Awaited<ReturnType<typeof listMyAdultHours>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyAdultHours>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyAdultHoursQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getLogMyAdultHoursUrl = () => {
+
+
+
+
+  return `/api/v1/me/adult-hours`
+}
+
+/**
+ * @summary Log my own adult volunteer hours (auto-recorded, no review)
+ */
+export const logMyAdultHours = async (adultHoursInput: AdultHoursInput, options?: RequestInit): Promise<AdultHoursEntry> => {
+
+  return customFetch<AdultHoursEntry>(getLogMyAdultHoursUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      adultHoursInput,)
+  }
+);}
+
+
+
+
+export const getLogMyAdultHoursMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logMyAdultHours>>, TError,{data: BodyType<AdultHoursInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logMyAdultHours>>, TError,{data: BodyType<AdultHoursInput>}, TContext> => {
+
+const mutationKey = ['logMyAdultHours'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logMyAdultHours>>, {data: BodyType<AdultHoursInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  logMyAdultHours(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogMyAdultHoursMutationResult = NonNullable<Awaited<ReturnType<typeof logMyAdultHours>>>
+    export type LogMyAdultHoursMutationBody = BodyType<AdultHoursInput>
+    export type LogMyAdultHoursMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Log my own adult volunteer hours (auto-recorded, no review)
+ */
+export const useLogMyAdultHours = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logMyAdultHours>>, TError,{data: BodyType<AdultHoursInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof logMyAdultHours>>,
+        TError,
+        {data: BodyType<AdultHoursInput>},
+        TContext
+      > => {
+      return useMutation(getLogMyAdultHoursMutationOptions(options));
+    }
+
+export const getDeleteMyAdultHoursUrl = (adultHoursId: string,) => {
+
+
+
+
+  return `/api/v1/me/adult-hours/${adultHoursId}`
+}
+
+/**
+ * @summary Delete one of my self-logged adult volunteer hour entries
+ */
+export const deleteMyAdultHours = async (adultHoursId: string, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getDeleteMyAdultHoursUrl(adultHoursId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteMyAdultHoursMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyAdultHours>>, TError,{adultHoursId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMyAdultHours>>, TError,{adultHoursId: string}, TContext> => {
+
+const mutationKey = ['deleteMyAdultHours'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMyAdultHours>>, {adultHoursId: string}> = (props) => {
+          const {adultHoursId} = props ?? {};
+
+          return  deleteMyAdultHours(adultHoursId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMyAdultHoursMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMyAdultHours>>>
+
+    export type DeleteMyAdultHoursMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Delete one of my self-logged adult volunteer hour entries
+ */
+export const useDeleteMyAdultHours = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMyAdultHours>>, TError,{adultHoursId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMyAdultHours>>,
+        TError,
+        {adultHoursId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteMyAdultHoursMutationOptions(options));
+    }
+
+export const getBroadcastToEventUrl = (eventId: string,) => {
+
+
+
+
+  return `/api/v1/events/${eventId}/broadcast`
+}
+
+/**
+ * @summary Email everyone registered for an event (supervisor/org-admin/admin)
+ */
+export const broadcastToEvent = async (eventId: string,
+    eventBroadcastInput: EventBroadcastInput, options?: RequestInit): Promise<BroadcastResult> => {
+
+  return customFetch<BroadcastResult>(getBroadcastToEventUrl(eventId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      eventBroadcastInput,)
+  }
+);}
+
+
+
+
+export const getBroadcastToEventMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof broadcastToEvent>>, TError,{eventId: string;data: BodyType<EventBroadcastInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof broadcastToEvent>>, TError,{eventId: string;data: BodyType<EventBroadcastInput>}, TContext> => {
+
+const mutationKey = ['broadcastToEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof broadcastToEvent>>, {eventId: string;data: BodyType<EventBroadcastInput>}> = (props) => {
+          const {eventId,data} = props ?? {};
+
+          return  broadcastToEvent(eventId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BroadcastToEventMutationResult = NonNullable<Awaited<ReturnType<typeof broadcastToEvent>>>
+    export type BroadcastToEventMutationBody = BodyType<EventBroadcastInput>
+    export type BroadcastToEventMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Email everyone registered for an event (supervisor/org-admin/admin)
+ */
+export const useBroadcastToEvent = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof broadcastToEvent>>, TError,{eventId: string;data: BodyType<EventBroadcastInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof broadcastToEvent>>,
+        TError,
+        {eventId: string;data: BodyType<EventBroadcastInput>},
+        TContext
+      > => {
+      return useMutation(getBroadcastToEventMutationOptions(options));
     }
 
 export const getGetParentChildrenUrl = () => {

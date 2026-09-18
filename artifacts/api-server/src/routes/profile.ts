@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, usersTable, organizationsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, usersTable, organizationsTable, adultHoursTable } from "@workspace/db";
+import { eq, and, desc } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { managedOrgIds } from "../lib/org-scope";
 
@@ -155,6 +155,101 @@ router.patch(
       displayAlias: me?.displayAlias ?? null,
       hideFromLeaderboard: me?.hideFromLeaderboard ?? false,
     });
+  },
+);
+
+// ----- Adult self-logged volunteer hours (supervisors / org admins / admins) -----
+// A personal tracker with NO approval step. These never touch the student
+// competition, leaderboard, or medals — they simply let adults keep a record.
+const ADULT_HOURS_ROLES = ["supervisor", "org_admin", "admin"] as const;
+
+router.get(
+  "/v1/me/adult-hours",
+  authenticate,
+  requireRole(...ADULT_HOURS_ROLES),
+  async (req, res) => {
+    const rows = await db
+      .select()
+      .from(adultHoursTable)
+      .where(eq(adultHoursTable.userId, req.auth!.userId))
+      .orderBy(desc(adultHoursTable.volunteerDate));
+    res.json(
+      rows.map((r) => ({
+        adultHoursId: r.adultHoursId,
+        activityName: r.activityName,
+        organizationName: r.organizationName ?? null,
+        volunteerDate: r.volunteerDate,
+        hoursWorked: Number(r.hoursWorked),
+        notes: r.notes ?? null,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    );
+  },
+);
+
+router.post(
+  "/v1/me/adult-hours",
+  authenticate,
+  requireRole(...ADULT_HOURS_ROLES),
+  async (req, res) => {
+    const body = (req.body ?? {}) as {
+      activityName?: unknown; organizationName?: unknown;
+      volunteerDate?: unknown; hoursWorked?: unknown; notes?: unknown;
+    };
+    const activityName = typeof body.activityName === "string" ? body.activityName.trim() : "";
+    const volunteerDate = typeof body.volunteerDate === "string" ? body.volunteerDate : "";
+    const hours = Number(body.hoursWorked);
+    if (activityName.length < 2) {
+      res.status(400).json({ error: "Describe what you did (at least 2 characters)." });
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(volunteerDate) || volunteerDate > new Date().toISOString().split("T")[0]) {
+      res.status(400).json({ error: "Enter a valid date that isn't in the future." });
+      return;
+    }
+    if (!Number.isFinite(hours) || hours < 0.25 || hours > 24) {
+      res.status(400).json({ error: "Hours must be between 0.25 and 24." });
+      return;
+    }
+    const [row] = await db
+      .insert(adultHoursTable)
+      .values({
+        userId: req.auth!.userId,
+        activityName,
+        organizationName: typeof body.organizationName === "string" && body.organizationName.trim()
+          ? body.organizationName.trim() : null,
+        volunteerDate,
+        hoursWorked: hours.toFixed(2),
+        notes: typeof body.notes === "string" && body.notes.trim() ? body.notes.trim() : null,
+      })
+      .returning();
+    res.status(201).json({
+      adultHoursId: row.adultHoursId,
+      activityName: row.activityName,
+      organizationName: row.organizationName ?? null,
+      volunteerDate: row.volunteerDate,
+      hoursWorked: Number(row.hoursWorked),
+      notes: row.notes ?? null,
+      createdAt: row.createdAt.toISOString(),
+    });
+  },
+);
+
+router.delete(
+  "/v1/me/adult-hours/:adultHoursId",
+  authenticate,
+  requireRole(...ADULT_HOURS_ROLES),
+  async (req, res) => {
+    const { adultHoursId } = req.params as { adultHoursId: string };
+    const result = await db
+      .delete(adultHoursTable)
+      .where(and(eq(adultHoursTable.adultHoursId, adultHoursId), eq(adultHoursTable.userId, req.auth!.userId)))
+      .returning();
+    if (result.length === 0) {
+      res.status(404).json({ error: "Entry not found." });
+      return;
+    }
+    res.json({ ok: true });
   },
 );
 

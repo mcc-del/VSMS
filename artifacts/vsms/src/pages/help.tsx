@@ -62,6 +62,8 @@ const SECTIONS: { title: string; items: QA[] }[] = [
       { q: "How do I take attendance / check people in?", a: "Open the event's Roster (from My Events or your Dashboard) to see who signed up and mark who actually attended. Supervisors don't manage user accounts — the roster is where you confirm your volunteers." },
       { q: "What reports can I see?", a: "Your Dashboard summarizes pending, approved, and rejected counts plus volunteers and approved hours. Reviewed History is your full, itemized log of every submission you've approved or rejected." },
       { q: "Can I see events I don't run?", a: "Yes — All Opportunities lists every event across the program, view-only. You can only edit events you supervise." },
+      { q: "How do I message the people signed up?", a: "Open the event's Roster and tap \"Message attendees\". Write a subject and message, and everyone registered gets it by email (you can also include parents/guardians). Recipients are emailed individually, so they never see each other's addresses." },
+      { q: "Can I track my own volunteer hours?", a: "Yes — go to My Hours. Log what you did, the date, and the hours. Adult hours are recorded instantly with no approval and are just for your own record; they are not part of the student competition, leaderboard, or medals." },
     ],
   },
 ];

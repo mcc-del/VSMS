@@ -164,6 +164,17 @@ export default function SupervisorDashboard() {
             <Link href="/supervisor/history"><Button variant="outline" size="sm">Reviewed history</Button></Link>
           </CardContent>
         </Card>
+
+        {/* Log my own hours shortcut */}
+        <Card>
+          <CardContent className="p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Clock className="w-5 h-5 text-muted-foreground shrink-0" />
+              <p className="text-sm text-muted-foreground">Volunteered yourself? Keep a personal record of your own adult hours (not part of the student competition).</p>
+            </div>
+            <Link href="/supervisor/my-hours"><Button variant="outline" size="sm">My hours</Button></Link>
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );

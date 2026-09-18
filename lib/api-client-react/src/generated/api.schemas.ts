@@ -804,6 +804,56 @@ export interface ParticipantDashboard {
   rejectedCount: number;
 }
 
+export interface AdultHoursEntry {
+  adultHoursId: string;
+  activityName: string;
+  organizationName?: string | null;
+  volunteerDate: string;
+  hoursWorked: number;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface AdultHoursInput {
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  activityName: string;
+  /** @maxLength 200 */
+  organizationName?: string | null;
+  volunteerDate: string;
+  /**
+     * @minimum 0.25
+     * @maximum 24
+     */
+  hoursWorked: number;
+  /** @maxLength 500 */
+  notes?: string | null;
+}
+
+export interface EventBroadcastInput {
+  /**
+     * @minLength 2
+     * @maxLength 150
+     */
+  subject: string;
+  /**
+     * @minLength 2
+     * @maxLength 4000
+     */
+  message: string;
+  /** Also email the guardians of managed (elementary) children. */
+  includeGuardians?: boolean;
+}
+
+export interface BroadcastResult {
+  /** How many email addresses the message was sent to. */
+  recipients: number;
+  /** False when the server has no email provider configured. */
+  emailConfigured?: boolean;
+}
+
 export interface SupervisorDashboard {
   pendingCount: number;
   approvedCount: number;
