@@ -276,7 +276,7 @@ export default function ParticipantDashboard() {
                       <Search className="w-4 h-4" /> Find opportunities
                     </Link>
                     <Link href="/external" className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 text-primary-foreground font-medium px-4 py-2 text-sm hover:bg-white/25 transition-colors">
-                      <ExternalLink className="w-4 h-4" /> Log external hours
+                      <ExternalLink className="w-4 h-4" /> Submit my hours
                     </Link>
                     <Link href="/service-record" className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 text-primary-foreground font-medium px-4 py-2 text-sm hover:bg-white/25 transition-colors">
                       <FileText className="w-4 h-4" /> My service record

@@ -9,6 +9,7 @@ const SECTIONS: { title: string; items: QA[] }[] = [
     title: "Getting started",
     items: [
       { q: "How do I join?", a: "Create an account from the sign-up page. Students in middle/high school sign up themselves and add a parent's email; a parent of an elementary child (grades 2–5) creates the account and adds the child." },
+      { q: "What is a join code and do I need one?", a: "A join code links you to a specific organization (for example your school or a partner nonprofit) so you can see and sign up for their private events. Enter it when you create your account, or later in My Profile under your affiliation. If your organization gave you a code, use it; if you don't have one, you can still join the general community and take part in open-to-all events. Ask your school/organization or email mcc@medinaacademy.org if you're not sure of your code." },
       { q: "What are the awards?", a: "Log verified volunteer hours to earn Bronze (40+), Silver (60+) or Gold (80+), presented at the year-end ceremony." },
     ],
   },

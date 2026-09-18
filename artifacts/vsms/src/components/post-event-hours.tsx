@@ -113,10 +113,12 @@ export function PostEventHours() {
         );
       })}
 
-      {walkIns.length > 0 && (
-        <div className="pt-2">
-          <p className="text-sm font-semibold">Attended without signing up?</p>
-          <p className="text-xs text-muted-foreground mb-2">Pick a past event you volunteered at and submit your hours — your supervisor will verify them.</p>
+      <div className="pt-4 mt-2 border-t">
+        <p className="text-sm font-semibold">Attended without signing up?</p>
+        <p className="text-xs text-muted-foreground mb-2">Pick a past event you volunteered at and submit your hours — your supervisor will verify them.</p>
+        {walkIns.length === 0 ? (
+          <Card><CardContent className="p-4 text-xs text-muted-foreground text-center">No past events available to claim right now. If you volunteered at an event that isn't listed, use the Outside volunteering tab or email your supervisor.</CardContent></Card>
+        ) : (
           <div className="space-y-3">
             {walkIns.map((e) => (
               <Card key={e.eventId}>
@@ -144,8 +146,8 @@ export function PostEventHours() {
               </Card>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

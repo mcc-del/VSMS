@@ -217,7 +217,9 @@ export default function ExternalSubmissionPage() {
         <div>
           <h1 className="text-2xl font-bold">Submit My Hours</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Submit hours for events you attended, or report volunteering you did on your own.
+            Two ways to log hours — use the tabs below. <span className="font-medium text-foreground">Post-event hours</span> is for
+            MedinaCares events you signed up for or attended. <span className="font-medium text-foreground">Outside volunteering</span> is
+            for service you did on your own with another nonprofit.
           </p>
         </div>
 
@@ -230,7 +232,7 @@ export default function ExternalSubmissionPage() {
         <Tabs defaultValue="postevent">
           <TabsList>
             <TabsTrigger value="postevent" data-testid="tab-postevent">Post-event hours</TabsTrigger>
-            <TabsTrigger value="external" data-testid="tab-external">External hours</TabsTrigger>
+            <TabsTrigger value="external" data-testid="tab-external">Outside volunteering</TabsTrigger>
           </TabsList>
 
           <TabsContent value="postevent" className="mt-4">

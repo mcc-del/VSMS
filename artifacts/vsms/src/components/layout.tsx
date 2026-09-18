@@ -21,6 +21,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
       { label: "My Reports", href: "/reports", icon: TrendingUp },
       { label: "My Profile", href: "/profile", icon: Settings },
+      { label: "Help", href: "/help", icon: HelpCircle },
     ] : []),
     ...(role === "parent" ? [
       { label: "Dashboard", href: "/parent", icon: LayoutDashboard },

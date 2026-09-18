@@ -11,8 +11,8 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
     title: "Welcome! Here's how to get started",
     steps: [
       { label: "Find & sign up for an opportunity", href: "/opportunities", hint: "Browse events that fit, pick a time slot, and add it to your calendar." },
-      { label: "Log your hours after you volunteer", href: "/dashboard", hint: "Check in and submit the actual hours you worked." },
-      { label: "Add outside volunteering", href: "/external", hint: "Volunteered elsewhere? Submit external hours (with proof)." },
+      { label: "Submit your hours after you volunteer", href: "/external", hint: "Go to Submit My Hours → Post-event hours and enter the time you worked for supervisor approval." },
+      { label: "Add outside volunteering", href: "/external", hint: "Volunteered with another nonprofit? In Submit My Hours, open the External hours tab and add the organization, date, and hours (proof needed over 5 hours)." },
       { label: "See the leaderboard", href: "/leaderboard", hint: "Track your progress toward Bronze, Silver, Gold." },
     ],
   },
