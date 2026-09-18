@@ -1588,6 +1588,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/parent/children/{childId}/hours:
+    post:
+      operationId: submitChildHours
+      tags: [parent]
+      summary: Submit a managed child's post-event hours for supervisor review
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildHoursInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/parent/co-guardians:
     get:
       operationId: listCoGuardians
@@ -2125,6 +2162,9 @@ components:
           type: string
         isNew:
           type: boolean
+        hoursStatus:
+          type: ["string", "null"]
+          description: The child's submission status for this event (pending/approved/rejected), or null if none yet.
     ParentChild:
       type: object
       required: [userId, firstName, lastName, isManaged, totalApprovedHours, upcomingRegistrations]
@@ -2149,6 +2189,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ParentChildRegistration"
+        pastRegistrations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParentChildRegistration"
+
+    ChildHoursInput:
+      type: object
+      required: [eventId, hoursWorked]
+      properties:
+        eventId:
+          type: string
+        hoursWorked:
+          type: number
+          minimum: 0.25
+          maximum: 24
 
     ChildInput:
       type: object

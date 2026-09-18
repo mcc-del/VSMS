@@ -20,4 +20,5 @@ export interface ParentChild {
   isManaged: boolean;
   totalApprovedHours: number;
   upcomingRegistrations: ParentChildRegistration[];
+  pastRegistrations?: ParentChildRegistration[];
 }

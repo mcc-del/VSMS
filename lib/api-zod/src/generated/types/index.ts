@@ -19,6 +19,7 @@ export * from './attendanceInputStatus';
 export * from './authResponse';
 export * from './broadcastResult';
 export * from './checkInResponse';
+export * from './childHoursInput';
 export * from './childInput';
 export * from './childRegisterInput';
 export * from './coGuardian';

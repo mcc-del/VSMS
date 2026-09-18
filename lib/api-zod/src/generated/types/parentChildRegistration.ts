@@ -21,4 +21,9 @@ export interface ParentChildRegistration {
   location?: string | null;
   status: string;
   isNew: boolean;
+  /**
+     * The child's submission status for this event (pending/approved/rejected), or null if none yet.
+     * @nullable
+     */
+  hoursStatus?: string | null;
 }

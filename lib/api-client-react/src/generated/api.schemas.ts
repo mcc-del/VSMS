@@ -307,6 +307,11 @@ export interface ParentChildRegistration {
   location?: string | null;
   status: string;
   isNew: boolean;
+  /**
+     * The child's submission status for this event (pending/approved/rejected), or null if none yet.
+     * @nullable
+     */
+  hoursStatus?: string | null;
 }
 
 export interface ParentChild {
@@ -322,6 +327,16 @@ export interface ParentChild {
   isManaged: boolean;
   totalApprovedHours: number;
   upcomingRegistrations: ParentChildRegistration[];
+  pastRegistrations?: ParentChildRegistration[];
+}
+
+export interface ChildHoursInput {
+  eventId: string;
+  /**
+     * @minimum 0.25
+     * @maximum 24
+     */
+  hoursWorked: number;
 }
 
 export interface ChildInput {

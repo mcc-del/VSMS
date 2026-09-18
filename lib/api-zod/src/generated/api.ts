@@ -1344,8 +1344,21 @@ export const GetParentChildrenResponseItem = zod.object({
   "endTime": zod.string().nullish(),
   "location": zod.string().nullish(),
   "status": zod.string(),
-  "isNew": zod.boolean()
-}))
+  "isNew": zod.boolean(),
+  "hoursStatus": zod.string().nullish().describe('The child\'s submission status for this event (pending\/approved\/rejected), or null if none yet.')
+})),
+  "pastRegistrations": zod.array(zod.object({
+  "registrationId": zod.string(),
+  "eventId": zod.string(),
+  "eventTitle": zod.string().nullish(),
+  "eventDate": zod.string().nullish(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "status": zod.string(),
+  "isNew": zod.boolean(),
+  "hoursStatus": zod.string().nullish().describe('The child\'s submission status for this event (pending\/approved\/rejected), or null if none yet.')
+})).optional()
 })
 export const GetParentChildrenResponse = zod.array(GetParentChildrenResponseItem)
 
@@ -1414,6 +1427,24 @@ export const RegisterChildForEventParams = zod.object({
 
 export const RegisterChildForEventBody = zod.object({
   "eventId": zod.string()
+})
+
+
+/**
+ * @summary Submit a managed child's post-event hours for supervisor review
+ */
+export const SubmitChildHoursParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const submitChildHoursBodyHoursWorkedMin = 0.25;
+export const submitChildHoursBodyHoursWorkedMax = 24;
+
+
+
+export const SubmitChildHoursBody = zod.object({
+  "eventId": zod.string(),
+  "hoursWorked": zod.number().min(submitChildHoursBodyHoursWorkedMin).max(submitChildHoursBodyHoursWorkedMax)
 })
 
 

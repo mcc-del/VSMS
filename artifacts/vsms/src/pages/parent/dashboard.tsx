@@ -7,6 +7,7 @@ import {
   useListOrganizations,
   useListCoGuardians,
   useInviteCoGuardian,
+  useSubmitChildHours,
   getGetParentChildrenQueryKey,
   getListCoGuardiansQueryKey,
   type ParentChild,
@@ -87,6 +88,27 @@ export default function ParentDashboard() {
   const { data: orgs } = useListOrganizations();
   const qc = useQueryClient();
   const { toast } = useToast();
+  const submitChildHours = useSubmitChildHours();
+  const [hoursDraft, setHoursDraft] = useState<Record<string, string>>({});
+
+  function submitHours(childId: string, eventId: string) {
+    const val = Number(hoursDraft[eventId]);
+    if (!Number.isFinite(val) || val < 0.25 || val > 24) {
+      toast({ title: "Enter valid hours", description: "0.25 to 24 hours.", variant: "destructive" });
+      return;
+    }
+    submitChildHours.mutate(
+      { childId, data: { eventId, hoursWorked: val } },
+      {
+        onSuccess: () => {
+          toast({ title: "Hours submitted", description: "Sent to the supervisor for approval." });
+          qc.invalidateQueries({ queryKey: getGetParentChildrenQueryKey() });
+          setHoursDraft((d) => ({ ...d, [eventId]: "" }));
+        },
+        onError: (err: any) => toast({ title: "Couldn't submit", description: err?.data?.error ?? "Try again.", variant: "destructive" }),
+      },
+    );
+  }
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ParentChild | null>(null);
@@ -344,6 +366,52 @@ export default function ParentDashboard() {
                       </div>
                     )}
                   </div>
+
+                  {(child.pastRegistrations?.length ?? 0) > 0 && (
+                    <div>
+                      <p className="text-sm font-medium flex items-center gap-2 mb-2">
+                        <Clock className="w-4 h-4 text-primary" /> Submit hours (past events)
+                      </p>
+                      <div className="space-y-2">
+                        {child.pastRegistrations!.map((r) => {
+                          const approved = r.hoursStatus === "approved";
+                          const pending = r.hoursStatus === "pending";
+                          return (
+                            <div key={r.registrationId} className="rounded-lg border p-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="font-medium text-sm">{r.eventTitle ?? "Event"}</p>
+                                  <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                                    <CalendarDays className="w-3 h-3" /> {formatDate(r.eventDate)}
+                                  </p>
+                                </div>
+                                {approved && <Badge className="bg-green-100 text-green-700 border-0 shrink-0">Approved</Badge>}
+                                {pending && <Badge className="bg-yellow-100 text-yellow-700 border-0 shrink-0">Waiting for review</Badge>}
+                                {r.hoursStatus === "rejected" && <Badge className="bg-red-100 text-red-700 border-0 shrink-0">Rejected</Badge>}
+                              </div>
+                              {!approved && (
+                                <div className="mt-2 flex items-end gap-2">
+                                  <div>
+                                    <label className="text-xs text-muted-foreground">Hours worked</label>
+                                    <Input
+                                      type="number" min="0.25" max="24" step="0.25"
+                                      className="w-28 h-9"
+                                      placeholder="e.g. 2"
+                                      value={hoursDraft[r.eventId] ?? ""}
+                                      onChange={(e) => setHoursDraft((d) => ({ ...d, [r.eventId]: e.target.value }))}
+                                    />
+                                  </div>
+                                  <Button size="sm" onClick={() => submitHours(child.userId, r.eventId)} disabled={submitChildHours.isPending}>
+                                    {pending || r.hoursStatus === "rejected" ? "Resubmit" : "Submit"}
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

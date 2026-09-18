@@ -175,6 +175,38 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
       )
       .orderBy(asc(eventsTable.eventDate));
 
+    // Past events the child was signed up for / attended — the parent can
+    // submit their hours here (managed children have no login of their own).
+    const pastRegs = await db
+      .select({
+        registrationId: eventRegistrationsTable.registrationId,
+        eventId: eventRegistrationsTable.eventId,
+        status: eventRegistrationsTable.status,
+        registeredAt: eventRegistrationsTable.registeredAt,
+        eventTitle: eventsTable.title,
+        eventDate: eventsTable.eventDate,
+        startTime: eventsTable.startTime,
+        endTime: eventsTable.endTime,
+        location: eventsTable.location,
+      })
+      .from(eventRegistrationsTable)
+      .leftJoin(eventsTable, eq(eventRegistrationsTable.eventId, eventsTable.eventId))
+      .where(
+        and(
+          eq(eventRegistrationsTable.userId, child.userId),
+          inArray(eventRegistrationsTable.status, ["registered", "attended"]),
+          sql`${eventsTable.eventDate} < ${today}`,
+        ),
+      )
+      .orderBy(sql`${eventsTable.eventDate} DESC`);
+
+    // The child's submission status per event (to show pending/approved).
+    const childSubs = await db
+      .select({ eventId: volunteerSubmissionsTable.eventId, status: volunteerSubmissionsTable.status })
+      .from(volunteerSubmissionsTable)
+      .where(eq(volunteerSubmissionsTable.userId, child.userId));
+    const subStatus = new Map(childSubs.map((s) => [s.eventId, s.status]));
+
     result.push({
       userId: child.userId,
       firstName: child.firstName,
@@ -194,6 +226,19 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
         location: r.location ?? null,
         status: r.status,
         isNew: lastSeen ? r.registeredAt > lastSeen : false,
+        hoursStatus: subStatus.get(r.eventId) ?? null,
+      })),
+      pastRegistrations: pastRegs.map((r) => ({
+        registrationId: r.registrationId,
+        eventId: r.eventId,
+        eventTitle: r.eventTitle ?? null,
+        eventDate: r.eventDate ?? null,
+        startTime: r.startTime ?? null,
+        endTime: r.endTime ?? null,
+        location: r.location ?? null,
+        status: r.status,
+        isNew: false,
+        hoursStatus: subStatus.get(r.eventId) ?? null,
       })),
     });
   }
@@ -432,6 +477,77 @@ router.post(
       endTime: event.endTime,
       location: event.location,
     });
+  },
+);
+
+// POST /api/v1/parent/children/:childId/hours — a parent submits a managed
+// child's actual hours for a past event, on the child's behalf. Still goes to
+// the supervisor for approval, exactly like a student's own submission.
+router.post(
+  "/v1/parent/children/:childId/hours",
+  authenticate,
+  requireRole("parent"),
+  async (req, res) => {
+    const { childId } = req.params as { childId: string };
+    const body = (req.body ?? {}) as { eventId?: unknown; hoursWorked?: unknown };
+    const eventId = typeof body.eventId === "string" ? body.eventId : "";
+    const hours = Number(body.hoursWorked);
+    if (!eventId || !Number.isFinite(hours) || hours < 0.25 || hours > 24) {
+      res.status(400).json({ error: "A valid event and hours (0.25–24) are required." });
+      return;
+    }
+
+    // The parent must guard this child.
+    const parentEmail = req.auth!.email.toLowerCase();
+    const childIds = await resolveChildIds(req.auth!.userId, parentEmail);
+    if (!childIds.includes(childId)) {
+      res.status(404).json({ error: "Child not found." });
+      return;
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
+    if (!event) { res.status(404).json({ error: "Event not found." }); return; }
+    if (event.eventDate >= today) {
+      res.status(400).json({ error: "You can submit hours only after the event has ended." });
+      return;
+    }
+
+    const [reg] = await db
+      .select({ status: eventRegistrationsTable.status })
+      .from(eventRegistrationsTable)
+      .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, childId)))
+      .limit(1);
+    if (!reg) {
+      res.status(400).json({ error: "Your child wasn't signed up for this event." });
+      return;
+    }
+    if (reg.status === "no_show") {
+      res.status(400).json({ error: "Your child was marked as a no-show for this event." });
+      return;
+    }
+
+    const [existing] = await db
+      .select({ submissionId: volunteerSubmissionsTable.submissionId, status: volunteerSubmissionsTable.status })
+      .from(volunteerSubmissionsTable)
+      .where(and(eq(volunteerSubmissionsTable.userId, childId), eq(volunteerSubmissionsTable.eventId, eventId)))
+      .limit(1);
+    if (existing && existing.status === "approved") {
+      res.status(409).json({ error: "These hours are already approved and can't be changed." });
+      return;
+    }
+
+    if (existing) {
+      await db
+        .update(volunteerSubmissionsTable)
+        .set({ hoursWorked: String(hours), status: "pending", reviewedAt: null })
+        .where(eq(volunteerSubmissionsTable.submissionId, existing.submissionId));
+    } else {
+      await db
+        .insert(volunteerSubmissionsTable)
+        .values({ userId: childId, eventId, hoursWorked: String(hours), status: "pending" });
+    }
+    res.status(201).json({ ok: true });
   },
 );
 

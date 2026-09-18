@@ -29,6 +29,7 @@ import type {
   AuthResponse,
   BroadcastResult,
   CheckInResponse,
+  ChildHoursInput,
   ChildInput,
   ChildRegisterInput,
   CoGuardianInviteInput,
@@ -5190,6 +5191,78 @@ export const useRegisterChildForEvent = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getRegisterChildForEventMutationOptions(options));
+    }
+
+export const getSubmitChildHoursUrl = (childId: string,) => {
+
+
+
+
+  return `/api/v1/parent/children/${childId}/hours`
+}
+
+/**
+ * @summary Submit a managed child's post-event hours for supervisor review
+ */
+export const submitChildHours = async (childId: string,
+    childHoursInput: ChildHoursInput, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getSubmitChildHoursUrl(childId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      childHoursInput,)
+  }
+);}
+
+
+
+
+export const getSubmitChildHoursMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitChildHours>>, TError,{childId: string;data: BodyType<ChildHoursInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitChildHours>>, TError,{childId: string;data: BodyType<ChildHoursInput>}, TContext> => {
+
+const mutationKey = ['submitChildHours'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitChildHours>>, {childId: string;data: BodyType<ChildHoursInput>}> = (props) => {
+          const {childId,data} = props ?? {};
+
+          return  submitChildHours(childId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitChildHoursMutationResult = NonNullable<Awaited<ReturnType<typeof submitChildHours>>>
+    export type SubmitChildHoursMutationBody = BodyType<ChildHoursInput>
+    export type SubmitChildHoursMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Submit a managed child's post-event hours for supervisor review
+ */
+export const useSubmitChildHours = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitChildHours>>, TError,{childId: string;data: BodyType<ChildHoursInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitChildHours>>,
+        TError,
+        {childId: string;data: BodyType<ChildHoursInput>},
+        TContext
+      > => {
+      return useMutation(getSubmitChildHoursMutationOptions(options));
     }
 
 export const getListCoGuardiansUrl = () => {
