@@ -370,7 +370,7 @@ export default function AdminNewEvent() {
                         {!isOrgAdmin && <SelectItem value={NONE}>Open to all (community)</SelectItem>}
                         {selectableOrgs.map((o) => (
                           <SelectItem key={o.organizationId} value={o.organizationId}>
-                            {o.name} only
+                            Only {o.name} students
                           </SelectItem>
                         ))}
                       </SelectContent>

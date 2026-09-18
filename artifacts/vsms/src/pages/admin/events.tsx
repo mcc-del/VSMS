@@ -26,7 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, MapPin, Clock, Calendar, Plus, Users } from "lucide-react";
+import { Pencil, Trash2, MapPin, Clock, Calendar, Plus, Users, Search, UserCheck, Building2 } from "lucide-react";
 import { Link } from "wouter";
 import { AuthenticatedImage } from "@/components/authenticated-image";
 import { calculateEventDuration, formatHours } from "@/lib/event-duration";
@@ -82,6 +82,10 @@ export default function AdminEventsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
+  const [search, setSearch] = useState("");
+  const [whenFilter, setWhenFilter] = useState<"all" | "upcoming" | "past">("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const supervisors = (users ?? []).filter((u) => u.role === "supervisor");
 
@@ -94,6 +98,23 @@ export default function AdminEventsPage() {
           (e) => e.organizationId && managed.organizationIds.includes(e.organizationId),
         )
       : events ?? [];
+
+  const q = search.trim().toLowerCase();
+  const filteredEvents = visibleEvents.filter((e) => {
+    if (whenFilter === "upcoming" && e.eventDate < today) return false;
+    if (whenFilter === "past" && e.eventDate >= today) return false;
+    if (fromDate && e.eventDate < fromDate) return false;
+    if (toDate && e.eventDate > toDate) return false;
+    if (q) {
+      const hay = [e.title, (e as any).supervisorName, (e as any).organizationName, e.location]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  const hasFilters = !!q || whenFilter !== "all" || !!fromDate || !!toDate;
 
   const form = useForm<z.infer<typeof editSchema>>({
     resolver: zodResolver(editSchema),
@@ -202,15 +223,75 @@ export default function AdminEventsPage() {
           </Link>
         </div>
 
+        {!isLoading && visibleEvents.length > 0 && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search by title, supervisor, organization, or location"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-events"
+                />
+              </div>
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex gap-1.5">
+                  {(["all", "upcoming", "past"] as const).map((w) => (
+                    <Button
+                      key={w}
+                      type="button"
+                      size="sm"
+                      variant={whenFilter === w ? "default" : "outline"}
+                      onClick={() => setWhenFilter(w)}
+                      className="capitalize"
+                    >
+                      {w}
+                    </Button>
+                  ))}
+                </div>
+                <div className="flex items-end gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">From</label>
+                    <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">To</label>
+                    <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9" />
+                  </div>
+                </div>
+                {hasFilters && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => { setSearch(""); setWhenFilter("all"); setFromDate(""); setToDate(""); }}
+                  >
+                    Clear
+                  </Button>
+                )}
+                <span className="text-xs text-muted-foreground ml-auto self-center">
+                  {filteredEvents.length} of {visibleEvents.length}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {isLoading ? (
           <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-24" />)}</div>
         ) : visibleEvents.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">No events yet.</CardContent>
           </Card>
+        ) : filteredEvents.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">No events match your filters.</CardContent>
+          </Card>
         ) : (
           <div className="space-y-3">
-            {[...visibleEvents].sort((a, b) => b.eventDate.localeCompare(a.eventDate)).map((event) => {
+            {[...filteredEvents].sort((a, b) => b.eventDate.localeCompare(a.eventDate)).map((event) => {
               const isUpcoming = event.eventDate >= today;
               return (
                 <Card key={event.eventId}>
@@ -245,6 +326,16 @@ export default function AdminEventsPage() {
                         )}
                         <span>{event.registrationCount}/{event.maxCapacity} registered</span>
                         <span>{event.hoursValue}h credit</span>
+                        {(event as any).supervisorName && (
+                          <span className="flex items-center gap-1">
+                            <UserCheck className="w-3 h-3" /> {(event as any).supervisorName}
+                          </span>
+                        )}
+                        {(event as any).organizationName && (
+                          <span className="flex items-center gap-1">
+                            <Building2 className="w-3 h-3" /> {(event as any).organizationName}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">

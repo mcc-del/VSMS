@@ -15,7 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Clock, Building2, Pencil, FileText } from "lucide-react";
+import { Plus, Trash2, Clock, Building2, Pencil, FileText, Search } from "lucide-react";
 import { useLocation } from "wouter";
 
 const schema = z.object({
@@ -58,6 +58,8 @@ export default function AdminUsers() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [editUser, setEditUser] = useState<{ userId: string; firstName: string; lastName: string; phone: string } | null>(null);
 
@@ -188,13 +190,51 @@ export default function AdminUsers() {
           </Button>
         </div>
 
+        {(() => {
+          const q = search.trim().toLowerCase();
+          const filtered = (users ?? []).filter((u) => {
+            if (roleFilter !== "all" && u.role !== roleFilter) return false;
+            if (!q) return true;
+            return (
+              `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) ||
+              (u.email ?? "").toLowerCase().includes(q)
+            );
+          });
+          const roleCount = (r: string) => (users ?? []).filter((u) => u.role === r).length;
+          return (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">All Users</CardTitle>
+          <CardHeader className="gap-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <CardTitle className="text-base">Users ({filtered.length})</CardTitle>
+              <div className="relative w-56 max-w-full">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input placeholder="Search name or email…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" data-testid="input-user-search" />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                ["all", `All (${users?.length ?? 0})`],
+                ["participant", `Participants (${roleCount("participant")})`],
+                ["supervisor", `Supervisors (${roleCount("supervisor")})`],
+                ["org_admin", `Org admins (${roleCount("org_admin")})`],
+                ["parent", `Parents (${roleCount("parent")})`],
+                ["admin", `Admins (${roleCount("admin")})`],
+              ].map(([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => setRoleFilter(val)}
+                  className={`text-xs font-medium px-2.5 py-1 rounded-full border ${roleFilter === val ? "bg-primary text-primary-foreground border-primary" : "bg-muted/40 text-muted-foreground border-transparent hover:bg-muted"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="space-y-2">{[0,1,2,3].map(i => <Skeleton key={i} className="h-12" />)}</div>
+            ) : filtered.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-8 text-center">No users match.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
@@ -207,7 +247,7 @@ export default function AdminUsers() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {users?.map((u) => (
+                  {filtered.map((u) => (
                     <tr key={u.userId} data-testid={`row-user-${u.userId}`}>
                       <td className="py-3 font-medium">{u.firstName} {u.lastName}</td>
                       <td className="py-3 text-muted-foreground">{u.email}</td>
@@ -288,6 +328,8 @@ export default function AdminUsers() {
             )}
           </CardContent>
         </Card>
+          );
+        })()}
       </div>
 
       <Dialog open={showCreate} onOpenChange={setShowCreate}>
@@ -400,8 +442,9 @@ export default function AdminUsers() {
             <DialogTitle>Organization Admin{orgAdminUser ? ` — ${orgAdminUser.name}` : ""}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground -mt-1">
-            Choose which organizations this person administers. They'll be able to create events and
-            approve hours for those orgs only. Uncheck all to revert them to a participant.
+            Check the organizations this person should manage — they can create events and approve
+            hours for those organizations. Checking at least one makes them an Organization Admin;
+            leaving all unchecked (and saving) removes org-admin access and returns them to a regular participant.
           </p>
           <div className="space-y-2 pt-2 max-h-64 overflow-y-auto">
             {(organizations ?? []).map((o) => (

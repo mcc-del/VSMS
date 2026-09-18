@@ -31,11 +31,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Reviewed History", href: "/supervisor/history", icon: FileText },
       { label: "My Events", href: "/admin/events", icon: Calendar },
       { label: "New Event", href: "/admin/events/new", icon: FileText },
+      { label: "All Opportunities", href: "/supervisor/opportunities", icon: Calendar },
     ] : []),
     ...(role === "org_admin" ? [
       { label: "Pending Reviews", href: "/supervisor/pending", icon: CheckSquare },
       { label: "Reviewed History", href: "/supervisor/history", icon: FileText },
       { label: "My Events", href: "/admin/events", icon: Calendar },
+      { label: "All Opportunities", href: "/supervisor/opportunities", icon: Calendar },
     ] : []),
     ...(role === "admin" ? [
       { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
