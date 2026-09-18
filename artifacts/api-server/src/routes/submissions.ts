@@ -4,7 +4,7 @@ import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitInternalHoursBody, ReviewSubmissionBody, OverrideSubmissionBody } from "@workspace/api-zod";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
-import { sendHoursForReview } from "../lib/email";
+import { sendHoursForReview, sendHoursReviewed } from "../lib/email";
 
 const router = Router();
 
@@ -318,6 +318,8 @@ router.put(
     const [submission] = await db
       .select({
         submissionId: volunteerSubmissionsTable.submissionId,
+        userId: volunteerSubmissionsTable.userId,
+        eventId: volunteerSubmissionsTable.eventId,
         supervisorId: eventsTable.supervisorId,
         organizationId: eventsTable.organizationId,
       })
@@ -351,6 +353,31 @@ router.put(
         reviewedAt: new Date(),
       })
       .where(eq(volunteerSubmissionsTable.submissionId, submissionId));
+
+    // Notify the participant (and their parent) of the outcome.
+    const [participant] = await db
+      .select({
+        firstName: usersTable.firstName,
+        email: usersTable.email,
+        parentEmail: usersTable.parentEmail,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.userId, submission.userId))
+      .limit(1);
+    if (participant) {
+      const [ev] = await db
+        .select({ title: eventsTable.title })
+        .from(eventsTable)
+        .where(eq(eventsTable.eventId, submission.eventId))
+        .limit(1);
+      sendHoursReviewed(
+        [participant.email, participant.parentEmail].filter((e): e is string => !!e),
+        participant.firstName,
+        ev?.title ?? "your event",
+        status === "approved",
+        comments ?? null,
+      ).catch((err) => req.log.error({ err }, "hours-reviewed email failed"));
+    }
 
     res.json({ status: "success", message: "Submission evaluation processed successfully." });
   },

@@ -139,6 +139,48 @@ export async function sendAccountInvite(
   }
 }
 
+// Notify a participant (and optionally their parent) that their hours were
+// approved or rejected.
+export async function sendHoursReviewed(
+  recipients: string[],
+  participantName: string,
+  eventTitle: string,
+  approved: boolean,
+  comments?: string | null,
+): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const to = recipients.filter(Boolean);
+  if (to.length === 0) return;
+  const text = approved
+    ? [
+        `Hi ${participantName},`,
+        "",
+        `Good news — your volunteer hours for "${eventTitle}" have been approved and added to your total.`,
+        comments ? `\nNote from your supervisor: ${comments}` : "",
+        `\nSee your progress: ${APP_URL}/dashboard`,
+        "",
+        "— MedinaCares Volunteer Service Awards",
+      ].join("\n")
+    : [
+        `Hi ${participantName},`,
+        "",
+        `Your volunteer hours for "${eventTitle}" need another look and were not approved.`,
+        comments ? `\nReason: ${comments}` : "",
+        `\nYou can correct and resubmit them here: ${APP_URL}/external`,
+        "",
+        "— MedinaCares Volunteer Service Awards",
+      ].join("\n");
+  const subject = approved ? `Hours approved: ${eventTitle}` : `Hours need attention: ${eventTitle}`;
+  for (const addr of to) {
+    try {
+      await client.emails.send({ from: FROM_ADDRESS, to: addr, subject, text });
+    } catch (err) {
+      logger.error({ err, addr }, "Failed to send hours-reviewed email");
+    }
+  }
+}
+
 function getClient(): Resend | null {
   const apiKey = process.env["RESEND_API_KEY"];
   if (!apiKey) {

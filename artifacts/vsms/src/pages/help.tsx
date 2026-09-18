@@ -66,6 +66,18 @@ const SECTIONS: { title: string; items: QA[] }[] = [
       { q: "Can I track my own volunteer hours?", a: "Yes — go to My Hours. Log what you did, the date, and the hours. Adult hours are recorded instantly with no approval and are just for your own record; they are not part of the student competition, leaderboard, or medals." },
     ],
   },
+  {
+    title: "Admins & Super Admins",
+    items: [
+      { q: "What's the difference between an Admin and a Super Admin?", a: "An Admin manages a single organization: they can do everything a supervisor can, plus add supervisors, generate their org's join code, add participant hours, and manage their org's users and events. A Super Admin can do all of that across every organization, and additionally creates organizations and updates the recycling cans total." },
+      { q: "How do I add a supervisor?", a: "Open Users → Add user, choose the Supervisor role, and save. The person is emailed an invite to set their own password (the temporary password you enter is just a fallback)." },
+      { q: "How do I make someone an Admin?", a: "In Users, open a person's admin-access dialog and check the organization(s) they should manage. Checking at least one makes them an Admin; unchecking all returns them to a participant." },
+      { q: "How do I hand out a join code?", a: "Each organization has a join code (set on the Organizations screen). Share it with that org's members so they can enter it at sign-up and see the org's private events." },
+      { q: "How do I grant hours to a participant?", a: "Open the participant in Users and add manual hours with a description and date. These are auto-approved and count toward their total and medals." },
+      { q: "Why can't a participant register?", a: "Usually a duplicate email (already registered) or a required join code. You can create the account for them from Users — they'll get a set-password invite email — but self-registration is preferred so accounts aren't duplicated." },
+      { q: "How does email sending work?", a: "Transactional emails (password resets, invites, review notifications, event messages) send through the configured provider. Use Send test email on the admin dashboard to confirm it's working; if it fails, the sending key/domain needs attention." },
+    ],
+  },
 ];
 
 export default function HelpPage() {
