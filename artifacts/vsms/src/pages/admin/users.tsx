@@ -400,6 +400,7 @@ export default function AdminUsers() {
                     <SelectContent>
                       <SelectItem value="participant">Participant</SelectItem>
                       <SelectItem value="supervisor">Supervisor</SelectItem>
+                      {isSuperAdmin && <SelectItem value="admin">Super Admin</SelectItem>}
                     </SelectContent>
                   </Select>
                   <FormMessage />
