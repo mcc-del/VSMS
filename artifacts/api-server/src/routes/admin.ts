@@ -1,11 +1,20 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 import { db, usersTable, manualHoursTable, orgAdminsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
-import { sendTestEmail } from "../lib/email";
+import { sendTestEmail, sendAccountInvite } from "../lib/email";
+
+const ROLE_LABELS: Record<string, string> = {
+  participant: "Participant",
+  supervisor: "Supervisor",
+  org_admin: "Admin",
+  admin: "Super Admin",
+  parent: "Parent",
+};
 
 const router = Router();
 
@@ -135,6 +144,10 @@ router.post(
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
+    // Also issue a set-password invite token so the new person sets their own
+    // password rather than relying on the admin-typed temporary one.
+    const inviteToken = randomBytes(32).toString("hex");
+    const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const [user] = await db
       .insert(usersTable)
       .values({
@@ -144,8 +157,14 @@ router.post(
         passwordHash,
         role: role as "participant" | "supervisor" | "admin",
         phone: phone?.trim() || null,
+        resetToken: inviteToken,
+        resetTokenExpiresAt: inviteExpires,
       })
       .returning();
+
+    // Fire-and-forget the invite email (no-op if email isn't configured).
+    sendAccountInvite(user.email!, user.firstName, ROLE_LABELS[user.role] ?? user.role, inviteToken)
+      .catch((err) => req.log.error({ err }, "account invite email failed"));
 
     res.status(201).json({
       userId: user.userId,

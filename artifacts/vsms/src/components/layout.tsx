@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { RecyclingRibbon } from "@/components/recycling-ribbon";
+import { roleLabel } from "@/lib/roles";
 
 type NavItem = { label: string; href: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -85,7 +86,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex items-center justify-between mb-4">
         <div className="text-sm">
           <p className="font-medium">{firstName}</p>
-          <p className="text-xs text-muted-foreground capitalize">{role}</p>
+          <p className="text-xs text-muted-foreground">{roleLabel(role)}</p>
         </div>
       </div>
       <Link href="/help" className="flex items-center gap-2 w-full px-3 py-2 mb-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">

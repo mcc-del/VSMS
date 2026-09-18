@@ -15,8 +15,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Clock, Building2, Pencil, FileText, Search } from "lucide-react";
+import { Plus, Trash2, Clock, Building2, Pencil, FileText, Search, Eye, EyeOff } from "lucide-react";
 import { useLocation } from "wouter";
+import { roleLabel } from "@/lib/roles";
 
 const schema = z.object({
   firstName: z.string().min(2).max(50),
@@ -43,8 +44,7 @@ function RoleBadge({ role }: { role: string }) {
     parent: "bg-amber-100 text-amber-800 border-0",
     participant: "bg-gray-100 text-gray-700 border-0",
   };
-  const label = role === "org_admin" ? "org admin" : role;
-  return <Badge className={colors[role] ?? ""}>{label}</Badge>;
+  return <Badge className={colors[role] ?? ""}>{roleLabel(role)}</Badge>;
 }
 
 export default function AdminUsers() {
@@ -61,6 +61,7 @@ export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
+  const [showCreatePw, setShowCreatePw] = useState(false);
   const [editUser, setEditUser] = useState<{ userId: string; firstName: string; lastName: string; phone: string } | null>(null);
 
   function saveEditUser() {
@@ -99,7 +100,7 @@ export default function AdminUsers() {
       {
         onSuccess: () => {
           toast({
-            title: selectedOrgIds.length ? "Organization Admin updated" : "Reverted to participant",
+            title: selectedOrgIds.length ? "Admin access updated" : "Reverted to participant",
           });
           queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
           setOrgAdminUser(null);
@@ -216,9 +217,9 @@ export default function AdminUsers() {
                 ["all", `All (${users?.length ?? 0})`],
                 ["participant", `Participants (${roleCount("participant")})`],
                 ["supervisor", `Supervisors (${roleCount("supervisor")})`],
-                ["org_admin", `Org admins (${roleCount("org_admin")})`],
+                ["org_admin", `Admins (${roleCount("org_admin")})`],
                 ["parent", `Parents (${roleCount("parent")})`],
-                ["admin", `Admins (${roleCount("admin")})`],
+                ["admin", `Super Admins (${roleCount("admin")})`],
               ].map(([val, label]) => (
                 <button
                   key={val}
@@ -364,8 +365,18 @@ export default function AdminUsers() {
               )} />
               <FormField control={form.control} name="password" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl><Input type="password" placeholder="Min 8 characters" {...field} /></FormControl>
+                  <FormLabel>Temporary password</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input type={showCreatePw ? "text" : "password"} placeholder="Min 8 characters" className="pr-10" {...field} />
+                      <button type="button" onClick={() => setShowCreatePw((v) => !v)} tabIndex={-1}
+                        aria-label={showCreatePw ? "Hide password" : "Show password"}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground">
+                        {showCreatePw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">We'll email the person an invite with a link to set their own password. This temporary one is a fallback.</p>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -386,7 +397,6 @@ export default function AdminUsers() {
                     <SelectContent>
                       <SelectItem value="participant">Participant</SelectItem>
                       <SelectItem value="supervisor">Supervisor</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -439,12 +449,13 @@ export default function AdminUsers() {
       <Dialog open={orgAdminUser !== null} onOpenChange={(open) => !open && setOrgAdminUser(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Organization Admin{orgAdminUser ? ` — ${orgAdminUser.name}` : ""}</DialogTitle>
+            <DialogTitle>Admin access{orgAdminUser ? ` — ${orgAdminUser.name}` : ""}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground -mt-1">
-            Check the organizations this person should manage — they can create events and approve
-            hours for those organizations. Checking at least one makes them an Organization Admin;
-            leaving all unchecked (and saving) removes org-admin access and returns them to a regular participant.
+            Check the organizations this person should manage — an Admin can create events, generate
+            join codes, add participant hours, manage that org's users, and approve hours for those
+            organizations. Checking at least one makes them an Admin; leaving all unchecked (and
+            saving) removes Admin access and returns them to a regular participant.
           </p>
           <div className="space-y-2 pt-2 max-h-64 overflow-y-auto">
             {(organizations ?? []).map((o) => (

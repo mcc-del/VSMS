@@ -107,6 +107,38 @@ export async function sendEventBroadcast(
   return sent;
 }
 
+// An admin created an account for someone — invite them to set their own
+// password and start using the app.
+export async function sendAccountInvite(
+  toEmail: string,
+  firstName: string,
+  roleLabel: string,
+  token: string,
+): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const link = `${APP_URL}/reset-password?token=${encodeURIComponent(token)}`;
+  const text = [
+    `Hi ${firstName},`,
+    "",
+    `An account has been created for you on MedinaCares as a ${roleLabel}.`,
+    "",
+    "To get started, set your password using the secure link below (it expires in 7 days):",
+    link,
+    "",
+    `Then sign in any time at ${APP_URL}.`,
+    "",
+    "If you weren't expecting this, you can ignore this email.",
+    "",
+    "— MedinaCares Volunteer Service Awards",
+  ].join("\n");
+  try {
+    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: "Your MedinaCares account — set your password", text });
+  } catch (err) {
+    logger.error({ err, toEmail }, "Failed to send account invite email");
+  }
+}
+
 function getClient(): Resend | null {
   const apiKey = process.env["RESEND_API_KEY"];
   if (!apiKey) {
