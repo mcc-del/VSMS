@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { LogOut, Calendar, Clock, CheckSquare, Users, FileText, LayoutDashboard, ExternalLink, Menu, Trophy, Building2, TrendingUp, Settings } from "lucide-react";
+import { LogOut, Calendar, Clock, CheckSquare, Users, FileText, LayoutDashboard, ExternalLink, Menu, Trophy, Building2, TrendingUp, Settings, HelpCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -19,6 +19,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Sign Up", href: "/opportunities", icon: Calendar },
       { label: "Submit My Hours", href: "/external", icon: Clock },
       { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+      { label: "My Reports", href: "/reports", icon: TrendingUp },
       { label: "My Profile", href: "/profile", icon: Settings },
     ] : []),
     ...(role === "parent" ? [
@@ -79,6 +80,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <p className="text-xs text-muted-foreground capitalize">{role}</p>
         </div>
       </div>
+      <Link href="/help" className="flex items-center gap-2 w-full px-3 py-2 mb-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+        <HelpCircle className="w-4 h-4" /> Help
+      </Link>
       <Button variant="outline" className="w-full justify-start gap-2" onClick={logout}>
         <LogOut className="w-4 h-4" />
         Sign out

@@ -117,7 +117,6 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     return;
   }
 
-  // Require a valid registration — no-show or unregistered participants cannot submit hours.
   const [registration] = await db
     .select()
     .from(eventRegistrationsTable)
@@ -129,14 +128,32 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     )
     .limit(1);
 
-  if (!registration) {
-    res.status(400).json({ error: "You are not registered for this event and cannot submit hours." });
+  if (registration && registration.status === "no_show") {
+    res.status(400).json({ error: "You were marked as a no-show for this event and cannot submit hours." });
     return;
   }
 
-  if (registration.status === "no_show") {
-    res.status(400).json({ error: "You were marked as a no-show for this event and cannot submit hours." });
-    return;
+  // Walk-in: showed up without signing up. Allow submitting hours if they're
+  // eligible (org + grade), creating an attended registration on the fly. The
+  // supervisor still reviews and approves the hours.
+  if (!registration) {
+    const [me] = await db
+      .select({ organizationId: usersTable.organizationId, grade: usersTable.grade })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+    if (event.organizationId && (me?.organizationId ?? null) !== event.organizationId) {
+      res.status(403).json({ error: "This opportunity isn't open to your organization." });
+      return;
+    }
+    if (event.minGrade != null || event.maxGrade != null) {
+      const g = me?.grade ? Number(me.grade) : null;
+      if (g == null || (event.minGrade != null && g < event.minGrade) || (event.maxGrade != null && g > event.maxGrade)) {
+        res.status(403).json({ error: "This opportunity's grade range doesn't include you." });
+        return;
+      }
+    }
+    await db.insert(eventRegistrationsTable).values({ eventId, userId, status: "attended" });
   }
 
   // Check for duplicate submission

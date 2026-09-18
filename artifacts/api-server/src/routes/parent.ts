@@ -370,6 +370,27 @@ router.post(
       return;
     }
 
+    // Enforce org gating and per-event grade limits for the child.
+    const [child] = await db
+      .select({ organizationId: usersTable.organizationId, grade: usersTable.grade })
+      .from(usersTable)
+      .where(eq(usersTable.userId, childId))
+      .limit(1);
+    if (event.organizationId && (child?.organizationId ?? null) !== event.organizationId) {
+      res.status(403).json({ error: "This opportunity isn't open to your child's organization." });
+      return;
+    }
+    if (event.minGrade != null || event.maxGrade != null) {
+      const g = child?.grade ? Number(child.grade) : null;
+      if (g == null || (event.minGrade != null && g < event.minGrade) || (event.maxGrade != null && g > event.maxGrade)) {
+        const range =
+          event.minGrade != null && event.maxGrade != null ? `grades ${event.minGrade}–${event.maxGrade}`
+            : event.minGrade != null ? `grade ${event.minGrade} and up` : `grade ${event.maxGrade} and below`;
+        res.status(403).json({ error: `This opportunity is for ${range}.` });
+        return;
+      }
+    }
+
     const [{ cnt }] = await db
       .select({ cnt: sql<number>`count(*)` })
       .from(eventRegistrationsTable)

@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   useListMyRegistrations,
   useListMySubmissions,
+  useListEvents,
   useSubmitInternalHours,
   getListMySubmissionsQueryKey,
   getGetParticipantDashboardQueryKey,
@@ -27,6 +28,7 @@ function statusBadge(s?: string | null) {
 export function PostEventHours() {
   const { data: regs, isLoading } = useListMyRegistrations();
   const { data: subs } = useListMySubmissions();
+  const { data: allEvents } = useListEvents();
   const submit = useSubmitInternalHours();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -38,6 +40,12 @@ export function PostEventHours() {
   const ended = (regs ?? [])
     .filter((r) => (r.eventDate ?? "") <= today && r.status !== "no_show")
     .sort((a, b) => (b.eventDate ?? "").localeCompare(a.eventDate ?? ""));
+
+  // Walk-in: eligible past events the participant is NOT registered for.
+  const regEventIds = new Set((regs ?? []).map((r) => r.eventId));
+  const walkIns = (allEvents ?? [])
+    .filter((e) => e.eventDate <= today && e.eligibleForMe !== false && !regEventIds.has(e.eventId))
+    .sort((a, b) => b.eventDate.localeCompare(a.eventDate));
 
   function doSubmit(eventId: string) {
     const val = Number(hours[eventId]);
@@ -59,11 +67,11 @@ export function PostEventHours() {
   }
 
   if (isLoading) return <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>;
-  if (ended.length === 0)
-    return <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">Once an event you signed up for has ended, it'll appear here so you can submit your hours.</CardContent></Card>;
-
   return (
     <div className="space-y-3">
+      {ended.length === 0 && (
+        <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">Once an event you signed up for has ended, it'll appear here so you can submit your hours.</CardContent></Card>
+      )}
       {ended.map((r) => {
         const sub = subMap.get(r.eventId);
         const approved = sub?.status === "approved";
@@ -104,6 +112,40 @@ export function PostEventHours() {
           </Card>
         );
       })}
+
+      {walkIns.length > 0 && (
+        <div className="pt-2">
+          <p className="text-sm font-semibold">Attended without signing up?</p>
+          <p className="text-xs text-muted-foreground mb-2">Pick a past event you volunteered at and submit your hours — your supervisor will verify them.</p>
+          <div className="space-y-3">
+            {walkIns.map((e) => (
+              <Card key={e.eventId}>
+                <CardContent className="p-4">
+                  <div className="min-w-0">
+                    <p className="font-semibold">{e.title}{e.slotLabel ? ` — ${e.slotLabel}` : ""}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <CalendarDays className="w-3.5 h-3.5" />{e.eventDate}
+                    </p>
+                  </div>
+                  <div className="flex items-end gap-2 mt-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Hours you worked</label>
+                      <Input
+                        type="number" min="0.25" max="24" step="0.25"
+                        className="w-28 h-9"
+                        placeholder="e.g. 2"
+                        value={hours[e.eventId] ?? ""}
+                        onChange={(ev) => setHours({ ...hours, [e.eventId]: ev.target.value })}
+                      />
+                    </div>
+                    <Button size="sm" onClick={() => doSubmit(e.eventId)} disabled={submit.isPending}>Submit hours</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
