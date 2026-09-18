@@ -3,6 +3,7 @@ import { db, organizationsTable } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateOrganizationBody, UpdateOrganizationBody } from "@workspace/api-zod";
+import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
 const router = Router();
 
@@ -32,10 +33,13 @@ router.get("/v1/organizations", async (_req, res) => {
   res.json(rows.map(format));
 });
 
-// GET /api/v1/admin/organizations — Super Admin view, includes join codes.
-router.get("/v1/admin/organizations", authenticate, requireRole("admin"), async (_req, res) => {
+// GET /api/v1/admin/organizations — includes join codes. Super Admin sees all;
+// an Admin (org_admin) sees only the organization(s) they manage.
+router.get("/v1/admin/organizations", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
   const rows = await db.select().from(organizationsTable).orderBy(asc(organizationsTable.name));
-  res.json(rows.map(formatAdmin));
+  const visible = managed === null ? rows : rows.filter((o) => managed.includes(o.organizationId));
+  res.json(visible.map(formatAdmin));
 });
 
 // POST /api/v1/admin/organizations
@@ -70,9 +74,14 @@ router.post("/v1/admin/organizations", authenticate, requireRole("admin"), async
 router.put(
   "/v1/admin/organizations/:organizationId",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const { organizationId } = req.params as { organizationId: string };
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (!canManageOrg(managed, organizationId)) {
+      res.status(403).json({ error: "You can only manage your own organization." });
+      return;
+    }
     const parsed = UpdateOrganizationBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });

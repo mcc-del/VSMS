@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, Clock, Building2, Pencil, FileText, Search, Eye, EyeOff } from "lucide-react";
 import { useLocation } from "wouter";
 import { roleLabel } from "@/lib/roles";
+import { useAuth } from "@/hooks/use-auth";
 
 const schema = z.object({
   firstName: z.string().min(2).max(50),
@@ -48,6 +49,8 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 export default function AdminUsers() {
+  const { role: currentRole } = useAuth();
+  const isSuperAdmin = currentRole === "admin";
   const { data: users, isLoading } = useListUsers();
   const { data: organizations } = useListOrganizations();
   const createUser = useCreateUser();
@@ -278,7 +281,7 @@ export default function AdminUsers() {
                               <FileText className="w-4 h-4" /> Service record
                             </Button>
                           )}
-                          {(u.role === "participant" || u.role === "org_admin" || u.role === "supervisor") && (
+                          {isSuperAdmin && (u.role === "participant" || u.role === "org_admin" || u.role === "supervisor") && (
                             <Button
                               variant="ghost"
                               size="sm"

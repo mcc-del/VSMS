@@ -87,12 +87,12 @@ function Router() {
       <ProtectedRoute path="/supervisor/my-hours" component={SupervisorMyHours} allowedRoles={["supervisor", "org_admin"]} />
 
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} allowedRoles={["admin"]} />
-      <ProtectedRoute path="/admin/users" component={AdminUsers} allowedRoles={["admin"]} />
+      <ProtectedRoute path="/admin/users" component={AdminUsers} allowedRoles={["admin", "org_admin"]} />
       <ProtectedRoute path="/admin/events/new" component={AdminNewEvent} allowedRoles={["admin", "org_admin", "supervisor"]} />
       <ProtectedRoute path="/admin/events" component={AdminEventsPage} allowedRoles={["admin", "org_admin", "supervisor"]} />
       <ProtectedRoute path="/admin/reports" component={AdminReports} allowedRoles={["admin"]} />
-      <ProtectedRoute path="/admin/organizations" component={AdminOrganizations} allowedRoles={["admin"]} />
-      <ProtectedRoute path="/admin/users/:userId/service-record" component={ServiceRecordPage} allowedRoles={["admin"]} />
+      <ProtectedRoute path="/admin/organizations" component={AdminOrganizations} allowedRoles={["admin", "org_admin"]} />
+      <ProtectedRoute path="/admin/users/:userId/service-record" component={ServiceRecordPage} allowedRoles={["admin", "org_admin"]} />
 
       <Route component={NotFound} />
     </Switch>

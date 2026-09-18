@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import type { Organization } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +59,8 @@ function levelBadges(o: Organization) {
 }
 
 export default function AdminOrganizations() {
+  const { role } = useAuth();
+  const isSuperAdmin = role === "admin";
   const { data: orgs, isLoading } = useListAdminOrganizations();
   const createOrg = useCreateOrganization();
   const updateOrg = useUpdateOrganization();
@@ -110,9 +113,11 @@ export default function AdminOrganizations() {
               Partner orgs that run opportunities, and which grade levels they serve.
             </p>
           </div>
-          <Button data-testid="button-add-org" onClick={() => setDraft({ ...emptyDraft })}>
-            <Plus className="w-4 h-4 mr-2" /> Add organization
-          </Button>
+          {isSuperAdmin && (
+            <Button data-testid="button-add-org" onClick={() => setDraft({ ...emptyDraft })}>
+              <Plus className="w-4 h-4 mr-2" /> Add organization
+            </Button>
+          )}
         </div>
 
         <Card>

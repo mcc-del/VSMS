@@ -7,6 +7,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
 import { sendTestEmail, sendAccountInvite } from "../lib/email";
+import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
 const ROLE_LABELS: Record<string, string> = {
   participant: "Participant",
@@ -15,6 +16,19 @@ const ROLE_LABELS: Record<string, string> = {
   admin: "Super Admin",
   parent: "Parent",
 };
+
+// Whether the acting admin (managed = null for Super Admin, else their org ids)
+// may act on a target user. Only a Super Admin may act on other Admins/Super
+// Admins; an Admin may act on non-admin users in their own organization(s).
+function canActOnUser(
+  managed: string[] | null,
+  targetRole: string,
+  targetOrgId: string | null,
+): boolean {
+  if (managed === null) return true; // Super Admin
+  if (targetRole === "admin" || targetRole === "org_admin") return false;
+  return canManageOrg(managed, targetOrgId);
+}
 
 const router = Router();
 
@@ -34,7 +48,9 @@ router.post("/v1/admin/test-email", authenticate, requireRole("admin"), async (r
 });
 
 // GET /api/v1/admin/users
-router.get("/v1/admin/users", authenticate, requireRole("admin"), async (req, res) => {
+router.get("/v1/admin/users", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+
   const users = await db
     .select({
       userId: usersTable.userId,
@@ -42,6 +58,7 @@ router.get("/v1/admin/users", authenticate, requireRole("admin"), async (req, re
       firstName: usersTable.firstName,
       lastName: usersTable.lastName,
       role: usersTable.role,
+      organizationId: usersTable.organizationId,
       createdAt: usersTable.createdAt,
     })
     .from(usersTable)
@@ -58,8 +75,13 @@ router.get("/v1/admin/users", authenticate, requireRole("admin"), async (req, re
     managedByUser.set(r.userId, list);
   }
 
+  // An Admin (org_admin) only sees non-admin users in their organization(s).
+  const visible = managed === null
+    ? users
+    : users.filter((u) => canActOnUser(managed, u.role, u.organizationId));
+
   res.json(
-    users.map((u) => ({
+    visible.map((u) => ({
       userId: u.userId,
       email: u.email,
       firstName: u.firstName,
@@ -120,7 +142,7 @@ router.patch(
 router.post(
   "/v1/admin/users",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const parsed = CreateUserBody.safeParse(req.body);
     if (!parsed.success) {
@@ -131,6 +153,22 @@ router.post(
     const { firstName, lastName, email, password, role, phone } = parsed.data as typeof parsed.data & {
       phone?: string;
     };
+
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    // An Admin may only create non-admin users, stamped to their own org. A
+    // Super Admin may create any role and leave the org unset.
+    let newUserOrgId: string | null = null;
+    if (managed !== null) {
+      if (role !== "participant" && role !== "supervisor") {
+        res.status(403).json({ error: "Admins can only create participants and supervisors." });
+        return;
+      }
+      if (managed.length === 0) {
+        res.status(403).json({ error: "You don't manage any organization." });
+        return;
+      }
+      newUserOrgId = managed[0];
+    }
 
     const existing = await db
       .select()
@@ -157,6 +195,7 @@ router.post(
         passwordHash,
         role: role as "participant" | "supervisor" | "admin",
         phone: phone?.trim() || null,
+        organizationId: newUserOrgId,
         resetToken: inviteToken,
         resetTokenExpiresAt: inviteExpires,
       })
@@ -179,8 +218,18 @@ router.post(
 );
 
 // PATCH /api/v1/admin/users/:userId — edit a user's name and/or phone.
-router.patch("/v1/admin/users/:userId", authenticate, requireRole("admin"), async (req, res) => {
+router.patch("/v1/admin/users/:userId", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
   const { userId } = req.params as { userId: string };
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+  if (managed !== null) {
+    const [t] = await db.select({ role: usersTable.role, organizationId: usersTable.organizationId })
+      .from(usersTable).where(eq(usersTable.userId, userId)).limit(1);
+    if (!t) { res.status(404).json({ error: "User not found." }); return; }
+    if (!canActOnUser(managed, t.role, t.organizationId)) {
+      res.status(403).json({ error: "You can only manage users in your organization." });
+      return;
+    }
+  }
   const body = (req.body ?? {}) as { firstName?: unknown; lastName?: unknown; phone?: unknown };
   const updates: { firstName?: string; lastName?: string; phone?: string | null } = {};
   if (typeof body.firstName === "string" && body.firstName.trim()) updates.firstName = body.firstName.trim();
@@ -216,9 +265,18 @@ router.patch("/v1/admin/users/:userId", authenticate, requireRole("admin"), asyn
 router.get(
   "/v1/admin/users/:userId/hours",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const { userId } = req.params as { userId: string };
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null) {
+      const [t] = await db.select({ role: usersTable.role, organizationId: usersTable.organizationId })
+        .from(usersTable).where(eq(usersTable.userId, userId)).limit(1);
+      if (!t || !canActOnUser(managed, t.role, t.organizationId)) {
+        res.status(403).json({ error: "You can only manage users in your organization." });
+        return;
+      }
+    }
     const awarder = alias(usersTable, "awarder");
     const rows = await db
       .select({
@@ -257,7 +315,7 @@ router.get(
 router.post(
   "/v1/admin/users/:userId/hours",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const { userId } = req.params as { userId: string };
     const parsed = AddManualHoursBody.safeParse(req.body);
@@ -267,12 +325,17 @@ router.post(
     }
 
     const [target] = await db
-      .select({ userId: usersTable.userId, role: usersTable.role })
+      .select({ userId: usersTable.userId, role: usersTable.role, organizationId: usersTable.organizationId })
       .from(usersTable)
       .where(eq(usersTable.userId, userId))
       .limit(1);
     if (!target) {
       res.status(404).json({ error: "User not found." });
+      return;
+    }
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (!canActOnUser(managed, target.role, target.organizationId)) {
+      res.status(403).json({ error: "You can only add hours for users in your organization." });
       return;
     }
 
@@ -304,9 +367,24 @@ router.post(
 router.delete(
   "/v1/admin/hours/:creditId",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const { creditId } = req.params as { creditId: string };
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null) {
+      const [credit] = await db
+        .select({ userId: manualHoursTable.userId })
+        .from(manualHoursTable)
+        .where(eq(manualHoursTable.manualHoursId, creditId))
+        .limit(1);
+      if (!credit) { res.json({ status: "success", message: "Manual hours removed" }); return; }
+      const [t] = await db.select({ role: usersTable.role, organizationId: usersTable.organizationId })
+        .from(usersTable).where(eq(usersTable.userId, credit.userId)).limit(1);
+      if (!t || !canActOnUser(managed, t.role, t.organizationId)) {
+        res.status(403).json({ error: "You can only manage users in your organization." });
+        return;
+      }
+    }
     await db.delete(manualHoursTable).where(eq(manualHoursTable.manualHoursId, creditId));
     res.json({ status: "success", message: "Manual hours removed" });
   },
@@ -316,9 +394,19 @@ router.delete(
 router.delete(
   "/v1/admin/users/:userId",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const { userId } = req.params as { userId: string };
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null) {
+      const [t] = await db.select({ role: usersTable.role, organizationId: usersTable.organizationId })
+        .from(usersTable).where(eq(usersTable.userId, userId)).limit(1);
+      if (!t) { res.json({ status: "success", message: "User deleted" }); return; }
+      if (!canActOnUser(managed, t.role, t.organizationId)) {
+        res.status(403).json({ error: "You can only delete users in your organization." });
+        return;
+      }
+    }
     await db.delete(usersTable).where(eq(usersTable.userId, userId));
     res.json({ status: "success", message: "User deleted" });
   },

@@ -11,6 +11,7 @@ import {
 import { eq, and, asc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
+import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
 const router = Router();
 
@@ -193,9 +194,22 @@ router.get(
 router.get(
   "/v1/admin/users/:userId/service-record",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req: Request, res: Response) => {
     const { userId } = req.params as { userId: string };
+    // An Admin may only view records for participants in their organization.
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null) {
+      const [t] = await db
+        .select({ organizationId: usersTable.organizationId })
+        .from(usersTable)
+        .where(eq(usersTable.userId, userId))
+        .limit(1);
+      if (!t || !canManageOrg(managed, t.organizationId)) {
+        res.status(403).json({ error: "You can only view records for users in your organization." });
+        return;
+      }
+    }
     const record = await buildRecord(userId);
     if (!record) {
       res.status(404).json({ error: "Record not found." });
