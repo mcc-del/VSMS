@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { db, eventRegistrationsTable, eventsTable, usersTable } from "@workspace/db";
 import { eq, and, or } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { logger } from "./logger";
 import { sendReminderEmail } from "./email";
 
@@ -12,6 +13,7 @@ async function sendTwoDayReminders(): Promise<void> {
   logger.info({ targetDate }, "Running 2-day reminder job");
 
   try {
+    const supervisor = alias(usersTable, "supervisor");
     const rows = await db
       .select({
         registrationId: eventRegistrationsTable.registrationId,
@@ -23,10 +25,21 @@ async function sendTwoDayReminders(): Promise<void> {
         startTime: eventsTable.startTime,
         endTime: eventsTable.endTime,
         location: eventsTable.location,
+        slotLabel: eventsTable.slotLabel,
+        description: eventsTable.description,
+        street: eventsTable.street,
+        city: eventsTable.city,
+        state: eventsTable.state,
+        zip: eventsTable.zip,
+        hoursValue: eventsTable.hoursValue,
+        supervisorFirstName: supervisor.firstName,
+        supervisorLastName: supervisor.lastName,
+        supervisorPhone: supervisor.phone,
       })
       .from(eventRegistrationsTable)
       .innerJoin(eventsTable, eq(eventRegistrationsTable.eventId, eventsTable.eventId))
       .innerJoin(usersTable, eq(eventRegistrationsTable.userId, usersTable.userId))
+      .leftJoin(supervisor, eq(eventsTable.supervisorId, supervisor.userId))
       .where(
         and(
           eq(eventsTable.eventDate, targetDate),
@@ -57,6 +70,17 @@ async function sendTwoDayReminders(): Promise<void> {
         startTime: row.startTime ?? "",
         endTime: row.endTime ?? "",
         location: row.location ?? "",
+        slotLabel: row.slotLabel ?? null,
+        description: row.description ?? null,
+        street: row.street ?? null,
+        city: row.city ?? null,
+        state: row.state ?? null,
+        zip: row.zip ?? null,
+        supervisorName: row.supervisorFirstName
+          ? `${row.supervisorFirstName} ${row.supervisorLastName ?? ""}`.trim()
+          : null,
+        supervisorPhone: row.supervisorPhone ?? null,
+        hoursValue: row.hoursValue != null ? Number(row.hoursValue) : null,
       });
 
       if (delivered) {

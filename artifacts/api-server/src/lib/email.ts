@@ -232,6 +232,38 @@ export interface EventDetails {
   startTime: string;
   endTime: string;
   location: string;
+  slotLabel?: string | null;
+  description?: string | null;
+  street?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  supervisorName?: string | null;
+  supervisorPhone?: string | null;
+  hoursValue?: number | null;
+}
+
+// The full set of event detail lines a supervisor entered, for confirmation
+// and reminder emails.
+function eventLines(event: EventDetails): string[] {
+  const cityState = [event.city, event.state].filter(Boolean).join(", ");
+  const address = [event.street, cityState, event.zip].filter(Boolean).join(" ").trim();
+  const lines = [
+    `Event:      ${event.title}`,
+    ...(event.slotLabel ? [`Slot:       ${event.slotLabel}`] : []),
+    `Date:       ${formatEventDate(event.eventDate)}`,
+    `Time:       ${formatTime(event.startTime)} – ${formatTime(event.endTime)}`,
+    `Location:   ${event.location}`,
+    ...(address ? [`Address:    ${address}`] : []),
+    ...(event.hoursValue != null ? [`Credit:     ${event.hoursValue} volunteer hour(s)`] : []),
+    ...(event.supervisorName
+      ? [`Supervisor: ${event.supervisorName}${event.supervisorPhone ? ` (${event.supervisorPhone})` : ""}`]
+      : []),
+  ];
+  if (event.description) {
+    lines.push("", "Details:", event.description);
+  }
+  return lines;
 }
 
 function formatEventDate(dateStr: string): string {
@@ -262,25 +294,18 @@ export async function sendRegistrationConfirmation(
   const client = getClient();
   if (!client) return;
 
-  const formattedDate = formatEventDate(event.eventDate);
-  const startFmt = formatTime(event.startTime);
-  const endFmt = formatTime(event.endTime);
-
   const subject = `You're registered: ${event.title}`;
   const text = [
     `Hi ${toName},`,
     "",
     `You have successfully registered for the following volunteer opportunity:`,
     "",
-    `Event:    ${event.title}`,
-    `Date:     ${formattedDate}`,
-    `Time:     ${startFmt} – ${endFmt}`,
-    `Location: ${event.location}`,
+    ...eventLines(event),
     "",
-    "Please remember to check in on the day of the event using the VSMS app.",
+    "Please remember to check in on the day of the event using the MedinaCares VSA app.",
     "",
     "Thank you for volunteering!",
-    "— The VSMS Team",
+    "— MedinaCares Council",
   ].join("\n");
 
   try {
@@ -317,25 +342,18 @@ export async function sendReminderEmail(
     return false;
   }
 
-  const formattedDate = formatEventDate(event.eventDate);
-  const startFmt = formatTime(event.startTime);
-  const endFmt = formatTime(event.endTime);
-
   const subject = `Reminder: ${event.title} is in 2 days`;
   const text = [
     `Hi ${toName},`,
     "",
     `This is a friendly reminder that you are registered for a volunteer event in 2 days:`,
     "",
-    `Event:    ${event.title}`,
-    `Date:     ${formattedDate}`,
-    `Time:     ${startFmt} – ${endFmt}`,
-    `Location: ${event.location}`,
+    ...eventLines(event),
     "",
-    "Remember to check in on the day of the event using the VSMS app.",
+    "Remember to check in on the day of the event using the MedinaCares VSA app.",
     "",
     "See you there!",
-    "— The VSMS Team",
+    "— MedinaCares Council",
   ].join("\n");
 
   try {

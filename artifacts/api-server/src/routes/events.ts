@@ -491,6 +491,15 @@ router.post(
         startTime: event.startTime,
         endTime: event.endTime,
         location: event.location,
+        slotLabel: event.slotLabel ?? null,
+        description: event.description ?? null,
+        street: event.street ?? null,
+        city: event.city ?? null,
+        state: event.state ?? null,
+        zip: event.zip ?? null,
+        supervisorName: supervisor ? `${supervisor.firstName} ${supervisor.lastName}` : null,
+        supervisorPhone: supervisor?.phone ?? null,
+        hoursValue: calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue),
       }).catch((err) => {
         req.log.error({ err }, "Unhandled error sending registration confirmation");
       });
