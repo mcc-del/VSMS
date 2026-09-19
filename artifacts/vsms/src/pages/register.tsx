@@ -241,6 +241,7 @@ export default function RegisterPage() {
                     <FormControl>
                       <Input data-testid="input-email" type="email" placeholder="you@example.com" {...field} />
                     </FormControl>
+                    <FormDescription>You'll use this to sign in. Use one you check often — reminders and confirmations go here.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -391,6 +392,7 @@ export default function RegisterPage() {
                     <FormControl>
                       <Input data-testid="input-password" type="password" placeholder="Min. 8 characters" {...field} />
                     </FormControl>
+                    <FormDescription>At least 8 characters. You'll use this with your email to sign in.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
