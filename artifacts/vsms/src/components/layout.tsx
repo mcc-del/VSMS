@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { LogOut, Calendar, Clock, CheckSquare, Users, FileText, LayoutDashboard, ExternalLink, Menu, Trophy, Building2, TrendingUp, Settings, HelpCircle } from "lucide-react";
+import { LogOut, Calendar, Clock, CheckSquare, Users, FileText, LayoutDashboard, ExternalLink, Menu, Trophy, Building2, TrendingUp, Settings, HelpCircle, ScrollText } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -54,6 +54,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Users", href: "/admin/users", icon: Users },
       { label: "Events", href: "/admin/events", icon: Calendar },
       { label: "Organizations", href: "/admin/organizations", icon: Building2 },
+      { label: "Audit Log", href: "/admin/audit-log", icon: ScrollText },
     ] : []),
   ];
 

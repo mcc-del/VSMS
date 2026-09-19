@@ -824,6 +824,21 @@ export interface ParticipantDashboard {
   rejectedCount: number;
 }
 
+export interface AuditLogEntry {
+  auditLogId: string;
+  actorName: string;
+  actorRole: string;
+  action: string;
+  /** @nullable */
+  targetType?: string | null;
+  /** @nullable */
+  targetId?: string | null;
+  /** @nullable */
+  targetLabel?: string | null;
+  summary: string;
+  createdAt: string;
+}
+
 export interface NotificationPreferences {
   emailNotifications: boolean;
 }
@@ -927,4 +942,9 @@ export const ListAllSchoolsStatus = {
   approved: 'approved',
   pending: 'pending',
 } as const;
+
+export type GetAuditLogParams = {
+limit?: number;
+action?: string;
+};
 

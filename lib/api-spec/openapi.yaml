@@ -1500,6 +1500,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/admin/audit-log:
+    get:
+      operationId: getAuditLog
+      tags: [admin]
+      summary: Recent admin activity (Super Admin only)
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: action
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogEntry"
+
   /v1/parent/children:
     get:
       operationId: getParentChildren
@@ -2955,6 +2981,29 @@ components:
           type: integer
         rejectedCount:
           type: integer
+
+    AuditLogEntry:
+      type: object
+      required: [auditLogId, actorName, actorRole, action, summary, createdAt]
+      properties:
+        auditLogId:
+          type: string
+        actorName:
+          type: string
+        actorRole:
+          type: string
+        action:
+          type: string
+        targetType:
+          type: ["string", "null"]
+        targetId:
+          type: ["string", "null"]
+        targetLabel:
+          type: ["string", "null"]
+        summary:
+          type: string
+        createdAt:
+          type: string
 
     NotificationPreferences:
       type: object

@@ -1345,6 +1345,28 @@ export const BroadcastToEventResponse = zod.object({
 
 
 /**
+ * @summary Recent admin activity (Super Admin only)
+ */
+export const GetAuditLogQueryParams = zod.object({
+  "limit": zod.coerce.number().optional(),
+  "action": zod.coerce.string().optional()
+})
+
+export const GetAuditLogResponseItem = zod.object({
+  "auditLogId": zod.string(),
+  "actorName": zod.string(),
+  "actorRole": zod.string(),
+  "action": zod.string(),
+  "targetType": zod.string().nullish(),
+  "targetId": zod.string().nullish(),
+  "targetLabel": zod.string().nullish(),
+  "summary": zod.string(),
+  "createdAt": zod.string()
+})
+export const GetAuditLogResponse = zod.array(GetAuditLogResponseItem)
+
+
+/**
  * @summary List a parent's linked children with schedule and progress
  */
 export const GetParentChildrenResponseItem = zod.object({

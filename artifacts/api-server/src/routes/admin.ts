@@ -1,12 +1,13 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
-import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable } from "@workspace/db";
+import { eq, desc, ilike } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
 import { sendTestEmail, sendAccountInvite } from "../lib/email";
+import { recordAudit } from "../lib/audit";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -45,6 +46,33 @@ router.post("/v1/admin/test-email", authenticate, requireRole("admin"), async (r
     return;
   }
   res.json({ ok: true, id: result.id ?? null, to });
+});
+
+// GET /api/v1/admin/audit-log — recent admin activity (Super Admin only).
+router.get("/v1/admin/audit-log", authenticate, requireRole("admin"), async (req, res) => {
+  const rawLimit = Number(req.query.limit);
+  const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 500) : 200;
+  const action = typeof req.query.action === "string" ? req.query.action.trim() : "";
+  const where = action ? ilike(auditLogsTable.action, `%${action}%`) : undefined;
+  const rows = await db
+    .select()
+    .from(auditLogsTable)
+    .where(where)
+    .orderBy(desc(auditLogsTable.createdAt))
+    .limit(limit);
+  res.json(
+    rows.map((r) => ({
+      auditLogId: r.auditLogId,
+      actorName: r.actorName,
+      actorRole: r.actorRole,
+      action: r.action,
+      targetType: r.targetType ?? null,
+      targetId: r.targetId ?? null,
+      targetLabel: r.targetLabel ?? null,
+      summary: r.summary,
+      createdAt: r.createdAt.toISOString(),
+    })),
+  );
 });
 
 // GET /api/v1/admin/users
@@ -107,7 +135,7 @@ router.patch(
       : [];
 
     const [target] = await db
-      .select({ userId: usersTable.userId, role: usersTable.role })
+      .select({ userId: usersTable.userId, role: usersTable.role, firstName: usersTable.firstName, lastName: usersTable.lastName })
       .from(usersTable)
       .where(eq(usersTable.userId, userId))
       .limit(1);
@@ -123,9 +151,18 @@ router.patch(
     // Replace this user's managed-org rows.
     await db.delete(orgAdminsTable).where(eq(orgAdminsTable.userId, userId));
 
+    const targetLabel = `${target.firstName ?? ""} ${target.lastName ?? ""}`.trim() || userId;
     if (organizationIds.length === 0) {
       // Demote back to a regular participant.
       await db.update(usersTable).set({ role: "participant" }).where(eq(usersTable.userId, userId));
+      recordAudit({
+        actorUserId: req.auth!.userId,
+        action: "user.role_change",
+        targetType: "user",
+        targetId: userId,
+        targetLabel,
+        summary: `Removed Admin access from ${targetLabel} (reverted to participant)`,
+      });
       res.json({ role: "participant", organizationIds: [] });
       return;
     }
@@ -134,6 +171,14 @@ router.patch(
       await db.insert(orgAdminsTable).values({ userId, organizationId }).onConflictDoNothing();
     }
     await db.update(usersTable).set({ role: "org_admin" }).where(eq(usersTable.userId, userId));
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "user.role_change",
+      targetType: "user",
+      targetId: userId,
+      targetLabel,
+      summary: `Granted Admin access to ${targetLabel} for ${organizationIds.length} organization(s)`,
+    });
     res.json({ role: "org_admin", organizationIds });
   },
 );
@@ -227,6 +272,15 @@ router.post(
     // Fire-and-forget the invite email (no-op if email isn't configured).
     sendAccountInvite(user.email!, user.firstName, ROLE_LABELS[user.role] ?? user.role, inviteToken)
       .catch((err) => req.log.error({ err }, "account invite email failed"));
+
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "user.create",
+      targetType: "user",
+      targetId: user.userId,
+      targetLabel: `${user.firstName} ${user.lastName}`,
+      summary: `Created ${ROLE_LABELS[user.role] ?? user.role} account for ${user.firstName} ${user.lastName} (${user.email})`,
+    });
 
     res.status(201).json({
       userId: user.userId,
@@ -374,6 +428,15 @@ router.post(
       })
       .returning();
 
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "hours.grant",
+      targetType: "user",
+      targetId: userId,
+      targetLabel: null,
+      summary: `Granted ${hours} manual hour(s): "${description}"`,
+    });
+
     res.status(201).json({
       manualHoursId: credit.manualHoursId,
       userId: credit.userId,
@@ -409,6 +472,14 @@ router.delete(
       }
     }
     await db.delete(manualHoursTable).where(eq(manualHoursTable.manualHoursId, creditId));
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "hours.delete",
+      targetType: "hours",
+      targetId: creditId,
+      targetLabel: null,
+      summary: "Removed a manual hours credit",
+    });
     res.json({ status: "success", message: "Manual hours removed" });
   },
 );
@@ -430,7 +501,22 @@ router.delete(
         return;
       }
     }
+    const [victim] = await db
+      .select({ firstName: usersTable.firstName, lastName: usersTable.lastName, email: usersTable.email, role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
     await db.delete(usersTable).where(eq(usersTable.userId, userId));
+    if (victim) {
+      recordAudit({
+        actorUserId: req.auth!.userId,
+        action: "user.delete",
+        targetType: "user",
+        targetId: userId,
+        targetLabel: `${victim.firstName} ${victim.lastName}`,
+        summary: `Deleted ${ROLE_LABELS[victim.role] ?? victim.role} ${victim.firstName} ${victim.lastName} (${victim.email ?? "no email"})`,
+      });
+    }
     res.json({ status: "success", message: "User deleted" });
   },
 );

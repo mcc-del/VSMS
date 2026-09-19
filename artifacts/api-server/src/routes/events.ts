@@ -12,6 +12,7 @@ import { eq, count, sql, and, inArray } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification } from "../lib/email";
+import { recordAudit } from "../lib/audit";
 import { gradeToLevel, orgAllowsLevel, type SchoolLevel } from "../lib/levels";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
@@ -1051,7 +1052,20 @@ router.delete(
       return;
     }
 
+    const [deleted] = await db
+      .select({ title: eventsTable.title, eventDate: eventsTable.eventDate })
+      .from(eventsTable)
+      .where(eq(eventsTable.eventId, eventId))
+      .limit(1);
     await db.delete(eventsTable).where(eq(eventsTable.eventId, eventId));
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "event.delete",
+      targetType: "event",
+      targetId: eventId,
+      targetLabel: deleted?.title ?? null,
+      summary: `Deleted event "${deleted?.title ?? eventId}"${deleted?.eventDate ? ` (${deleted.eventDate})` : ""}`,
+    });
     res.json({ status: "success", message: "Event deleted" });
   },
 );

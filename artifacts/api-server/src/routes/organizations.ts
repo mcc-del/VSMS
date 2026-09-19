@@ -4,6 +4,7 @@ import { eq, asc } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateOrganizationBody, UpdateOrganizationBody } from "@workspace/api-zod";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
+import { recordAudit } from "../lib/audit";
 
 const router = Router();
 
@@ -64,6 +65,14 @@ router.post("/v1/admin/organizations", authenticate, requireRole("admin"), async
         joinCode: joinCode?.trim() || null,
       })
       .returning();
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "org.create",
+      targetType: "org",
+      targetId: org.organizationId,
+      targetLabel: org.name,
+      summary: `Created organization "${org.name}"${org.joinCode ? " with a join code" : ""}`,
+    });
     res.status(201).json(formatAdmin(org));
   } catch {
     res.status(400).json({ error: "An organization with that name already exists." });
@@ -107,6 +116,14 @@ router.put(
       res.status(404).json({ error: "Organization not found." });
       return;
     }
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "org.update",
+      targetType: "org",
+      targetId: org.organizationId,
+      targetLabel: org.name,
+      summary: `Updated organization "${org.name}"${"joinCode" in updates ? " (join code changed)" : ""}`,
+    });
     res.json(formatAdmin(org));
   },
 );
