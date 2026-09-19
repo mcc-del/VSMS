@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ProofUpload } from "@/components/proof-upload";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { SchoolSelect } from "@/components/school-select";
@@ -96,7 +97,7 @@ export default function ParentDashboard() {
   const submitChildExternal = useSubmitChildExternalHours();
   const [hoursDraft, setHoursDraft] = useState<Record<string, string>>({});
 
-  const emptyExt = { activityName: "", organizationName: "", isNonprofit: false, ein: "", volunteerDate: "", hoursWorked: "", extSupervisorName: "", extSupervisorEmail: "", description: "" };
+  const emptyExt = { activityName: "", organizationName: "", isNonprofit: false, ein: "", volunteerDate: "", hoursWorked: "", extSupervisorName: "", extSupervisorEmail: "", description: "", proofUrl: null as string | null };
   const [extChild, setExtChild] = useState<{ userId: string; name: string } | null>(null);
   const [ext, setExt] = useState({ ...emptyExt });
 
@@ -111,6 +112,9 @@ export default function ParentDashboard() {
     if (!ext.extSupervisorName.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ext.extSupervisorEmail.trim())) {
       toast({ title: "Add a supervisor name and valid email", variant: "destructive" }); return;
     }
+    if (hrs > 5 && !ext.proofUrl) {
+      toast({ title: "Proof required", description: "Attach a photo or letter for claims over 5 hours.", variant: "destructive" }); return;
+    }
     submitChildExternal.mutate(
       { childId: extChild.userId, data: {
         activityName: ext.activityName.trim(), organizationName: ext.organizationName.trim(),
@@ -118,6 +122,7 @@ export default function ParentDashboard() {
         volunteerDate: ext.volunteerDate, hoursWorked: hrs,
         extSupervisorName: ext.extSupervisorName.trim(), extSupervisorEmail: ext.extSupervisorEmail.trim(),
         description: ext.description.trim() || undefined,
+        proofUrl: ext.proofUrl || undefined,
       } as any },
       {
         onSuccess: () => {
@@ -678,7 +683,11 @@ export default function ParentDashboard() {
             <div><Label className="text-xs">Supervisor name</Label><Input value={ext.extSupervisorName} onChange={(e) => setExt({ ...ext, extSupervisorName: e.target.value })} placeholder="Who supervised them" /></div>
             <div><Label className="text-xs">Supervisor email</Label><Input type="email" value={ext.extSupervisorEmail} onChange={(e) => setExt({ ...ext, extSupervisorEmail: e.target.value })} placeholder="supervisor@org.org" /></div>
             <div><Label className="text-xs">Notes (optional)</Label><Textarea rows={2} value={ext.description} onChange={(e) => setExt({ ...ext, description: e.target.value })} /></div>
-            <p className="text-xs text-muted-foreground">Proof is required over 5 hours — for larger claims, submit with a supervisor who can verify, or keep entries at 5h or under here.</p>
+            <div>
+              <Label className="text-xs">Proof {Number(ext.hoursWorked) > 5 ? "(required over 5 hours)" : "(optional)"}</Label>
+              <ProofUpload value={ext.proofUrl} onChange={(p) => setExt({ ...ext, proofUrl: p })} />
+              <p className="text-xs text-muted-foreground mt-1">A photo or letter confirming the hours. Required for claims over 5 hours.</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setExtChild(null)}>Cancel</Button>
