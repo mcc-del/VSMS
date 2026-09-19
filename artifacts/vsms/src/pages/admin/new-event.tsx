@@ -182,6 +182,7 @@ export default function AdminNewEvent() {
                     <FormControl>
                       <Textarea data-testid="input-description" placeholder="Describe the volunteer activity..." rows={3} {...field} />
                     </FormControl>
+                    <FormDescription>What volunteers will do, what to bring/wear, and where to meet. This is shown to everyone signing up and in their confirmation email.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -314,7 +315,7 @@ export default function AdminNewEvent() {
                           )} />
                           <FormField control={form.control} name={`slots.${i}.maxCapacity`} render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="text-xs">Slots</FormLabel>
+                              <FormLabel className="text-xs">Volunteers needed</FormLabel>
                               <FormControl><Input type="number" min="1" {...field} /></FormControl>
                             </FormItem>
                           )} />
@@ -378,7 +379,7 @@ export default function AdminNewEvent() {
                     <FormDescription>
                       {isOrgAdmin
                         ? "Your event is private to your organization's students."
-                        : "\"Open to all\" shows to every eligible student. Choosing an organization keeps it private to that org's students (e.g. Medina on-site events)."}
+                        : "Pick \"Open to all (community)\" for events anyone can join — including on-site events open to the whole community. Pick a specific organization ONLY when the event is private to that org's students (e.g. a Medina-only recycling or in-school shift). When unsure, choose \"Open to all.\""}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
