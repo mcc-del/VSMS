@@ -525,6 +525,11 @@ export interface AdminCreateUserInput {
   password: string;
   role: string;
   phone?: string;
+  /**
+     * Organization to assign the new user to. Honored only for Super Admins; Admins always assign their own org.
+     * @nullable
+     */
+  organizationId?: string | null;
 }
 
 export interface Event {

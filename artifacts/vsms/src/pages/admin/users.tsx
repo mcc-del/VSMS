@@ -27,6 +27,7 @@ const schema = z.object({
   password: z.string().min(8, "Min 8 characters"),
   role: z.enum(["participant", "supervisor", "admin"]),
   phone: z.string().optional(),
+  organizationId: z.string().optional(),
 });
 
 const hoursSchema = z.object({
@@ -116,7 +117,7 @@ export default function AdminUsers() {
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "participant" as const, phone: "" },
+    defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "participant" as const, phone: "", organizationId: "none" },
   });
 
   const hoursForm = useForm({
@@ -147,8 +148,12 @@ export default function AdminUsers() {
   }
 
   function onSubmit(values: z.infer<typeof schema>) {
+    const data = {
+      ...values,
+      organizationId: values.organizationId && values.organizationId !== "none" ? values.organizationId : null,
+    };
     createUser.mutate(
-      { data: values },
+      { data },
       {
         onSuccess: () => {
           toast({ title: "User created" });
@@ -406,6 +411,25 @@ export default function AdminUsers() {
                   <FormMessage />
                 </FormItem>
               )} />
+              {isSuperAdmin && (
+                <FormField control={form.control} name="organizationId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Organization <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || "none"}>
+                      <FormControl>
+                        <SelectTrigger><SelectValue placeholder="No specific organization" /></SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">No specific organization</SelectItem>
+                        {(organizations ?? []).map((o) => (
+                          <SelectItem key={o.organizationId} value={o.organizationId}>{o.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Assign a supervisor/participant to an organization so that org's Admin can manage them.</p>
+                  </FormItem>
+                )} />
+              )}
               <Button type="submit" className="w-full" disabled={createUser.isPending}>
                 {createUser.isPending ? "Creating..." : "Create User"}
               </Button>

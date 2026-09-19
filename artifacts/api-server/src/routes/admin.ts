@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
-import { db, usersTable, manualHoursTable, orgAdminsTable } from "@workspace/db";
+import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
@@ -150,13 +150,14 @@ router.post(
       return;
     }
 
-    const { firstName, lastName, email, password, role, phone } = parsed.data as typeof parsed.data & {
+    const { firstName, lastName, email, password, role, phone, organizationId } = parsed.data as typeof parsed.data & {
       phone?: string;
+      organizationId?: string | null;
     };
 
     const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
     // An Admin may only create non-admin users, stamped to their own org. A
-    // Super Admin may create any role and leave the org unset.
+    // Super Admin may create any role and choose the org (or leave it unset).
     let newUserOrgId: string | null = null;
     if (managed !== null) {
       if (role !== "participant" && role !== "supervisor") {
@@ -168,6 +169,18 @@ router.post(
         return;
       }
       newUserOrgId = managed[0];
+    } else if (organizationId) {
+      // Super Admin picked an organization — validate it exists.
+      const [org] = await db
+        .select({ organizationId: organizationsTable.organizationId })
+        .from(organizationsTable)
+        .where(eq(organizationsTable.organizationId, organizationId))
+        .limit(1);
+      if (!org) {
+        res.status(400).json({ error: "That organization doesn't exist." });
+        return;
+      }
+      newUserOrgId = organizationId;
     }
 
     const existing = await db

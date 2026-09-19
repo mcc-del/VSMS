@@ -692,7 +692,8 @@ export const CreateUserBody = zod.object({
   "email": zod.string(),
   "password": zod.string().min(createUserBodyPasswordMin),
   "role": zod.string(),
-  "phone": zod.string().optional()
+  "phone": zod.string().optional(),
+  "organizationId": zod.string().nullish().describe('Organization to assign the new user to. Honored only for Super Admins; Admins always assign their own org.')
 })
 
 

@@ -2522,6 +2522,9 @@ components:
           type: string
         phone:
           type: string
+        organizationId:
+          type: ["string", "null"]
+          description: Organization to assign the new user to. Honored only for Super Admins; Admins always assign their own org.
 
     Event:
       type: object
