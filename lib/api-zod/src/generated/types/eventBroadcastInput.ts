@@ -5,6 +5,7 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+import type { EventBroadcastInputAttachmentsItem } from './eventBroadcastInputAttachmentsItem';
 
 export interface EventBroadcastInput {
   /**
@@ -19,4 +20,6 @@ export interface EventBroadcastInput {
   message: string;
   /** Also email the guardians of managed (elementary) children. */
   includeGuardians?: boolean;
+  /** Files to attach (uploaded to object storage first). */
+  attachments?: EventBroadcastInputAttachmentsItem[];
 }

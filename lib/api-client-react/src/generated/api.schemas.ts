@@ -871,6 +871,11 @@ export interface AdultHoursInput {
   notes?: string | null;
 }
 
+export type EventBroadcastInputAttachmentsItem = {
+  path: string;
+  filename: string;
+};
+
 export interface EventBroadcastInput {
   /**
      * @minLength 2
@@ -884,6 +889,8 @@ export interface EventBroadcastInput {
   message: string;
   /** Also email the guardians of managed (elementary) children. */
   includeGuardians?: boolean;
+  /** Files to attach (uploaded to object storage first). */
+  attachments?: EventBroadcastInputAttachmentsItem[];
 }
 
 export interface BroadcastResult {

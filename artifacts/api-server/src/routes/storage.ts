@@ -16,9 +16,11 @@ const ALLOWED_IMAGE_TYPES = new Set([
   "image/gif",
   "image/webp",
   "image/svg+xml",
+  // Documents (proof letters, message attachments like flyers).
+  "application/pdf",
 ]);
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 /**
  * POST /storage/uploads/request-url
@@ -41,12 +43,12 @@ router.post(
     const { name, size, contentType } = parsed.data;
 
     if (!ALLOWED_IMAGE_TYPES.has(contentType)) {
-      res.status(400).json({ error: "Only image files are allowed (JPEG, PNG, GIF, WebP, SVG)." });
+      res.status(400).json({ error: "Only images (JPEG, PNG, GIF, WebP, SVG) or PDF files are allowed." });
       return;
     }
 
     if (size > MAX_IMAGE_SIZE) {
-      res.status(400).json({ error: "Image must be 5 MB or smaller." });
+      res.status(400).json({ error: "File must be 10 MB or smaller." });
       return;
     }
 

@@ -32,6 +32,7 @@ export * from './coGuardianStatus';
 export * from './errorResponse';
 export * from './event';
 export * from './eventBroadcastInput';
+export * from './eventBroadcastInputAttachmentsItem';
 export * from './eventInput';
 export * from './eventRegistration';
 export * from './eventRoster';

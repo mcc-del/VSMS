@@ -79,6 +79,7 @@ export async function sendEventBroadcast(
   senderName: string,
   subject: string,
   message: string,
+  attachments?: { filename: string; content: string }[],
 ): Promise<number> {
   const client = getClient();
   if (!client) return 0;
@@ -98,6 +99,7 @@ export async function sendEventBroadcast(
         to,
         subject: `[${eventTitle}] ${subject}`,
         text: body,
+        ...(attachments && attachments.length > 0 ? { attachments } : {}),
       });
       sent += 1;
     } catch (err) {

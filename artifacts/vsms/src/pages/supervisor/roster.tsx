@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X, Mail } from "lucide-react";
+import { ArrowLeft, Check, X, Mail, Paperclip, Upload } from "lucide-react";
 
 function statusBadge(s: string) {
   if (s === "attended") return <Badge className="bg-green-100 text-green-700 border-0">Checked in</Badge>;
@@ -41,6 +41,37 @@ export default function RosterPage() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [includeGuardians, setIncludeGuardians] = useState(true);
+  const [attachments, setAttachments] = useState<{ path: string; filename: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  async function uploadAttachment(file: File) {
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Attachments must be 10 MB or smaller.", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const tok = localStorage.getItem("vsms_token");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (tok) headers["Authorization"] = `Bearer ${tok}`;
+      const urlRes = await fetch("/api/storage/uploads/request-url", {
+        method: "POST", headers,
+        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+      });
+      if (!urlRes.ok) {
+        const e = (await urlRes.json().catch(() => ({}))) as { error?: string };
+        throw new Error(e.error ?? "Upload failed");
+      }
+      const { uploadURL, objectPath } = (await urlRes.json()) as { uploadURL: string; objectPath: string };
+      const put = await fetch(uploadURL, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+      if (!put.ok) throw new Error("Upload failed");
+      setAttachments((a) => [...a, { path: objectPath, filename: file.name }]);
+    } catch (e: any) {
+      toast({ title: "Couldn't attach", description: e?.message ?? "Try again.", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  }
 
   function sendMessage() {
     if (subject.trim().length < 2 || message.trim().length < 2) {
@@ -48,7 +79,7 @@ export default function RosterPage() {
       return;
     }
     broadcast.mutate(
-      { eventId, data: { subject: subject.trim(), message: message.trim(), includeGuardians } },
+      { eventId, data: { subject: subject.trim(), message: message.trim(), includeGuardians, attachments } },
       {
         onSuccess: (res) => {
           if (!res.emailConfigured) {
@@ -59,6 +90,7 @@ export default function RosterPage() {
           setMsgOpen(false);
           setSubject("");
           setMessage("");
+          setAttachments([]);
         },
         onError: (err: any) => toast({ title: "Couldn't send", description: err?.data?.error ?? "Try again.", variant: "destructive" }),
       },
@@ -165,6 +197,30 @@ export default function RosterPage() {
               <Checkbox checked={includeGuardians} onCheckedChange={(v) => setIncludeGuardians(v === true)} />
               Also email parents/guardians (recommended for younger volunteers)
             </label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Attachments <span className="text-muted-foreground font-normal">(optional)</span></label>
+              {attachments.map((a, i) => (
+                <div key={a.path} className="flex items-center gap-2 rounded-lg border p-2 text-sm">
+                  <Paperclip className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="flex-1 truncate">{a.filename}</span>
+                  <button type="button" onClick={() => setAttachments((arr) => arr.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-red-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {attachments.length < 5 && (
+                <label className="inline-flex items-center gap-1.5 text-sm text-primary cursor-pointer hover:underline">
+                  <Upload className="w-4 h-4" /> {uploading ? "Uploading…" : "Add a file (image or PDF, ≤10 MB)"}
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAttachment(f); e.target.value = ""; }}
+                  />
+                </label>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMsgOpen(false)}>Cancel</Button>

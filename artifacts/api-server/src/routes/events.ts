@@ -13,6 +13,9 @@ import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification } from "../lib/email";
 import { recordAudit } from "../lib/audit";
+import { ObjectStorageService } from "../lib/objectStorage";
+
+const objectStorageService = new ObjectStorageService();
 import { gradeToLevel, orgAllowsLevel, type SchoolLevel } from "../lib/levels";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
@@ -653,10 +656,15 @@ router.post(
   requireRole("supervisor", "admin", "org_admin"),
   async (req, res) => {
     const { eventId } = req.params as { eventId: string };
-    const body = (req.body ?? {}) as { subject?: unknown; message?: unknown; includeGuardians?: unknown };
+    const body = (req.body ?? {}) as { subject?: unknown; message?: unknown; includeGuardians?: unknown; attachments?: unknown };
     const subject = typeof body.subject === "string" ? body.subject.trim() : "";
     const message = typeof body.message === "string" ? body.message.trim() : "";
     const includeGuardians = body.includeGuardians !== false; // default on
+    const rawAttachments = Array.isArray(body.attachments)
+      ? (body.attachments as { path?: unknown; filename?: unknown }[])
+          .filter((a) => typeof a?.path === "string" && typeof a?.filename === "string")
+          .slice(0, 5) // cap the number of attachments
+      : [];
     if (subject.length < 2 || message.length < 2) {
       res.status(400).json({ error: "A subject and a message are both required." });
       return;
@@ -708,8 +716,20 @@ router.post(
       .limit(1);
     const senderName = sender ? `${sender.firstName} ${sender.lastName}`.trim() : "your supervisor";
 
+    // Fetch each attachment from object storage and base64-encode it for email.
+    const attachments: { filename: string; content: string }[] = [];
+    for (const a of rawAttachments) {
+      try {
+        const file = await objectStorageService.getObjectEntityFile(a.path as string);
+        const [buf] = await file.download();
+        attachments.push({ filename: a.filename as string, content: buf.toString("base64") });
+      } catch (err) {
+        req.log.error({ err, path: a.path }, "Failed to read broadcast attachment");
+      }
+    }
+
     const list = [...emails];
-    const sent = await sendEventBroadcast(list, event.title, senderName, subject, message);
+    const sent = await sendEventBroadcast(list, event.title, senderName, subject, message, attachments);
     res.json({ recipients: sent, emailConfigured: list.length === 0 ? true : sent > 0 });
   },
 );

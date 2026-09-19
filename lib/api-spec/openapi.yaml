@@ -3071,6 +3071,17 @@ components:
         includeGuardians:
           type: boolean
           description: Also email the guardians of managed (elementary) children.
+        attachments:
+          type: array
+          description: Files to attach (uploaded to object storage first).
+          items:
+            type: object
+            required: [path, filename]
+            properties:
+              path:
+                type: string
+              filename:
+                type: string
 
     BroadcastResult:
       type: object

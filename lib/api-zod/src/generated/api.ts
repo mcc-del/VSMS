@@ -1335,7 +1335,11 @@ export const broadcastToEventBodyMessageMax = 4000;
 export const BroadcastToEventBody = zod.object({
   "subject": zod.string().min(broadcastToEventBodySubjectMin).max(broadcastToEventBodySubjectMax),
   "message": zod.string().min(broadcastToEventBodyMessageMin).max(broadcastToEventBodyMessageMax),
-  "includeGuardians": zod.boolean().optional().describe('Also email the guardians of managed (elementary) children.')
+  "includeGuardians": zod.boolean().optional().describe('Also email the guardians of managed (elementary) children.'),
+  "attachments": zod.array(zod.object({
+  "path": zod.string(),
+  "filename": zod.string()
+})).optional().describe('Files to attach (uploaded to object storage first).')
 })
 
 export const BroadcastToEventResponse = zod.object({
