@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListUsers, useCreateUser, useDeleteUser, useUpdateUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useListUsers, useCreateUser, useDeleteUser, useUpdateUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, useGetManagedOrganizations, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,13 @@ export default function AdminUsers() {
   const isSuperAdmin = currentRole === "admin";
   const { data: users, isLoading } = useListUsers();
   const { data: organizations } = useListOrganizations();
+  const { data: managedOrgs } = useGetManagedOrganizations();
+  // Orgs the acting admin may assign a new user to.
+  const assignableOrgs = isSuperAdmin
+    ? (organizations ?? [])
+    : (organizations ?? []).filter((o) => managedOrgs?.organizationIds?.includes(o.organizationId));
+  // Show the picker for Super Admins, or for Admins who manage more than one org.
+  const showOrgPicker = isSuperAdmin || assignableOrgs.length > 1;
   const createUser = useCreateUser();
   const deleteUser = useDeleteUser();
   const addHours = useAddManualHours();
@@ -411,22 +418,22 @@ export default function AdminUsers() {
                   <FormMessage />
                 </FormItem>
               )} />
-              {isSuperAdmin && (
+              {showOrgPicker && (
                 <FormField control={form.control} name="organizationId" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Organization <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "none"}>
+                    <FormLabel>Organization {isSuperAdmin && <span className="text-muted-foreground font-normal">(optional)</span>}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || (isSuperAdmin ? "none" : "")}>
                       <FormControl>
-                        <SelectTrigger><SelectValue placeholder="No specific organization" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={isSuperAdmin ? "No specific organization" : "Select organization"} /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="none">No specific organization</SelectItem>
-                        {(organizations ?? []).map((o) => (
+                        {isSuperAdmin && <SelectItem value="none">No specific organization</SelectItem>}
+                        {assignableOrgs.map((o) => (
                           <SelectItem key={o.organizationId} value={o.organizationId}>{o.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">Assign a supervisor/participant to an organization so that org's Admin can manage them.</p>
+                    <p className="text-xs text-muted-foreground">The org whose Admin can manage this person. It does not change which events they see or run.</p>
                   </FormItem>
                 )} />
               )}

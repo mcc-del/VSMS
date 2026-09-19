@@ -168,7 +168,17 @@ router.post(
         res.status(403).json({ error: "You don't manage any organization." });
         return;
       }
-      newUserOrgId = managed[0];
+      // An Admin may choose among the organizations they manage; default to
+      // their first if none was specified.
+      if (organizationId) {
+        if (!managed.includes(organizationId)) {
+          res.status(403).json({ error: "You can only assign users to an organization you manage." });
+          return;
+        }
+        newUserOrgId = organizationId;
+      } else {
+        newUserOrgId = managed[0];
+      }
     } else if (organizationId) {
       // Super Admin picked an organization — validate it exists.
       const [org] = await db
