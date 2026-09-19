@@ -23,11 +23,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck (api-server)
-        run: pnpm --filter @workspace/api-server run typecheck
+      # Builds the workspace libs (@workspace/db, api-zod, api-client) so their
+      # dist/*.d.ts exist, then typechecks every app. dist is gitignored, so this
+      # build must run before any app typecheck.
+      - name: Typecheck (libs + apps)
+        run: pnpm run typecheck
 
       - name: Unit tests (api-server)
         run: pnpm --filter @workspace/api-server run test
-
-      - name: Typecheck (web)
-        run: pnpm --filter @workspace/vsms run typecheck
