@@ -122,6 +122,9 @@ export default function RosterPage() {
             <p className="text-muted-foreground text-sm mt-1">
               {participants.length} signed up · {checkedIn} checked in. Tap ✓ to check a student in at the event.
             </p>
+            <p className="text-xs text-amber-700 mt-1">
+              Before sharing building access (e.g. a QR code), confirm each attendee is a verified member — "Community · unverified" means they joined without an organization join code.
+            </p>
           </div>
           <Button variant="outline" className="gap-1.5 shrink-0" disabled={participants.length === 0} onClick={() => setMsgOpen(true)}>
             <Mail className="w-4 h-4" /> Message attendees
@@ -141,9 +144,15 @@ export default function RosterPage() {
                   <div key={p.userId} className="flex items-center justify-between gap-3 py-3">
                     <div className="min-w-0">
                       <p className="font-medium truncate">{p.name || "Participant"}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {statusBadge(p.status)}
+                        {p.organizationName ? (
+                          <Badge className="bg-blue-100 text-blue-700 border-0">{p.organizationName}</Badge>
+                        ) : (
+                          <Badge className="bg-amber-100 text-amber-800 border-0">Community · unverified</Badge>
+                        )}
                         {p.grade && <span className="text-xs text-muted-foreground">Gr {p.grade}</span>}
+                        {p.school && <span className="text-xs text-muted-foreground">· {p.school}</span>}
                         {p.hoursStatus && <span className="text-xs text-muted-foreground">· hours {p.hoursStatus}</span>}
                       </div>
                     </div>
@@ -177,7 +186,7 @@ export default function RosterPage() {
       </div>
 
       <Dialog open={msgOpen} onOpenChange={setMsgOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Message attendees</DialogTitle>
             <DialogDescription>

@@ -2116,6 +2116,10 @@ components:
           type: string
         hoursStatus:
           type: ["string", "null"]
+        organizationName:
+          type: ["string", "null"]
+        school:
+          type: ["string", "null"]
     EventRoster:
       type: object
       required: [eventId, eventTitle, participants]

@@ -592,9 +592,12 @@ router.get(
         firstName: usersTable.firstName,
         lastName: usersTable.lastName,
         grade: usersTable.grade,
+        school: usersTable.school,
+        organizationName: organizationsTable.name,
       })
       .from(eventRegistrationsTable)
       .leftJoin(usersTable, eq(eventRegistrationsTable.userId, usersTable.userId))
+      .leftJoin(organizationsTable, eq(usersTable.organizationId, organizationsTable.organizationId))
       .where(eq(eventRegistrationsTable.eventId, eventId));
 
     const subs = await db
@@ -612,6 +615,8 @@ router.get(
         grade: r.grade ?? null,
         status: r.status,
         hoursStatus: subMap.get(r.userId) ?? null,
+        organizationName: r.organizationName ?? null,
+        school: r.school ?? null,
       })),
     });
   },

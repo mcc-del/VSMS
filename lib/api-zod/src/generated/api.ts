@@ -349,7 +349,9 @@ export const GetEventRosterResponse = zod.object({
   "name": zod.string(),
   "grade": zod.string().nullish(),
   "status": zod.string(),
-  "hoursStatus": zod.string().nullish()
+  "hoursStatus": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "school": zod.string().nullish()
 }))
 })
 

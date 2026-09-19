@@ -190,6 +190,10 @@ export interface RosterParticipant {
   status: string;
   /** @nullable */
   hoursStatus?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
+  /** @nullable */
+  school?: string | null;
 }
 
 export interface EventRoster {
