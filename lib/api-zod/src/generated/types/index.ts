@@ -55,6 +55,7 @@ export * from './manualHoursInput';
 export * from './myProfile';
 export * from './myProfileInput';
 export * from './nameHours';
+export * from './notificationPreferences';
 export * from './okResponse';
 export * from './organization';
 export * from './organizationInput';

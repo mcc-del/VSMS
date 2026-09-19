@@ -11,7 +11,7 @@ import {
 import { eq, count, sql, and, inArray } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
-import { sendRegistrationConfirmation, sendEventBroadcast } from "../lib/email";
+import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification } from "../lib/email";
 import { gradeToLevel, orgAllowsLevel, type SchoolLevel } from "../lib/levels";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 
@@ -451,6 +451,7 @@ router.post(
         lastName: usersTable.lastName,
         email: usersTable.email,
         phone: usersTable.phone,
+        emailNotifications: usersTable.emailNotifications,
       })
       .from(usersTable)
       .where(eq(usersTable.userId, event.supervisorId))
@@ -503,6 +504,18 @@ router.post(
       }).catch((err) => {
         req.log.error({ err }, "Unhandled error sending registration confirmation");
       });
+
+      // Notify the event's supervisor that someone signed up (if they haven't
+      // turned activity emails off).
+      if (supervisor?.email && supervisor.emailNotifications) {
+        sendSignupNotification(
+          supervisor.email,
+          `${supervisor.firstName} ${supervisor.lastName}`.trim(),
+          toName,
+          event.title,
+          event.eventDate,
+        ).catch((err) => req.log.error({ err }, "Unhandled error sending signup notification"));
+      }
     }
   },
 );

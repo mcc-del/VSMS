@@ -1247,6 +1247,26 @@ export const UpdateLeaderboardPreferencesResponse = zod.object({
 
 
 /**
+ * @summary Get my email notification preference
+ */
+export const GetNotificationPreferencesResponse = zod.object({
+  "emailNotifications": zod.boolean()
+})
+
+
+/**
+ * @summary Turn my activity emails on or off
+ */
+export const UpdateNotificationPreferencesBody = zod.object({
+  "emailNotifications": zod.boolean()
+})
+
+export const UpdateNotificationPreferencesResponse = zod.object({
+  "emailNotifications": zod.boolean()
+})
+
+
+/**
  * @summary List my self-logged adult volunteer hours (no approval; not competitive)
  */
 export const ListMyAdultHoursResponseItem = zod.object({

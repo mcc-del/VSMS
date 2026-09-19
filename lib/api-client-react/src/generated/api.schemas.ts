@@ -824,6 +824,10 @@ export interface ParticipantDashboard {
   rejectedCount: number;
 }
 
+export interface NotificationPreferences {
+  emailNotifications: boolean;
+}
+
 export interface AdultHoursEntry {
   adultHoursId: string;
   activityName: string;

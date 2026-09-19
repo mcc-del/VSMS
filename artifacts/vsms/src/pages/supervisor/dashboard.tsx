@@ -5,6 +5,7 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { GettingStarted } from "@/components/getting-started";
+import { NotificationToggle } from "@/components/notification-toggle";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -164,6 +165,8 @@ export default function SupervisorDashboard() {
             <Link href="/supervisor/history"><Button variant="outline" size="sm">Reviewed history</Button></Link>
           </CardContent>
         </Card>
+
+        <NotificationToggle description="Get an email when someone signs up for your events. Password resets always send." />
 
         {/* Log my own hours shortcut */}
         <Card>

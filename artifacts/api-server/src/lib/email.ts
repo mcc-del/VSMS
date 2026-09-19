@@ -181,6 +181,62 @@ export async function sendHoursReviewed(
   }
 }
 
+// Notify an event's supervisor that someone signed up.
+export async function sendSignupNotification(
+  toEmail: string,
+  supervisorName: string,
+  participantName: string,
+  eventTitle: string,
+  eventDate: string,
+): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const text = [
+    `Hi ${supervisorName},`,
+    "",
+    `${participantName} just signed up for your event "${eventTitle}" (${eventDate}).`,
+    "",
+    `See the roster: ${APP_URL}/admin/events`,
+    "",
+    "You can turn these emails off in the app under Email notifications.",
+    "",
+    "— MedinaCares Council",
+  ].join("\n");
+  try {
+    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: `New sign-up: ${eventTitle}`, text });
+  } catch (err) {
+    logger.error({ err, toEmail }, "Failed to send signup notification");
+  }
+}
+
+// Alert Super Admins that a new account registered.
+export async function sendNewUserAlert(
+  recipients: string[],
+  newUserName: string,
+  role: string,
+): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const to = recipients.filter(Boolean);
+  if (to.length === 0) return;
+  const text = [
+    `A new ${role} account was just created on MedinaCares: ${newUserName}.`,
+    "",
+    `View users: ${APP_URL}/admin/users`,
+    "",
+    "You can turn these emails off in the app under Email notifications.",
+    "",
+    "— MedinaCares VSA",
+  ].join("\n");
+  for (const addr of to) {
+    try {
+      await client.emails.send({ from: FROM_ADDRESS, to: addr, subject: `New ${role} signed up: ${newUserName}`, text });
+    } catch (err) {
+      logger.error({ err, addr }, "Failed to send new-user alert");
+    }
+  }
+}
+
 function getClient(): Resend | null {
   const apiKey = process.env["RESEND_API_KEY"];
   if (!apiKey) {

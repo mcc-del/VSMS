@@ -44,6 +44,9 @@ export const usersTable = pgTable("users", {
   // Password reset: a one-time token and its expiry (both cleared after use).
   resetToken: varchar("reset_token", { length: 100 }),
   resetTokenExpiresAt: timestamp("reset_token_expires_at", { withTimezone: true }),
+  // Whether this user receives activity emails (sign-up alerts, new-user
+  // alerts). Password resets and invites always send regardless. Default on.
+  emailNotifications: boolean("email_notifications").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

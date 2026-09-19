@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Calendar, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
 import { GettingStarted } from "@/components/getting-started";
+import { NotificationToggle } from "@/components/notification-toggle";
 
 interface StatCardProps {
   title: string;
@@ -76,6 +77,7 @@ export default function AdminDashboard() {
         )}
 
         <RecyclingLogCard />
+        <NotificationToggle description="Get an email when a new user signs up. Password resets always send." />
         <EmailTestCard />
       </div>
     </AppLayout>

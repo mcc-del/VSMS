@@ -1370,6 +1370,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/me/notification-preferences:
+    get:
+      operationId: getNotificationPreferences
+      tags: [profile]
+      summary: Get my email notification preference
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+    patch:
+      operationId: updateNotificationPreferences
+      tags: [profile]
+      summary: Turn my activity emails on or off
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreferences"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+
   /v1/me/adult-hours:
     get:
       operationId: listMyAdultHours
@@ -2925,6 +2955,13 @@ components:
           type: integer
         rejectedCount:
           type: integer
+
+    NotificationPreferences:
+      type: object
+      required: [emailNotifications]
+      properties:
+        emailNotifications:
+          type: boolean
 
     AdultHoursEntry:
       type: object

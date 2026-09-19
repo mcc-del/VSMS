@@ -2,11 +2,11 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { db, usersTable, guardianInvitesTable, organizationsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { authenticate, signToken } from "../middlewares/auth";
 import { RegisterBody, LoginBody } from "@workspace/api-zod";
 import { linkGuardianToInviterChildren } from "./parent";
-import { sendPasswordReset } from "../lib/email";
+import { sendPasswordReset, sendNewUserAlert } from "../lib/email";
 
 const router = Router();
 
@@ -138,6 +138,20 @@ router.post("/v1/auth/register", async (req, res) => {
     firstName: user.firstName,
     userId: user.userId,
   });
+
+  // Alert Super Admins (who haven't opted out) that a new account signed up.
+  db
+    .select({ email: usersTable.email })
+    .from(usersTable)
+    .where(and(eq(usersTable.role, "admin"), eq(usersTable.emailNotifications, true)))
+    .then((admins) =>
+      sendNewUserAlert(
+        admins.map((a) => a.email).filter((e): e is string => !!e),
+        `${user.firstName} ${user.lastName}`.trim(),
+        isParent ? "parent" : "participant",
+      ),
+    )
+    .catch((err) => req.log.error({ err }, "new-user alert failed"));
 });
 
 // POST /api/v1/auth/login

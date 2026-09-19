@@ -158,6 +158,29 @@ router.patch(
   },
 );
 
+// ----- Email notification preference (any signed-in user) -----
+router.get("/v1/me/notification-preferences", authenticate, async (req, res) => {
+  const [u] = await db
+    .select({ emailNotifications: usersTable.emailNotifications })
+    .from(usersTable)
+    .where(eq(usersTable.userId, req.auth!.userId))
+    .limit(1);
+  res.json({ emailNotifications: u?.emailNotifications ?? true });
+});
+
+router.patch("/v1/me/notification-preferences", authenticate, async (req, res) => {
+  const body = (req.body ?? {}) as { emailNotifications?: unknown };
+  if (typeof body.emailNotifications !== "boolean") {
+    res.status(400).json({ error: "emailNotifications (boolean) is required." });
+    return;
+  }
+  await db
+    .update(usersTable)
+    .set({ emailNotifications: body.emailNotifications })
+    .where(eq(usersTable.userId, req.auth!.userId));
+  res.json({ emailNotifications: body.emailNotifications });
+});
+
 // ----- Adult self-logged volunteer hours (supervisors / org admins / admins) -----
 // A personal tracker with NO approval step. These never touch the student
 // competition, leaderboard, or medals — they simply let adults keep a record.
