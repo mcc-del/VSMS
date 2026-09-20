@@ -65,7 +65,11 @@ const schema = z
   .refine((v) => v.signupType !== "student" || (v.grade && v.grade.length > 0), {
     message: "Please select your grade",
     path: ["grade"],
-  });
+  })
+  .refine(
+    (v) => v.signupType !== "student" || !v.organizationId || (v.joinCode != null && v.joinCode.trim().length > 0),
+    { message: "A join code is required for this organization. Ask your school/program for it.", path: ["joinCode"] },
+  );
 
 export default function RegisterPage() {
   const { login } = useAuth();
@@ -298,28 +302,20 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              {isStudent && (() => {
+              {isStudent && !!form.watch("organizationId") && (() => {
                 const selectedOrg = (orgs ?? []).find((o) => o.organizationId === form.watch("organizationId"));
-                const required = !!selectedOrg?.requiresJoinCode;
                 return (
                   <FormField
                     control={form.control}
                     name="joinCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          {required
-                            ? `${selectedOrg?.name} join code`
-                            : "Organization code"}{" "}
-                          {!required && <span className="text-muted-foreground font-normal">(optional)</span>}
-                        </FormLabel>
+                        <FormLabel>{selectedOrg?.name ?? "Organization"} join code</FormLabel>
                         <FormControl>
                           <Input data-testid="input-join-code" placeholder="Enter the code from your school or program" {...field} />
                         </FormControl>
                         <FormDescription>
-                          {required
-                            ? `${selectedOrg?.name} gives this code to its students — it confirms you're really enrolled.`
-                            : "If your school or program gave you a code, enter it to join them and see their events. Leave blank if you don't have one."}
+                          {selectedOrg?.name ?? "Your organization"} gives this code to its students — it confirms you're really enrolled. Ask them if you don't have it.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
