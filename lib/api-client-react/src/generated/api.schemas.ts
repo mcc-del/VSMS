@@ -318,6 +318,12 @@ export interface ParentChildRegistration {
   hoursStatus?: string | null;
 }
 
+export interface AwardThresholds {
+  bronze: number;
+  silver: number;
+  gold: number;
+}
+
 export interface ParentChild {
   userId: string;
   firstName: string;
@@ -332,6 +338,7 @@ export interface ParentChild {
   totalApprovedHours: number;
   upcomingRegistrations: ParentChildRegistration[];
   pastRegistrations?: ParentChildRegistration[];
+  thresholds?: AwardThresholds;
 }
 
 export interface ChildHoursInput {
@@ -826,6 +833,33 @@ export interface ParticipantDashboard {
   pendingCount: number;
   approvedCount: number;
   rejectedCount: number;
+  thresholds?: AwardThresholds;
+}
+
+export interface AwardThresholdRow {
+  awardThresholdId: string;
+  /** @nullable */
+  level?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
+  bronze: number;
+  silver: number;
+  gold: number;
+}
+
+export interface AwardThresholdInput {
+  /** @nullable */
+  level?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
+  /** @minimum 1 */
+  bronze: number;
+  /** @minimum 1 */
+  silver: number;
+  /** @minimum 1 */
+  gold: number;
 }
 
 export interface AuditLogEntry {

@@ -28,6 +28,8 @@ import type {
   AttendanceInput,
   AuditLogEntry,
   AuthResponse,
+  AwardThresholdInput,
+  AwardThresholdRow,
   BroadcastResult,
   CheckInResponse,
   ChildHoursInput,
@@ -5050,6 +5052,224 @@ export const useBroadcastToEvent = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getBroadcastToEventMutationOptions(options));
+    }
+
+export const getGetAwardThresholdsUrl = () => {
+
+
+
+
+  return `/api/v1/admin/award-thresholds`
+}
+
+/**
+ * @summary List award-threshold rows (Super Admin)
+ */
+export const getAwardThresholds = async ( options?: RequestInit): Promise<AwardThresholdRow[]> => {
+
+  return customFetch<AwardThresholdRow[]>(getGetAwardThresholdsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAwardThresholdsQueryKey = () => {
+    return [
+    `/api/v1/admin/award-thresholds`
+    ] as const;
+    }
+
+
+export const getGetAwardThresholdsQueryOptions = <TData = Awaited<ReturnType<typeof getAwardThresholds>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAwardThresholds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAwardThresholdsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAwardThresholds>>> = ({ signal }) => getAwardThresholds({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAwardThresholds>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAwardThresholdsQueryResult = NonNullable<Awaited<ReturnType<typeof getAwardThresholds>>>
+export type GetAwardThresholdsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List award-threshold rows (Super Admin)
+ */
+
+export function useGetAwardThresholds<TData = Awaited<ReturnType<typeof getAwardThresholds>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAwardThresholds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAwardThresholdsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpsertAwardThresholdUrl = () => {
+
+
+
+
+  return `/api/v1/admin/award-thresholds`
+}
+
+/**
+ * @summary Create or update an award-threshold row (Super Admin)
+ */
+export const upsertAwardThreshold = async (awardThresholdInput: AwardThresholdInput, options?: RequestInit): Promise<AwardThresholdRow> => {
+
+  return customFetch<AwardThresholdRow>(getUpsertAwardThresholdUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      awardThresholdInput,)
+  }
+);}
+
+
+
+
+export const getUpsertAwardThresholdMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertAwardThreshold>>, TError,{data: BodyType<AwardThresholdInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof upsertAwardThreshold>>, TError,{data: BodyType<AwardThresholdInput>}, TContext> => {
+
+const mutationKey = ['upsertAwardThreshold'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof upsertAwardThreshold>>, {data: BodyType<AwardThresholdInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  upsertAwardThreshold(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpsertAwardThresholdMutationResult = NonNullable<Awaited<ReturnType<typeof upsertAwardThreshold>>>
+    export type UpsertAwardThresholdMutationBody = BodyType<AwardThresholdInput>
+    export type UpsertAwardThresholdMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Create or update an award-threshold row (Super Admin)
+ */
+export const useUpsertAwardThreshold = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertAwardThreshold>>, TError,{data: BodyType<AwardThresholdInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof upsertAwardThreshold>>,
+        TError,
+        {data: BodyType<AwardThresholdInput>},
+        TContext
+      > => {
+      return useMutation(getUpsertAwardThresholdMutationOptions(options));
+    }
+
+export const getDeleteAwardThresholdUrl = (awardThresholdId: string,) => {
+
+
+
+
+  return `/api/v1/admin/award-thresholds/${awardThresholdId}`
+}
+
+/**
+ * @summary Delete an award-threshold row (Super Admin)
+ */
+export const deleteAwardThreshold = async (awardThresholdId: string, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getDeleteAwardThresholdUrl(awardThresholdId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAwardThresholdMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAwardThreshold>>, TError,{awardThresholdId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAwardThreshold>>, TError,{awardThresholdId: string}, TContext> => {
+
+const mutationKey = ['deleteAwardThreshold'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAwardThreshold>>, {awardThresholdId: string}> = (props) => {
+          const {awardThresholdId} = props ?? {};
+
+          return  deleteAwardThreshold(awardThresholdId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAwardThresholdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAwardThreshold>>>
+
+    export type DeleteAwardThresholdMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an award-threshold row (Super Admin)
+ */
+export const useDeleteAwardThreshold = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAwardThreshold>>, TError,{awardThresholdId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAwardThreshold>>,
+        TError,
+        {awardThresholdId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteAwardThresholdMutationOptions(options));
     }
 
 export const getGetAuditLogUrl = (params?: GetAuditLogParams,) => {

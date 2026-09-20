@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { db, usersTable, eventsTable, volunteerSubmissionsTable, manualHoursTable } from "@workspace/db";
+import { db, usersTable, eventsTable, volunteerSubmissionsTable, manualHoursTable, awardThresholdsTable } from "@workspace/db";
+import { thresholdsForGrade } from "../lib/thresholds";
 import { eq, sum, count } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 
@@ -46,7 +47,16 @@ router.get(
       .where(eq(manualHoursTable.userId, userId));
     totalApprovedHours += Number(manual?.total ?? 0);
 
-    res.json({ totalApprovedHours, pendingCount, approvedCount, rejectedCount });
+    // Resolve this participant's award thresholds (by grade band / org).
+    const [me] = await db
+      .select({ grade: usersTable.grade, organizationId: usersTable.organizationId })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+    const rows = await db.select().from(awardThresholdsTable);
+    const thresholds = thresholdsForGrade(rows, me?.grade, me?.organizationId ?? null);
+
+    res.json({ totalApprovedHours, pendingCount, approvedCount, rejectedCount, thresholds });
   },
 );
 

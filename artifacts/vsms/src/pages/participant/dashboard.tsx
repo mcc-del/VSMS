@@ -211,21 +211,22 @@ export default function ParticipantDashboard() {
         {dashLoading ? (
           <Skeleton className="h-52 rounded-2xl" />
         ) : (() => {
+          const th = dashboard?.thresholds ?? { bronze: 40, silver: 60, gold: 80 };
           const MILESTONES = [
-            { label: "Bronze", goal: 40 },
-            { label: "Silver", goal: 60 },
-            { label: "Gold", goal: 80 },
+            { label: "Bronze", goal: th.bronze },
+            { label: "Silver", goal: th.silver },
+            { label: "Gold", goal: th.gold },
           ];
           const totalHours = dashboard?.totalApprovedHours ?? 0;
           const next = MILESTONES.find((m) => totalHours < m.goal);
-          const prevGoal = next ? MILESTONES[MILESTONES.indexOf(next) - 1]?.goal ?? 0 : 80;
+          const prevGoal = next ? MILESTONES[MILESTONES.indexOf(next) - 1]?.goal ?? 0 : th.gold;
           const pct = next
             ? Math.min(100, Math.round(((totalHours - prevGoal) / (next.goal - prevGoal)) * 100))
             : 100;
           const remaining = next ? Math.max(0, next.goal - totalHours) : 0;
-          const tier = totalHours >= 80 ? "gold" : totalHours >= 60 ? "silver" : totalHours >= 40 ? "bronze" : "none";
+          const tier = totalHours >= th.gold ? "gold" : totalHours >= th.silver ? "silver" : totalHours >= th.bronze ? "bronze" : "none";
           // Next medal to aim for (shown as a goal badge alongside the ring).
-          const goalTier = totalHours >= 80 ? "gold" : totalHours >= 60 ? "gold" : totalHours >= 40 ? "silver" : "bronze";
+          const goalTier = totalHours >= th.silver ? "gold" : totalHours >= th.bronze ? "silver" : "bronze";
           const R = 66;
           const C = 2 * Math.PI * R;
           return (

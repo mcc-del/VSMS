@@ -1500,6 +1500,63 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/admin/award-thresholds:
+    get:
+      operationId: getAwardThresholds
+      tags: [admin]
+      summary: List award-threshold rows (Super Admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AwardThresholdRow"
+    put:
+      operationId: upsertAwardThreshold
+      tags: [admin]
+      summary: Create or update an award-threshold row (Super Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AwardThresholdInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AwardThresholdRow"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/award-thresholds/{awardThresholdId}:
+    delete:
+      operationId: deleteAwardThreshold
+      tags: [admin]
+      summary: Delete an award-threshold row (Super Admin)
+      parameters:
+        - name: awardThresholdId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
   /v1/admin/audit-log:
     get:
       operationId: getAuditLog
@@ -2315,6 +2372,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ParentChildRegistration"
+        thresholds:
+          $ref: "#/components/schemas/AwardThresholds"
 
     ChildHoursInput:
       type: object
@@ -2985,6 +3044,56 @@ components:
           type: integer
         rejectedCount:
           type: integer
+        thresholds:
+          $ref: "#/components/schemas/AwardThresholds"
+
+    AwardThresholds:
+      type: object
+      required: [bronze, silver, gold]
+      properties:
+        bronze:
+          type: integer
+        silver:
+          type: integer
+        gold:
+          type: integer
+
+    AwardThresholdRow:
+      type: object
+      required: [awardThresholdId, bronze, silver, gold]
+      properties:
+        awardThresholdId:
+          type: string
+        level:
+          type: ["string", "null"]
+        organizationId:
+          type: ["string", "null"]
+        organizationName:
+          type: ["string", "null"]
+        bronze:
+          type: integer
+        silver:
+          type: integer
+        gold:
+          type: integer
+
+    AwardThresholdInput:
+      type: object
+      required: [bronze, silver, gold]
+      properties:
+        level:
+          type: ["string", "null"]
+        organizationId:
+          type: ["string", "null"]
+        bronze:
+          type: integer
+          minimum: 1
+        silver:
+          type: integer
+          minimum: 1
+        gold:
+          type: integer
+          minimum: 1
 
     AuditLogEntry:
       type: object

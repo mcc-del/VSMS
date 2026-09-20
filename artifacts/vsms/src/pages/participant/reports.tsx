@@ -65,7 +65,7 @@ export default function ParticipantReports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
-              {[["Bronze", 40], ["Silver", 60], ["Gold", 80]].map(([label, goal]) => {
+              {(() => { const th = dash?.thresholds ?? { bronze: 40, silver: 60, gold: 80 }; return [["Bronze", th.bronze], ["Silver", th.silver], ["Gold", th.gold]] as [string, number][]; })().map(([label, goal]) => {
                 const g = goal as number;
                 const pct = Math.min(100, Math.round((total / g) * 100));
                 return (

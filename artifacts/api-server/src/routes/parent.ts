@@ -9,7 +9,9 @@ import {
   guardianshipsTable,
   guardianInvitesTable,
   organizationsTable,
+  awardThresholdsTable,
 } from "@workspace/db";
+import { thresholdsForGrade } from "../lib/thresholds";
 import { eq, and, inArray, gte, sum, sql, asc } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { sendCoGuardianInvite } from "../lib/email";
@@ -124,12 +126,14 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
             grade: usersTable.grade,
             school: usersTable.school,
             isManaged: usersTable.isManaged,
+            organizationId: usersTable.organizationId,
           })
           .from(usersTable)
           .where(inArray(usersTable.userId, childIds))
           .orderBy(asc(usersTable.firstName));
 
   const today = new Date().toISOString().split("T")[0];
+  const thresholdRows = await db.select().from(awardThresholdsTable);
 
   const result = [];
   for (const child of children) {
@@ -216,6 +220,7 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
       school: child.school,
       isManaged: child.isManaged,
       totalApprovedHours,
+      thresholds: thresholdsForGrade(thresholdRows, child.grade, child.organizationId ?? null),
       upcomingRegistrations: regs.map((r) => ({
         registrationId: r.registrationId,
         eventId: r.eventId,

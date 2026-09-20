@@ -63,16 +63,16 @@ function formatDate(dateStr?: string | null) {
   return `${DAYS[d.getDay()]}, ${d.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`;
 }
 
-const MILESTONES = [
-  { label: "Bronze", goal: 40 },
-  { label: "Silver", goal: 60 },
-  { label: "Gold", goal: 80 },
-];
-
-function nextMilestone(hours: number) {
-  const next = MILESTONES.find((m) => hours < m.goal);
-  if (!next) return { label: "Gold achieved", pct: 100, goal: 80 };
-  const prev = MILESTONES[MILESTONES.indexOf(next) - 1]?.goal ?? 0;
+function nextMilestone(hours: number, th?: { bronze: number; silver: number; gold: number } | null) {
+  const t = th ?? { bronze: 40, silver: 60, gold: 80 };
+  const milestones = [
+    { label: "Bronze", goal: t.bronze },
+    { label: "Silver", goal: t.silver },
+    { label: "Gold", goal: t.gold },
+  ];
+  const next = milestones.find((m) => hours < m.goal);
+  if (!next) return { label: "Gold achieved", pct: 100, goal: t.gold };
+  const prev = milestones[milestones.indexOf(next) - 1]?.goal ?? 0;
   const pct = Math.min(100, Math.round(((hours - prev) / (next.goal - prev)) * 100));
   return { label: next.label, pct, goal: next.goal };
 }
@@ -291,7 +291,7 @@ export default function ParentDashboard() {
           </Card>
         ) : (
           children.map((child) => {
-            const ms = nextMilestone(child.totalApprovedHours);
+            const ms = nextMilestone(child.totalApprovedHours, child.thresholds);
             const newCount = child.upcomingRegistrations.filter((r) => r.isNew).length;
             return (
               <Card key={child.userId} data-testid={`card-child-${child.userId}`}>

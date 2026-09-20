@@ -5,6 +5,7 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+import type { AwardThresholds } from './awardThresholds';
 import type { ParentChildRegistration } from './parentChildRegistration';
 
 export interface ParentChild {
@@ -21,4 +22,5 @@ export interface ParentChild {
   totalApprovedHours: number;
   upcomingRegistrations: ParentChildRegistration[];
   pastRegistrations?: ParentChildRegistration[];
+  thresholds?: AwardThresholds;
 }

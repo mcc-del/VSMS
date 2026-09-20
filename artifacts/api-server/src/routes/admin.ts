@@ -1,8 +1,8 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
-import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable } from "@workspace/db";
-import { eq, desc, ilike } from "drizzle-orm";
+import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable } from "@workspace/db";
+import { eq, desc, ilike, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
@@ -33,6 +33,83 @@ router.post("/v1/admin/test-email", authenticate, requireRole("admin"), async (r
     return;
   }
   res.json({ ok: true, id: result.id ?? null, to });
+});
+
+// ----- Award thresholds (Super Admin) -----
+const VALID_LEVELS = new Set(["elementary", "middle", "high"]);
+
+router.get("/v1/admin/award-thresholds", authenticate, requireRole("admin"), async (_req, res) => {
+  const rows = await db
+    .select({
+      awardThresholdId: awardThresholdsTable.awardThresholdId,
+      level: awardThresholdsTable.level,
+      organizationId: awardThresholdsTable.organizationId,
+      organizationName: organizationsTable.name,
+      bronze: awardThresholdsTable.bronze,
+      silver: awardThresholdsTable.silver,
+      gold: awardThresholdsTable.gold,
+    })
+    .from(awardThresholdsTable)
+    .leftJoin(organizationsTable, eq(awardThresholdsTable.organizationId, organizationsTable.organizationId));
+  res.json(rows.map((r) => ({ ...r, organizationName: r.organizationName ?? null })));
+});
+
+router.put("/v1/admin/award-thresholds", authenticate, requireRole("admin"), async (req, res) => {
+  const b = (req.body ?? {}) as { level?: unknown; organizationId?: unknown; bronze?: unknown; silver?: unknown; gold?: unknown };
+  const level = typeof b.level === "string" && VALID_LEVELS.has(b.level) ? b.level : null;
+  const organizationId = typeof b.organizationId === "string" && b.organizationId ? b.organizationId : null;
+  const bronze = Number(b.bronze), silver = Number(b.silver), gold = Number(b.gold);
+  if (![bronze, silver, gold].every((n) => Number.isFinite(n) && n >= 1 && n <= 10000)) {
+    res.status(400).json({ error: "Bronze, Silver and Gold must be positive numbers." });
+    return;
+  }
+  if (!(bronze <= silver && silver <= gold)) {
+    res.status(400).json({ error: "Thresholds must increase: Bronze ≤ Silver ≤ Gold." });
+    return;
+  }
+  const [existing] = await db
+    .select({ id: awardThresholdsTable.awardThresholdId })
+    .from(awardThresholdsTable)
+    .where(and(
+      level === null ? isNull(awardThresholdsTable.level) : eq(awardThresholdsTable.level, level),
+      organizationId === null ? isNull(awardThresholdsTable.organizationId) : eq(awardThresholdsTable.organizationId, organizationId),
+    ))
+    .limit(1);
+  let row;
+  if (existing) {
+    [row] = await db.update(awardThresholdsTable).set({ bronze, silver, gold, updatedAt: new Date() }).where(eq(awardThresholdsTable.awardThresholdId, existing.id)).returning();
+  } else {
+    [row] = await db.insert(awardThresholdsTable).values({ level, organizationId, bronze, silver, gold }).returning();
+  }
+  recordAudit({
+    actorUserId: req.auth!.userId,
+    action: "thresholds.update",
+    targetType: "thresholds",
+    targetId: row.awardThresholdId,
+    targetLabel: `${level ?? "all grades"} / ${organizationId ? "org" : "all orgs"}`,
+    summary: `Set award thresholds (${level ?? "all grades"}${organizationId ? ", one org" : ""}) to Bronze ${bronze} / Silver ${silver} / Gold ${gold}`,
+  });
+  res.json({
+    awardThresholdId: row.awardThresholdId,
+    level: row.level ?? null,
+    organizationId: row.organizationId ?? null,
+    organizationName: null,
+    bronze: row.bronze, silver: row.silver, gold: row.gold,
+  });
+});
+
+router.delete("/v1/admin/award-thresholds/:awardThresholdId", authenticate, requireRole("admin"), async (req, res) => {
+  const { awardThresholdId } = req.params as { awardThresholdId: string };
+  await db.delete(awardThresholdsTable).where(eq(awardThresholdsTable.awardThresholdId, awardThresholdId));
+  recordAudit({
+    actorUserId: req.auth!.userId,
+    action: "thresholds.delete",
+    targetType: "thresholds",
+    targetId: awardThresholdId,
+    targetLabel: null,
+    summary: "Removed an award-threshold override",
+  });
+  res.json({ ok: true });
 });
 
 // GET /api/v1/admin/audit-log — recent admin activity (Super Admin only).

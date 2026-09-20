@@ -12,17 +12,11 @@ import { eq, and, asc } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
-import { guardianshipsTable } from "@workspace/db";
+import { guardianshipsTable, awardThresholdsTable } from "@workspace/db";
 import { or } from "drizzle-orm";
+import { thresholdsForGrade, medalFor } from "../lib/thresholds";
 
 const router = Router();
-
-function medalFor(hours: number): string | null {
-  if (hours >= 80) return "Gold";
-  if (hours >= 60) return "Silver";
-  if (hours >= 40) return "Bronze";
-  return null;
-}
 
 // School-year label from a date, e.g. Oct 2026 -> "2026–2027", Feb 2027 -> "2026–2027".
 // The award season runs Sept 15 – Jun 15, so months Sept–Dec belong to that year's
@@ -54,6 +48,7 @@ async function buildRecord(userId: string): Promise<Record<string, unknown> | nu
       lastName: usersTable.lastName,
       grade: usersTable.grade,
       school: usersTable.school,
+      organizationId: usersTable.organizationId,
       orgName: organizationsTable.name,
     })
     .from(usersTable)
@@ -171,7 +166,7 @@ async function buildRecord(userId: string): Promise<Record<string, unknown> | nu
     season: seasonLabel(now),
     generatedAt: now.toISOString(),
     totalApprovedHours,
-    medal: medalFor(totalApprovedHours),
+    medal: medalFor(totalApprovedHours, thresholdsForGrade(await db.select().from(awardThresholdsTable), user.grade, user.organizationId ?? null)),
     items,
   };
 }

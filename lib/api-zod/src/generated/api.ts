@@ -1351,6 +1351,60 @@ export const BroadcastToEventResponse = zod.object({
 
 
 /**
+ * @summary List award-threshold rows (Super Admin)
+ */
+export const GetAwardThresholdsResponseItem = zod.object({
+  "awardThresholdId": zod.string(),
+  "level": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number()
+})
+export const GetAwardThresholdsResponse = zod.array(GetAwardThresholdsResponseItem)
+
+
+/**
+ * @summary Create or update an award-threshold row (Super Admin)
+ */
+
+
+
+
+
+export const UpsertAwardThresholdBody = zod.object({
+  "level": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "bronze": zod.number().min(1),
+  "silver": zod.number().min(1),
+  "gold": zod.number().min(1)
+})
+
+export const UpsertAwardThresholdResponse = zod.object({
+  "awardThresholdId": zod.string(),
+  "level": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number()
+})
+
+
+/**
+ * @summary Delete an award-threshold row (Super Admin)
+ */
+export const DeleteAwardThresholdParams = zod.object({
+  "awardThresholdId": zod.coerce.string()
+})
+
+export const DeleteAwardThresholdResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Recent admin activity (Super Admin only)
  */
 export const GetAuditLogQueryParams = zod.object({
@@ -1407,7 +1461,12 @@ export const GetParentChildrenResponseItem = zod.object({
   "status": zod.string(),
   "isNew": zod.boolean(),
   "hoursStatus": zod.string().nullish().describe('The child\'s submission status for this event (pending\/approved\/rejected), or null if none yet.')
-})).optional()
+})).optional(),
+  "thresholds": zod.object({
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number()
+}).optional()
 })
 export const GetParentChildrenResponse = zod.array(GetParentChildrenResponseItem)
 
@@ -1598,7 +1657,12 @@ export const GetParticipantDashboardResponse = zod.object({
   "totalApprovedHours": zod.number(),
   "pendingCount": zod.number(),
   "approvedCount": zod.number(),
-  "rejectedCount": zod.number()
+  "rejectedCount": zod.number(),
+  "thresholds": zod.object({
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number()
+}).optional()
 })
 
 

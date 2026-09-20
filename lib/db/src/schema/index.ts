@@ -12,3 +12,4 @@ export * from "./org-admins";
 export * from "./recycling";
 export * from "./adult-hours";
 export * from "./audit-logs";
+export * from "./award-thresholds";

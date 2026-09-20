@@ -9,15 +9,10 @@ import {
 } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { authenticate } from "../middlewares/auth";
+import { awardThresholdsTable } from "@workspace/db";
+import { thresholdsForGrade, medalFor } from "../lib/thresholds";
 
 const router = Router();
-
-function medalFor(hours: number): string | null {
-  if (hours >= 80) return "Gold";
-  if (hours >= 60) return "Silver";
-  if (hours >= 40) return "Bronze";
-  return null;
-}
 
 // Approved hours per user: approved internal (actual hours or planned) + manual credits.
 async function approvedHoursByUser(): Promise<Map<string, number>> {
@@ -56,6 +51,7 @@ router.get("/v1/leaderboard", authenticate, async (req, res) => {
       firstName: usersTable.firstName,
       lastName: usersTable.lastName,
       grade: usersTable.grade,
+      organizationId: usersTable.organizationId,
       displayAlias: usersTable.displayAlias,
       hideFromLeaderboard: usersTable.hideFromLeaderboard,
       orgCompetes: organizationsTable.competesOnLeaderboard,
@@ -65,6 +61,7 @@ router.get("/v1/leaderboard", authenticate, async (req, res) => {
     .where(eq(usersTable.role, "participant"));
 
   const hours = await approvedHoursByUser();
+  const thresholdRows = await db.select().from(awardThresholdsTable);
   const meId = req.auth!.userId;
 
   const ranked = students
@@ -78,6 +75,7 @@ router.get("/v1/leaderboard", authenticate, async (req, res) => {
       alias: s.displayAlias,
       hidden: s.hideFromLeaderboard,
       grade: s.grade ?? null,
+      organizationId: s.organizationId ?? null,
       totalApprovedHours: hours.get(s.userId) ?? 0,
     }))
     .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours);
@@ -95,7 +93,7 @@ router.get("/v1/leaderboard", authenticate, async (req, res) => {
       displayName,
       grade: r.hidden && !isMe ? null : r.grade,
       totalApprovedHours: r.totalApprovedHours,
-      medal: medalFor(r.totalApprovedHours),
+      medal: medalFor(r.totalApprovedHours, thresholdsForGrade(thresholdRows, r.grade, r.organizationId)),
       isMe,
     };
   });
