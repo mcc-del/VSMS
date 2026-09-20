@@ -8,7 +8,7 @@ import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
 import { sendTestEmail, sendAccountInvite } from "../lib/email";
 import { recordAudit } from "../lib/audit";
-import { managedOrgIds, canManageOrg } from "../lib/org-scope";
+import { managedOrgIds, canActOnUser } from "../lib/org-scope";
 
 const ROLE_LABELS: Record<string, string> = {
   participant: "Participant",
@@ -17,19 +17,6 @@ const ROLE_LABELS: Record<string, string> = {
   admin: "Super Admin",
   parent: "Parent",
 };
-
-// Whether the acting admin (managed = null for Super Admin, else their org ids)
-// may act on a target user. Only a Super Admin may act on other Admins/Super
-// Admins; an Admin may act on non-admin users in their own organization(s).
-function canActOnUser(
-  managed: string[] | null,
-  targetRole: string,
-  targetOrgId: string | null,
-): boolean {
-  if (managed === null) return true; // Super Admin
-  if (targetRole === "admin" || targetRole === "org_admin") return false;
-  return canManageOrg(managed, targetOrgId);
-}
 
 const router = Router();
 

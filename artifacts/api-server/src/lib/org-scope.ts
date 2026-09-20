@@ -24,3 +24,16 @@ export function canManageOrg(managed: string[] | null, organizationId: string | 
   if (!organizationId) return false; // org admins can't touch open/no-org items
   return managed.includes(organizationId);
 }
+
+// Whether the acting admin (managed = null for Super Admin, else their org ids)
+// may act on a target user. Only a Super Admin may act on other Admins/Super
+// Admins; an Admin may act on non-admin users in their own organization(s).
+export function canActOnUser(
+  managed: string[] | null,
+  targetRole: string,
+  targetOrgId: string | null,
+): boolean {
+  if (managed === null) return true; // Super Admin
+  if (targetRole === "admin" || targetRole === "org_admin") return false;
+  return canManageOrg(managed, targetOrgId);
+}
