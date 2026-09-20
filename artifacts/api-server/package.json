@@ -9,7 +9,7 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "seed:test": "tsx scripts/seed-test-users.ts"
+    "seed:test": "node build-seed.mjs && node dist/seed-test-users.mjs"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.21.0",
