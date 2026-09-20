@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, numeric } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, numeric, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -16,6 +16,11 @@ export const externalSubmissionsTable = pgTable("external_submissions", {
   extSupervisorName: text("ext_supervisor_name").notNull(),
   extSupervisorEmail: text("ext_supervisor_email").notNull(),
   description: text("description"),
+  // Legitimacy check: is the org a registered 501(c)(3), and its EIN.
+  isNonprofit: boolean("is_nonprofit").notNull().default(false),
+  ein: text("ein"),
+  // Optional proof (photo/letter) stored in object storage — the object path.
+  proofUrl: text("proof_url"),
   status: submissionStatusEnum("status").notNull().default("pending"),
   supervisorComments: text("supervisor_comments"),
   submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),

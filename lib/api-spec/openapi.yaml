@@ -88,6 +88,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      tags: [auth]
+      summary: Request a password reset email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /v1/auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      summary: Set a new password using a reset token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/auth/me:
     get:
       operationId: getMe
@@ -112,6 +156,13 @@ paths:
       operationId: listEvents
       tags: [events]
       summary: List all calendar events
+      parameters:
+        - name: childId
+          in: query
+          required: false
+          description: When a parent browses on behalf of a managed child, filter eligibility and sign-ups by that child.
+          schema:
+            type: string
       responses:
         "200":
           description: OK
@@ -256,6 +307,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: withdrawFromEvent
+      tags: [events]
+      summary: Withdraw your own sign-up (participant)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Withdrawn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Cannot withdraw
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/events/{eventId}/checkin:
     post:
@@ -282,6 +362,68 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/events/{eventId}/roster:
+    get:
+      operationId: getEventRoster
+      tags: [events]
+      summary: Participants signed up for an event (supervisor)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventRoster"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/events/{eventId}/attendance:
+    post:
+      operationId: setAttendance
+      tags: [events]
+      summary: Supervisor sets a participant's attendance
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttendanceInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/submissions:
     get:
       operationId: listMySubmissions
@@ -298,9 +440,9 @@ paths:
                   $ref: "#/components/schemas/Submission"
 
     post:
-      operationId: claimHours
+      operationId: submitInternalHours
       tags: [submissions]
-      summary: Claim hours for a past event
+      summary: Submit actual hours worked for a past registered event
       requestBody:
         required: true
         content:
@@ -321,7 +463,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
-          description: Already claimed
+          description: Hours already submitted
           content:
             application/json:
               schema:
@@ -423,6 +565,78 @@ paths:
         "400":
           description: Validation error
 
+  /v1/external-submissions/{externalSubmissionId}:
+    patch:
+      operationId: editExternalSubmission
+      tags: [submissions]
+      summary: Edit a still-pending external submission (participant)
+      parameters:
+        - name: externalSubmissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExternalSubmissionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalSubmission"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Duplicate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: withdrawExternalSubmission
+      tags: [submissions]
+      summary: Withdraw a still-pending external submission (participant)
+      parameters:
+        - name: externalSubmissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Withdrawn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Not withdrawable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/supervisor/external-submissions:
     get:
       operationId: listPendingExternalSubmissions
@@ -513,13 +727,150 @@ paths:
         "400":
           description: Validation error
 
+  /v1/admin/users/{userId}/org-admin:
+    patch:
+      operationId: setOrgAdmin
+      tags: [admin]
+      summary: Promote a user to Organization Admin over orgs, or demote (empty list)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetOrgAdminInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetOrgAdminResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/admin/users/{userId}:
+    patch:
+      operationId: updateUser
+      tags: [admin]
+      summary: Edit a user's name and/or phone (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     delete:
       operationId: deleteUser
       tags: [admin]
       summary: Delete a user (admin only)
       parameters:
         - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /v1/admin/users/{userId}/hours:
+    get:
+      operationId: listManualHours
+      tags: [admin]
+      summary: List manual hour credits for a participant (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ManualHoursCredit"
+    post:
+      operationId: addManualHours
+      tags: [admin]
+      summary: Add a manual hour credit for a participant (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualHoursInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualHoursCredit"
+        "400":
+          description: Validation error
+
+  /v1/admin/hours/{creditId}:
+    delete:
+      operationId: deleteManualHours
+      tags: [admin]
+      summary: Delete a manual hour credit (admin only)
+      parameters:
+        - name: creditId
           in: path
           required: true
           schema:
@@ -556,6 +907,1018 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
+
+  /v1/admin/metrics:
+    get:
+      operationId: getAdminMetrics
+      tags: [admin]
+      summary: Aggregated program metrics for the reports view (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMetrics"
+
+  /v1/admin/report-rows:
+    get:
+      operationId: getReportRows
+      tags: [admin]
+      summary: Per-participant rows for drill-down reports + CSV export (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportRow"
+
+  /v1/schools:
+    get:
+      operationId: listSchools
+      tags: [schools]
+      summary: List approved schools for the enrollment picker
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/School"
+
+  /v1/schools/request:
+    post:
+      operationId: requestSchool
+      tags: [schools]
+      summary: Request a school that isn't listed (queued for admin review)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchoolRequestInput"
+      responses:
+        "200":
+          description: School already exists (approved or pending)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+        "201":
+          description: Request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/schools:
+    get:
+      operationId: listAllSchools
+      tags: [admin]
+      summary: List all schools (admin), optionally filtered by status
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [approved, pending]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/School"
+
+  /v1/admin/schools/{schoolId}/approve:
+    post:
+      operationId: approveSchool
+      tags: [admin]
+      summary: Approve a requested school (admin only)
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/schools/{schoolId}/merge:
+    post:
+      operationId: mergeSchool
+      tags: [admin]
+      summary: Merge a duplicate school into an approved one (admin only)
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchoolMergeInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/schools/{schoolId}:
+    delete:
+      operationId: deleteSchool
+      tags: [admin]
+      summary: Reject/remove a school request (admin only)
+      parameters:
+        - name: schoolId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/organizations:
+    get:
+      operationId: listOrganizations
+      tags: [organizations]
+      summary: List organizations
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+
+  /v1/admin/organizations:
+    get:
+      operationId: listAdminOrganizations
+      tags: [admin]
+      summary: List organizations with join codes (admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+    post:
+      operationId: createOrganization
+      tags: [admin]
+      summary: Create an organization (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "400":
+          description: Validation error
+
+  /v1/admin/organizations/{organizationId}:
+    put:
+      operationId: updateOrganization
+      tags: [admin]
+      summary: Update an organization (admin only)
+      parameters:
+        - name: organizationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+
+  /v1/leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Overall individual leaderboard by approved hours
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardResponse"
+
+  /v1/admin/test-email:
+    post:
+      operationId: sendTestEmail
+      tags: [admin]
+      summary: Send a test email to confirm sending works
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestEmailBody"
+      responses:
+        "200":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestEmailResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "502":
+          description: Send failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/recycling/summary:
+    get:
+      operationId: getRecyclingSummary
+      tags: [recycling]
+      summary: Public totals for the Million Cans Recycling Competition
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecyclingSummary"
+
+  /v1/recycling/bins:
+    post:
+      operationId: logRecyclingBin
+      tags: [recycling]
+      summary: Log one collected bin toward the total (admin/supervisor)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogBinBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecyclingSummary"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/me/service-record:
+    get:
+      operationId: getMyServiceRecord
+      tags: [profile]
+      summary: My verified service record (approved hours, itemized & attributed)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRecord"
+
+  /v1/admin/users/{userId}/service-record:
+    get:
+      operationId: getUserServiceRecord
+      tags: [admin]
+      summary: Verified service record for a participant (admin)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/me/profile:
+    get:
+      operationId: getMyProfile
+      tags: [profile]
+      summary: The current participant's editable profile
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyProfile"
+    patch:
+      operationId: updateMyProfile
+      tags: [profile]
+      summary: Update own name, phone, grade, school, affiliation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MyProfileInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/me/managed-organizations:
+    get:
+      operationId: getManagedOrganizations
+      tags: [profile]
+      summary: Org IDs the current admin manages (all=true for Super Admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagedOrganizations"
+
+  /v1/me/leaderboard-preferences:
+    get:
+      operationId: getLeaderboardPreferences
+      tags: [profile]
+      summary: Get my leaderboard alias + hide setting
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardPreferences"
+    patch:
+      operationId: updateLeaderboardPreferences
+      tags: [profile]
+      summary: Set my leaderboard alias and/or hide setting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaderboardPreferencesInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardPreferences"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/me/notification-preferences:
+    get:
+      operationId: getNotificationPreferences
+      tags: [profile]
+      summary: Get my email notification preference
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+    patch:
+      operationId: updateNotificationPreferences
+      tags: [profile]
+      summary: Turn my activity emails on or off
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationPreferences"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferences"
+
+  /v1/me/adult-hours:
+    get:
+      operationId: listMyAdultHours
+      tags: [profile]
+      summary: List my self-logged adult volunteer hours (no approval; not competitive)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdultHoursEntry"
+    post:
+      operationId: logMyAdultHours
+      tags: [profile]
+      summary: Log my own adult volunteer hours (auto-recorded, no review)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdultHoursInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdultHoursEntry"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/me/adult-hours/{adultHoursId}:
+    delete:
+      operationId: deleteMyAdultHours
+      tags: [profile]
+      summary: Delete one of my self-logged adult volunteer hour entries
+      parameters:
+        - name: adultHoursId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/events/{eventId}/attendees:
+    post:
+      operationId: addEventAttendee
+      tags: [events]
+      summary: Add a participant to an event by email (supervisor/org-admin/admin)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddAttendeeInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RosterParticipant"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/events/{eventId}/broadcast:
+    post:
+      operationId: broadcastToEvent
+      tags: [events]
+      summary: Email everyone registered for an event (supervisor/org-admin/admin)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventBroadcastInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BroadcastResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/users/{userId}/reassign-events:
+    post:
+      operationId: reassignEvents
+      tags: [admin]
+      summary: Move all of a supervisor's events to another supervisor
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReassignEventsInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reassigned]
+                properties:
+                  reassigned:
+                    type: integer
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/award-thresholds:
+    get:
+      operationId: getAwardThresholds
+      tags: [admin]
+      summary: List award-threshold rows (Super Admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AwardThresholdRow"
+    put:
+      operationId: upsertAwardThreshold
+      tags: [admin]
+      summary: Create or update an award-threshold row (Super Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AwardThresholdInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AwardThresholdRow"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/admin/award-thresholds/{awardThresholdId}:
+    delete:
+      operationId: deleteAwardThreshold
+      tags: [admin]
+      summary: Delete an award-threshold row (Super Admin)
+      parameters:
+        - name: awardThresholdId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /v1/admin/audit-log:
+    get:
+      operationId: getAuditLog
+      tags: [admin]
+      summary: Recent admin activity (Super Admin only)
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: action
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogEntry"
+
+  /v1/parent/children:
+    get:
+      operationId: getParentChildren
+      tags: [parent]
+      summary: List a parent's linked children with schedule and progress
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParentChild"
+    post:
+      operationId: addParentChild
+      tags: [parent]
+      summary: Add a managed child (no login of its own)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParentChild"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/parent/children/{childId}:
+    patch:
+      operationId: updateParentChild
+      tags: [parent]
+      summary: Edit a managed child's details
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "403":
+          description: Child manages own profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Child not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/parent/children/{childId}/register:
+    post:
+      operationId: registerChildForEvent
+      tags: [parent]
+      summary: Sign a managed child up for an event
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildRegisterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParentChildRegistration"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/parent/children/{childId}/hours:
+    post:
+      operationId: submitChildHours
+      tags: [parent]
+      summary: Submit a managed child's post-event hours for supervisor review
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildHoursInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/parent/children/{childId}/external-hours:
+    post:
+      operationId: submitChildExternalHours
+      tags: [parent]
+      summary: Submit a managed child's external/outside volunteer hours
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExternalSubmissionInput"
+      responses:
+        "201":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalSubmission"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/parent/children/{childId}/service-record:
+    get:
+      operationId: getChildServiceRecord
+      tags: [parent]
+      summary: A managed child's verified service record (parent view)
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRecord"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /v1/parent/co-guardians:
+    get:
+      operationId: listCoGuardians
+      tags: [parent]
+      summary: List linked co-guardians and pending invites
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoGuardiansResponse"
+    post:
+      operationId: inviteCoGuardian
+      tags: [parent]
+      summary: Invite a co-guardian by email (links now if they have an account)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoGuardianInviteInput"
+      responses:
+        "200":
+          description: Linked to an existing account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoGuardianInviteResult"
+        "201":
+          description: Invite stored (they have no account yet)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CoGuardianInviteResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/dashboard/participant:
     get:
@@ -651,6 +2014,560 @@ paths:
 
 components:
   schemas:
+    ReportRow:
+      type: object
+      required: [name, school, organization, grade, approvedHours, medal]
+      properties:
+        name: { type: string }
+        school: { type: string }
+        organization: { type: string }
+        grade: { type: string }
+        approvedHours: { type: number }
+        medal: { type: string }
+    NameHours:
+      type: object
+      required: [name, hours]
+      properties:
+        name: { type: string }
+        hours: { type: number }
+    TopVolunteer:
+      type: object
+      required: [name, hours, org, medal]
+      properties:
+        name: { type: string }
+        hours: { type: number }
+        org: { type: string }
+        medal: { type: string }
+    AdminMetrics:
+      type: object
+      required: [participants, activeVolunteers, participationRate, totalApprovedHours, hoursBreakdown, medalCounts, medalsAwarded, pendingReviews, events, hoursByOrg, hoursBySchool, topVolunteers]
+      properties:
+        participants: { type: integer }
+        activeVolunteers: { type: integer }
+        participationRate: { type: integer }
+        totalApprovedHours: { type: number }
+        medalsAwarded: { type: integer }
+        pendingReviews: { type: integer }
+        hoursBreakdown:
+          type: object
+          required: [internal, manual, external]
+          properties:
+            internal: { type: number }
+            manual: { type: number }
+            external: { type: number }
+        medalCounts:
+          type: object
+          required: [gold, silver, bronze, none]
+          properties:
+            gold: { type: integer }
+            silver: { type: integer }
+            bronze: { type: integer }
+            none: { type: integer }
+        events:
+          type: object
+          required: [total, upcoming, upcomingRegistrations, totalCapacity]
+          properties:
+            total: { type: integer }
+            upcoming: { type: integer }
+            upcomingRegistrations: { type: integer }
+            totalCapacity: { type: integer }
+        hoursByOrg:
+          type: array
+          items: { $ref: "#/components/schemas/NameHours" }
+        hoursBySchool:
+          type: array
+          items: { $ref: "#/components/schemas/NameHours" }
+        topVolunteers:
+          type: array
+          items: { $ref: "#/components/schemas/TopVolunteer" }
+
+    School:
+      type: object
+      required: [schoolId, name, status, createdAt]
+      properties:
+        schoolId:
+          type: string
+        name:
+          type: string
+        city:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [approved, pending]
+        createdAt:
+          type: string
+        alreadyApproved:
+          type: boolean
+        alreadyRequested:
+          type: boolean
+    SchoolRequestInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 80
+    SchoolMergeInput:
+      type: object
+      required: [targetSchoolId]
+      properties:
+        targetSchoolId:
+          type: string
+
+    Organization:
+      type: object
+      required: [organizationId, name, allowsElementary, allowsMiddle, allowsHigh]
+      properties:
+        organizationId:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        allowsElementary:
+          type: boolean
+        allowsMiddle:
+          type: boolean
+        allowsHigh:
+          type: boolean
+        competesOnLeaderboard:
+          type: boolean
+        requiresJoinCode:
+          type: boolean
+        joinCode:
+          type: ["string", "null"]
+          description: Only returned from the admin organizations endpoint.
+    OrganizationInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 150
+        description:
+          type: string
+        allowsElementary:
+          type: boolean
+        allowsMiddle:
+          type: boolean
+        allowsHigh:
+          type: boolean
+        competesOnLeaderboard:
+          type: boolean
+        joinCode:
+          type: ["string", "null"]
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, displayName, totalApprovedHours, isMe]
+      properties:
+        rank:
+          type: integer
+        displayName:
+          type: string
+        grade:
+          type: ["string", "null"]
+        totalApprovedHours:
+          type: number
+        medal:
+          type: ["string", "null"]
+        isMe:
+          type: boolean
+    LeaderboardResponse:
+      type: object
+      required: [entries, myHours]
+      properties:
+        myRank:
+          type: ["integer", "null"]
+        myHours:
+          type: number
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+    ServiceRecordItem:
+      type: object
+      required: [date, activity, organization, hours, verifiedBy, type]
+      properties:
+        date:
+          type: string
+        activity:
+          type: string
+        organization:
+          type: string
+        hours:
+          type: number
+        verifiedBy:
+          type: string
+        type:
+          type: string
+          enum: [event, external, manual]
+    ServiceRecord:
+      type: object
+      required: [studentName, season, generatedAt, totalApprovedHours, items]
+      properties:
+        studentName:
+          type: string
+        grade:
+          type: ["string", "null"]
+        school:
+          type: ["string", "null"]
+        organizationName:
+          type: ["string", "null"]
+        season:
+          type: string
+        generatedAt:
+          type: string
+        totalApprovedHours:
+          type: number
+        medal:
+          type: ["string", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceRecordItem"
+    OkResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+    RosterParticipant:
+      type: object
+      required: [userId, name, status]
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        grade:
+          type: ["string", "null"]
+        status:
+          type: string
+        hoursStatus:
+          type: ["string", "null"]
+        organizationName:
+          type: ["string", "null"]
+        school:
+          type: ["string", "null"]
+    EventRoster:
+      type: object
+      required: [eventId, eventTitle, participants]
+      properties:
+        eventId:
+          type: string
+        eventTitle:
+          type: string
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/RosterParticipant"
+    AttendanceInput:
+      type: object
+      required: [userId, status]
+      properties:
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [registered, attended, no_show]
+    ForgotPasswordInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+    ResetPasswordInput:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+    MyProfile:
+      type: object
+      required: [firstName, lastName]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: ["string", "null"]
+        grade:
+          type: ["string", "null"]
+        school:
+          type: ["string", "null"]
+        organizationId:
+          type: ["string", "null"]
+    MyProfileInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: ["string", "null"]
+        grade:
+          type: string
+        school:
+          type: string
+        organizationId:
+          type: ["string", "null"]
+        joinCode:
+          type: string
+    TestEmailBody:
+      type: object
+      required: [to]
+      properties:
+        to:
+          type: string
+    TestEmailResult:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+        id:
+          type: ["string", "null"]
+        to:
+          type: string
+    TopGrade:
+      type: object
+      required: [grade, cans]
+      properties:
+        grade:
+          type: string
+        cans:
+          type: number
+    RecyclingSummary:
+      type: object
+      required: [name, goal, binSize, totalCans, topGrades]
+      properties:
+        name:
+          type: string
+        goal:
+          type: number
+        binSize:
+          type: number
+        totalCans:
+          type: number
+        topGrades:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopGrade"
+    LogBinBody:
+      type: object
+      required: [grade]
+      properties:
+        grade:
+          type: string
+        cans:
+          type: number
+    ManagedOrganizations:
+      type: object
+      required: [all, organizationIds]
+      properties:
+        all:
+          type: boolean
+        organizationIds:
+          type: array
+          items:
+            type: string
+    LeaderboardPreferences:
+      type: object
+      required: [hideFromLeaderboard]
+      properties:
+        displayAlias:
+          type: ["string", "null"]
+        hideFromLeaderboard:
+          type: boolean
+    LeaderboardPreferencesInput:
+      type: object
+      properties:
+        displayAlias:
+          type: ["string", "null"]
+        hideFromLeaderboard:
+          type: boolean
+
+    ParentChildRegistration:
+      type: object
+      required: [registrationId, eventId, status, isNew]
+      properties:
+        registrationId:
+          type: string
+        eventId:
+          type: string
+        eventTitle:
+          type: ["string", "null"]
+        eventDate:
+          type: ["string", "null"]
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        status:
+          type: string
+        isNew:
+          type: boolean
+        hoursStatus:
+          type: ["string", "null"]
+          description: The child's submission status for this event (pending/approved/rejected), or null if none yet.
+    ParentChild:
+      type: object
+      required: [userId, firstName, lastName, isManaged, totalApprovedHours, upcomingRegistrations]
+      properties:
+        userId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: ["string", "null"]
+        grade:
+          type: ["string", "null"]
+        school:
+          type: ["string", "null"]
+        isManaged:
+          type: boolean
+        totalApprovedHours:
+          type: number
+        upcomingRegistrations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParentChildRegistration"
+        pastRegistrations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParentChildRegistration"
+        thresholds:
+          $ref: "#/components/schemas/AwardThresholds"
+
+    ChildHoursInput:
+      type: object
+      required: [eventId, hoursWorked]
+      properties:
+        eventId:
+          type: string
+        hoursWorked:
+          type: number
+          minimum: 0.25
+          maximum: 24
+
+    ChildInput:
+      type: object
+      required: [firstName, lastName, grade, school]
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        grade:
+          type: string
+          minLength: 1
+          maxLength: 20
+        school:
+          type: string
+          minLength: 1
+          maxLength: 120
+        organizationId:
+          type: ["string", "null"]
+        joinCode:
+          type: string
+    ChildRegisterInput:
+      type: object
+      required: [eventId]
+      properties:
+        eventId:
+          type: string
+    CoGuardian:
+      type: object
+      required: [email, status]
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [linked, pending]
+    CoGuardiansResponse:
+      type: object
+      required: [linked, pending]
+      properties:
+        linked:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoGuardian"
+        pending:
+          type: array
+          items:
+            $ref: "#/components/schemas/CoGuardian"
+    CoGuardianInviteInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+    CoGuardianInviteResult:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [linked, invited]
+        linkedChildren:
+          type: number
+
+    ManualHoursInput:
+      type: object
+      required: [hours, description, dateAwarded]
+      properties:
+        hours:
+          type: number
+          minimum: 0.5
+          maximum: 500
+        description:
+          type: string
+          minLength: 2
+          maxLength: 300
+        dateAwarded:
+          type: string
+    ManualHoursCredit:
+      type: object
+      required: [manualHoursId, userId, hours, description, dateAwarded, createdAt]
+      properties:
+        manualHoursId:
+          type: string
+        userId:
+          type: string
+        hours:
+          type: number
+        description:
+          type: string
+        dateAwarded:
+          type: string
+        awardedByName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
     HealthStatus:
       type: object
       properties:
@@ -696,6 +2613,20 @@ components:
         password:
           type: string
           minLength: 8
+        accountType:
+          type: string
+          enum: [student, parent]
+        parentEmail:
+          type: string
+          format: email
+        school:
+          type: string
+        grade:
+          type: string
+        organizationId:
+          type: ["string", "null"]
+        joinCode:
+          type: string
 
     LoginInput:
       type: object
@@ -721,20 +2652,55 @@ components:
 
     UserProfile:
       type: object
-      required: [userId, email, firstName, lastName, role, createdAt]
+      required: [userId, firstName, lastName, role, createdAt]
       properties:
         userId:
           type: string
         email:
-          type: string
+          type: ["string", "null"]
         firstName:
           type: string
         lastName:
           type: string
         role:
           type: string
+        phone:
+          type: ["string", "null"]
         createdAt:
           type: string
+        managedOrganizationIds:
+          type: array
+          items:
+            type: string
+
+    SetOrgAdminInput:
+      type: object
+      required: [organizationIds]
+      properties:
+        organizationIds:
+          type: array
+          items:
+            type: string
+    SetOrgAdminResult:
+      type: object
+      required: [role, organizationIds]
+      properties:
+        role:
+          type: string
+        organizationIds:
+          type: array
+          items:
+            type: string
+
+    UpdateUserInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: ["string", "null"]
 
     AdminCreateUserInput:
       type: object
@@ -751,6 +2717,11 @@ components:
           minLength: 8
         role:
           type: string
+        phone:
+          type: string
+        organizationId:
+          type: ["string", "null"]
+          description: Organization to assign the new user to. Honored only for Super Admins; Admins always assign their own org.
 
     Event:
       type: object
@@ -762,8 +2733,18 @@ components:
           type: string
         description:
           type: string
+        slotLabel:
+          type: ["string", "null"]
         location:
           type: string
+        street:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        zip:
+          type: ["string", "null"]
         eventDate:
           type: string
         startTime:
@@ -774,27 +2755,52 @@ components:
           type: number
         maxCapacity:
           type: integer
+        minGrade:
+          type: ["integer", "null"]
+        maxGrade:
+          type: ["integer", "null"]
         imageUrl:
           type: ["string", "null"]
         supervisorId:
           type: string
         supervisorName:
           type: ["string", "null"]
+        supervisorEmail:
+          type: ["string", "null"]
+        supervisorPhone:
+          type: ["string", "null"]
         registrationCount:
           type: integer
         myRegistrationStatus:
           type: ["string", "null"]
+        organizationId:
+          type: ["string", "null"]
+        organizationName:
+          type: ["string", "null"]
+        eligibleForMe:
+          type: boolean
 
     EventInput:
       type: object
-      required: [title, description, location, eventDate, startTime, endTime, hoursValue, maxCapacity, supervisorId]
+      required: [title, description, location, eventDate, startTime, endTime, maxCapacity, supervisorId]
       properties:
         title:
           type: string
           maxLength: 150
         description:
           type: string
+        slotLabel:
+          type: string
+          maxLength: 80
         location:
+          type: string
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
           type: string
         eventDate:
           type: string
@@ -802,13 +2808,17 @@ components:
           type: string
         endTime:
           type: string
-        hoursValue:
-          type: number
         maxCapacity:
           type: integer
+        minGrade:
+          type: ["integer", "null"]
+        maxGrade:
+          type: ["integer", "null"]
         supervisorId:
           type: string
         imageUrl:
+          type: string
+        organizationId:
           type: string
 
     EventUpdateInput:
@@ -819,21 +2829,35 @@ components:
           maxLength: 150
         description:
           type: string
+        slotLabel:
+          type: ["string", "null"]
         location:
           type: string
+        street:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        zip:
+          type: ["string", "null"]
         eventDate:
           type: string
         startTime:
           type: string
         endTime:
           type: string
-        hoursValue:
-          type: number
         maxCapacity:
           type: integer
+        minGrade:
+          type: ["integer", "null"]
+        maxGrade:
+          type: ["integer", "null"]
         supervisorId:
           type: string
         imageUrl:
+          type: ["string", "null"]
+        organizationId:
           type: ["string", "null"]
 
     EventRegistration:
@@ -864,18 +2888,21 @@ components:
           type: ["number", "null"]
         imageUrl:
           type: ["string", "null"]
+        supervisorName:
+          type: ["string", "null"]
+        supervisorEmail:
+          type: ["string", "null"]
+        supervisorPhone:
+          type: ["string", "null"]
 
     CheckInResponse:
       type: object
-      required: [status, message, submissionId]
+      required: [status, message]
       properties:
         status:
           type: string
         message:
           type: string
-        submissionId:
-          type: string
-
     Submission:
       type: object
       required: [submissionId, eventId, userId, status, submittedAt]
@@ -898,7 +2925,9 @@ components:
           type: ["string", "null"]
         eventDate:
           type: ["string", "null"]
-        hoursValue:
+        hoursWorked:
+          type: ["number", "null"]
+        plannedHours:
           type: ["number", "null"]
 
     SubmissionDetail:
@@ -923,7 +2952,9 @@ components:
           type: ["string", "null"]
         eventDate:
           type: ["string", "null"]
-        hoursValue:
+        hoursWorked:
+          type: ["number", "null"]
+        plannedHours:
           type: ["number", "null"]
         participantFirstName:
           type: ["string", "null"]
@@ -934,10 +2965,15 @@ components:
 
     SubmissionInput:
       type: object
-      required: [eventId]
+      required: [eventId, hoursWorked]
       properties:
         eventId:
           type: string
+        hoursWorked:
+          type: number
+          minimum: 0.25
+          maximum: 24
+          multipleOf: 0.25
 
     ReviewInput:
       type: object
@@ -984,6 +3020,12 @@ components:
           format: email
         description:
           type: string
+        isNonprofit:
+          type: boolean
+        ein:
+          type: string
+        proofUrl:
+          type: ["string", "null"]
 
     ExternalSubmission:
       type: object
@@ -1014,6 +3056,12 @@ components:
         submittedAt:
           type: string
         reviewedAt:
+          type: ["string", "null"]
+        isNonprofit:
+          type: boolean
+        ein:
+          type: ["string", "null"]
+        proofUrl:
           type: ["string", "null"]
         message:
           type: ["string", "null"]
@@ -1049,6 +3097,12 @@ components:
           type: string
         reviewedAt:
           type: ["string", "null"]
+        isNonprofit:
+          type: boolean
+        ein:
+          type: ["string", "null"]
+        proofUrl:
+          type: ["string", "null"]
         participantFirstName:
           type: ["string", "null"]
         participantLastName:
@@ -1068,6 +3122,182 @@ components:
           type: integer
         rejectedCount:
           type: integer
+        thresholds:
+          $ref: "#/components/schemas/AwardThresholds"
+
+    AddAttendeeInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+
+    ReassignEventsInput:
+      type: object
+      required: [toSupervisorId]
+      properties:
+        toSupervisorId:
+          type: string
+
+    AwardThresholds:
+      type: object
+      required: [bronze, silver, gold]
+      properties:
+        bronze:
+          type: integer
+        silver:
+          type: integer
+        gold:
+          type: integer
+
+    AwardThresholdRow:
+      type: object
+      required: [awardThresholdId, bronze, silver, gold]
+      properties:
+        awardThresholdId:
+          type: string
+        level:
+          type: ["string", "null"]
+        organizationId:
+          type: ["string", "null"]
+        organizationName:
+          type: ["string", "null"]
+        bronze:
+          type: integer
+        silver:
+          type: integer
+        gold:
+          type: integer
+
+    AwardThresholdInput:
+      type: object
+      required: [bronze, silver, gold]
+      properties:
+        level:
+          type: ["string", "null"]
+        organizationId:
+          type: ["string", "null"]
+        bronze:
+          type: integer
+          minimum: 1
+        silver:
+          type: integer
+          minimum: 1
+        gold:
+          type: integer
+          minimum: 1
+
+    AuditLogEntry:
+      type: object
+      required: [auditLogId, actorName, actorRole, action, summary, createdAt]
+      properties:
+        auditLogId:
+          type: string
+        actorName:
+          type: string
+        actorRole:
+          type: string
+        action:
+          type: string
+        targetType:
+          type: ["string", "null"]
+        targetId:
+          type: ["string", "null"]
+        targetLabel:
+          type: ["string", "null"]
+        summary:
+          type: string
+        createdAt:
+          type: string
+
+    NotificationPreferences:
+      type: object
+      required: [emailNotifications]
+      properties:
+        emailNotifications:
+          type: boolean
+
+    AdultHoursEntry:
+      type: object
+      required: [adultHoursId, activityName, volunteerDate, hoursWorked, createdAt]
+      properties:
+        adultHoursId:
+          type: string
+        activityName:
+          type: string
+        organizationName:
+          type: string
+          nullable: true
+        volunteerDate:
+          type: string
+        hoursWorked:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+
+    AdultHoursInput:
+      type: object
+      required: [activityName, volunteerDate, hoursWorked]
+      properties:
+        activityName:
+          type: string
+          minLength: 2
+          maxLength: 200
+        organizationName:
+          type: string
+          maxLength: 200
+          nullable: true
+        volunteerDate:
+          type: string
+        hoursWorked:
+          type: number
+          minimum: 0.25
+          maximum: 24
+        notes:
+          type: string
+          maxLength: 500
+          nullable: true
+
+    EventBroadcastInput:
+      type: object
+      required: [subject, message]
+      properties:
+        subject:
+          type: string
+          minLength: 2
+          maxLength: 150
+        message:
+          type: string
+          minLength: 2
+          maxLength: 4000
+        includeGuardians:
+          type: boolean
+          description: Also email the guardians of managed (elementary) children.
+        attachments:
+          type: array
+          description: Files to attach (uploaded to object storage first).
+          items:
+            type: object
+            required: [path, filename]
+            properties:
+              path:
+                type: string
+              filename:
+                type: string
+
+    BroadcastResult:
+      type: object
+      required: [recipients]
+      properties:
+        recipients:
+          type: integer
+          description: How many email addresses the message was sent to.
+        emailConfigured:
+          type: boolean
+          description: False when the server has no email provider configured.
 
     SupervisorDashboard:
       type: object

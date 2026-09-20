@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { db, usersTable, eventsTable, volunteerSubmissionsTable } from "@workspace/db";
-import { eq, and, sum, count } from "drizzle-orm";
+import { db, usersTable, eventsTable, volunteerSubmissionsTable, manualHoursTable, awardThresholdsTable } from "@workspace/db";
+import { thresholdsForGrade } from "../lib/thresholds";
+import { eq, sum, count } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 
 const router = Router();
@@ -16,7 +17,8 @@ router.get(
     const allSubs = await db
       .select({
         status: volunteerSubmissionsTable.status,
-        hoursValue: eventsTable.hoursValue,
+        hoursWorked: volunteerSubmissionsTable.hoursWorked,
+        plannedHours: eventsTable.hoursValue,
       })
       .from(volunteerSubmissionsTable)
       .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
@@ -29,16 +31,32 @@ router.get(
 
     for (const sub of allSubs) {
       if (sub.status === "approved") {
-        totalApprovedHours += Number(sub.hoursValue ?? 0);
+        totalApprovedHours += Number(sub.hoursWorked ?? sub.plannedHours ?? 0);
         approvedCount++;
-      } else if (sub.status === "pending") {
+      } else if (sub.status === "pending" && sub.hoursWorked !== null) {
         pendingCount++;
       } else if (sub.status === "rejected") {
         rejectedCount++;
       }
     }
 
-    res.json({ totalApprovedHours, pendingCount, approvedCount, rejectedCount });
+    // Include admin-granted manual hour credits (auto-approved).
+    const [manual] = await db
+      .select({ total: sum(manualHoursTable.hours) })
+      .from(manualHoursTable)
+      .where(eq(manualHoursTable.userId, userId));
+    totalApprovedHours += Number(manual?.total ?? 0);
+
+    // Resolve this participant's award thresholds (by grade band / org).
+    const [me] = await db
+      .select({ grade: usersTable.grade, organizationId: usersTable.organizationId })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+    const rows = await db.select().from(awardThresholdsTable);
+    const thresholds = thresholdsForGrade(rows, me?.grade, me?.organizationId ?? null);
+
+    res.json({ totalApprovedHours, pendingCount, approvedCount, rejectedCount, thresholds });
   },
 );
 

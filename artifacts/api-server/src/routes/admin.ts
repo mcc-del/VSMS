@@ -1,14 +1,188 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
-import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { randomBytes } from "node:crypto";
+import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable, eventsTable } from "@workspace/db";
+import { eq, desc, ilike, and, isNull, count } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
-import { CreateUserBody } from "@workspace/api-zod";
+import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
+import { sendTestEmail, sendAccountInvite } from "../lib/email";
+import { recordAudit } from "../lib/audit";
+import { managedOrgIds, canActOnUser, canManageOrg } from "../lib/org-scope";
+
+const ROLE_LABELS: Record<string, string> = {
+  participant: "Participant",
+  supervisor: "Supervisor",
+  org_admin: "Admin",
+  admin: "Super Admin",
+  parent: "Parent",
+};
 
 const router = Router();
 
+// POST /api/v1/admin/test-email — send a test email to confirm sending works.
+router.post("/v1/admin/test-email", authenticate, requireRole("admin"), async (req, res) => {
+  const to = typeof (req.body as { to?: unknown })?.to === "string" ? (req.body as { to: string }).to.trim() : "";
+  if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+    res.status(400).json({ error: "Enter a valid email address." });
+    return;
+  }
+  const result = await sendTestEmail(to);
+  if (!result.ok) {
+    res.status(502).json({ error: result.error ?? "Failed to send." });
+    return;
+  }
+  res.json({ ok: true, id: result.id ?? null, to });
+});
+
+// POST /v1/admin/users/:userId/reassign-events — move a supervisor's events to
+// another supervisor (e.g. before deleting them).
+router.post("/v1/admin/users/:userId/reassign-events", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
+  const { userId } = req.params as { userId: string };
+  const toSupervisorId = typeof (req.body as { toSupervisorId?: unknown })?.toSupervisorId === "string"
+    ? (req.body as { toSupervisorId: string }).toSupervisorId : "";
+  if (!toSupervisorId || toSupervisorId === userId) {
+    res.status(400).json({ error: "Choose a different supervisor to receive the events." });
+    return;
+  }
+  const [target] = await db
+    .select({ role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.userId, toSupervisorId))
+    .limit(1);
+  if (!target || !["supervisor", "org_admin", "admin"].includes(target.role)) {
+    res.status(400).json({ error: "The chosen recipient must be a supervisor or admin." });
+    return;
+  }
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+  // Which of this supervisor's events the actor may move.
+  const events = await db
+    .select({ eventId: eventsTable.eventId, organizationId: eventsTable.organizationId })
+    .from(eventsTable)
+    .where(eq(eventsTable.supervisorId, userId));
+  const movable = managed === null ? events : events.filter((e) => canManageOrg(managed, e.organizationId));
+  for (const e of movable) {
+    await db.update(eventsTable).set({ supervisorId: toSupervisorId }).where(eq(eventsTable.eventId, e.eventId));
+  }
+  recordAudit({
+    actorUserId: req.auth!.userId,
+    action: "events.reassign",
+    targetType: "user",
+    targetId: userId,
+    targetLabel: null,
+    summary: `Reassigned ${movable.length} event(s) to another supervisor`,
+  });
+  res.json({ reassigned: movable.length });
+});
+
+// ----- Award thresholds (Super Admin) -----
+const VALID_LEVELS = new Set(["elementary", "middle", "high"]);
+
+router.get("/v1/admin/award-thresholds", authenticate, requireRole("admin"), async (_req, res) => {
+  const rows = await db
+    .select({
+      awardThresholdId: awardThresholdsTable.awardThresholdId,
+      level: awardThresholdsTable.level,
+      organizationId: awardThresholdsTable.organizationId,
+      organizationName: organizationsTable.name,
+      bronze: awardThresholdsTable.bronze,
+      silver: awardThresholdsTable.silver,
+      gold: awardThresholdsTable.gold,
+    })
+    .from(awardThresholdsTable)
+    .leftJoin(organizationsTable, eq(awardThresholdsTable.organizationId, organizationsTable.organizationId));
+  res.json(rows.map((r) => ({ ...r, organizationName: r.organizationName ?? null })));
+});
+
+router.put("/v1/admin/award-thresholds", authenticate, requireRole("admin"), async (req, res) => {
+  const b = (req.body ?? {}) as { level?: unknown; organizationId?: unknown; bronze?: unknown; silver?: unknown; gold?: unknown };
+  const level = typeof b.level === "string" && VALID_LEVELS.has(b.level) ? b.level : null;
+  const organizationId = typeof b.organizationId === "string" && b.organizationId ? b.organizationId : null;
+  const bronze = Number(b.bronze), silver = Number(b.silver), gold = Number(b.gold);
+  if (![bronze, silver, gold].every((n) => Number.isFinite(n) && n >= 1 && n <= 10000)) {
+    res.status(400).json({ error: "Bronze, Silver and Gold must be positive numbers." });
+    return;
+  }
+  if (!(bronze <= silver && silver <= gold)) {
+    res.status(400).json({ error: "Thresholds must increase: Bronze ≤ Silver ≤ Gold." });
+    return;
+  }
+  const [existing] = await db
+    .select({ id: awardThresholdsTable.awardThresholdId })
+    .from(awardThresholdsTable)
+    .where(and(
+      level === null ? isNull(awardThresholdsTable.level) : eq(awardThresholdsTable.level, level),
+      organizationId === null ? isNull(awardThresholdsTable.organizationId) : eq(awardThresholdsTable.organizationId, organizationId),
+    ))
+    .limit(1);
+  let row;
+  if (existing) {
+    [row] = await db.update(awardThresholdsTable).set({ bronze, silver, gold, updatedAt: new Date() }).where(eq(awardThresholdsTable.awardThresholdId, existing.id)).returning();
+  } else {
+    [row] = await db.insert(awardThresholdsTable).values({ level, organizationId, bronze, silver, gold }).returning();
+  }
+  recordAudit({
+    actorUserId: req.auth!.userId,
+    action: "thresholds.update",
+    targetType: "thresholds",
+    targetId: row.awardThresholdId,
+    targetLabel: `${level ?? "all grades"} / ${organizationId ? "org" : "all orgs"}`,
+    summary: `Set award thresholds (${level ?? "all grades"}${organizationId ? ", one org" : ""}) to Bronze ${bronze} / Silver ${silver} / Gold ${gold}`,
+  });
+  res.json({
+    awardThresholdId: row.awardThresholdId,
+    level: row.level ?? null,
+    organizationId: row.organizationId ?? null,
+    organizationName: null,
+    bronze: row.bronze, silver: row.silver, gold: row.gold,
+  });
+});
+
+router.delete("/v1/admin/award-thresholds/:awardThresholdId", authenticate, requireRole("admin"), async (req, res) => {
+  const { awardThresholdId } = req.params as { awardThresholdId: string };
+  await db.delete(awardThresholdsTable).where(eq(awardThresholdsTable.awardThresholdId, awardThresholdId));
+  recordAudit({
+    actorUserId: req.auth!.userId,
+    action: "thresholds.delete",
+    targetType: "thresholds",
+    targetId: awardThresholdId,
+    targetLabel: null,
+    summary: "Removed an award-threshold override",
+  });
+  res.json({ ok: true });
+});
+
+// GET /api/v1/admin/audit-log — recent admin activity (Super Admin only).
+router.get("/v1/admin/audit-log", authenticate, requireRole("admin"), async (req, res) => {
+  const rawLimit = Number(req.query.limit);
+  const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 500) : 200;
+  const action = typeof req.query.action === "string" ? req.query.action.trim() : "";
+  const where = action ? ilike(auditLogsTable.action, `%${action}%`) : undefined;
+  const rows = await db
+    .select()
+    .from(auditLogsTable)
+    .where(where)
+    .orderBy(desc(auditLogsTable.createdAt))
+    .limit(limit);
+  res.json(
+    rows.map((r) => ({
+      auditLogId: r.auditLogId,
+      actorName: r.actorName,
+      actorRole: r.actorRole,
+      action: r.action,
+      targetType: r.targetType ?? null,
+      targetId: r.targetId ?? null,
+      targetLabel: r.targetLabel ?? null,
+      summary: r.summary,
+      createdAt: r.createdAt.toISOString(),
+    })),
+  );
+});
+
 // GET /api/v1/admin/users
-router.get("/v1/admin/users", authenticate, requireRole("admin"), async (req, res) => {
+router.get("/v1/admin/users", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+
   const users = await db
     .select({
       userId: usersTable.userId,
@@ -16,28 +190,108 @@ router.get("/v1/admin/users", authenticate, requireRole("admin"), async (req, re
       firstName: usersTable.firstName,
       lastName: usersTable.lastName,
       role: usersTable.role,
+      organizationId: usersTable.organizationId,
       createdAt: usersTable.createdAt,
     })
     .from(usersTable)
     .orderBy(usersTable.createdAt);
 
+  // Map each org-admin to the organizations they manage.
+  const adminRows = await db
+    .select({ userId: orgAdminsTable.userId, organizationId: orgAdminsTable.organizationId })
+    .from(orgAdminsTable);
+  const managedByUser = new Map<string, string[]>();
+  for (const r of adminRows) {
+    const list = managedByUser.get(r.userId) ?? [];
+    list.push(r.organizationId);
+    managedByUser.set(r.userId, list);
+  }
+
+  // An Admin (org_admin) only sees non-admin users in their organization(s).
+  const visible = managed === null
+    ? users
+    : users.filter((u) => canActOnUser(managed, u.role, u.organizationId));
+
   res.json(
-    users.map((u) => ({
+    visible.map((u) => ({
       userId: u.userId,
       email: u.email,
       firstName: u.firstName,
       lastName: u.lastName,
       role: u.role,
       createdAt: u.createdAt.toISOString(),
+      managedOrganizationIds: managedByUser.get(u.userId) ?? [],
     })),
   );
 });
+
+// PATCH /api/v1/admin/users/:userId/org-admin — Super Admin promotes a user to
+// Organization Admin over the given orgs, or demotes them (empty list).
+router.patch(
+  "/v1/admin/users/:userId/org-admin",
+  authenticate,
+  requireRole("admin"),
+  async (req, res) => {
+    const { userId } = req.params as { userId: string };
+    const raw = (req.body as { organizationIds?: unknown })?.organizationIds;
+    const organizationIds = Array.isArray(raw)
+      ? raw.filter((x): x is string => typeof x === "string")
+      : [];
+
+    const [target] = await db
+      .select({ userId: usersTable.userId, role: usersTable.role, firstName: usersTable.firstName, lastName: usersTable.lastName })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+    if (!target) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    if (target.role === "admin") {
+      res.status(400).json({ error: "That user is a Super Admin." });
+      return;
+    }
+
+    // Replace this user's managed-org rows.
+    await db.delete(orgAdminsTable).where(eq(orgAdminsTable.userId, userId));
+
+    const targetLabel = `${target.firstName ?? ""} ${target.lastName ?? ""}`.trim() || userId;
+    if (organizationIds.length === 0) {
+      // Demote back to a regular participant.
+      await db.update(usersTable).set({ role: "participant" }).where(eq(usersTable.userId, userId));
+      recordAudit({
+        actorUserId: req.auth!.userId,
+        action: "user.role_change",
+        targetType: "user",
+        targetId: userId,
+        targetLabel,
+        summary: `Removed Admin access from ${targetLabel} (reverted to participant)`,
+      });
+      res.json({ role: "participant", organizationIds: [] });
+      return;
+    }
+
+    for (const organizationId of organizationIds) {
+      await db.insert(orgAdminsTable).values({ userId, organizationId }).onConflictDoNothing();
+    }
+    await db.update(usersTable).set({ role: "org_admin" }).where(eq(usersTable.userId, userId));
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "user.role_change",
+      targetType: "user",
+      targetId: userId,
+      targetLabel,
+      summary: `Granted Admin access to ${targetLabel} for ${organizationIds.length} organization(s)`,
+    });
+    res.json({ role: "org_admin", organizationIds });
+  },
+);
 
 // POST /api/v1/admin/users
 router.post(
   "/v1/admin/users",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const parsed = CreateUserBody.safeParse(req.body);
     if (!parsed.success) {
@@ -45,7 +299,48 @@ router.post(
       return;
     }
 
-    const { firstName, lastName, email, password, role } = parsed.data;
+    const { firstName, lastName, email, password, role, phone, organizationId } = parsed.data as typeof parsed.data & {
+      phone?: string;
+      organizationId?: string | null;
+    };
+
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    // An Admin may only create non-admin users, stamped to their own org. A
+    // Super Admin may create any role and choose the org (or leave it unset).
+    let newUserOrgId: string | null = null;
+    if (managed !== null) {
+      if (role !== "participant" && role !== "supervisor") {
+        res.status(403).json({ error: "Admins can only create participants and supervisors." });
+        return;
+      }
+      if (managed.length === 0) {
+        res.status(403).json({ error: "You don't manage any organization." });
+        return;
+      }
+      // An Admin may choose among the organizations they manage; default to
+      // their first if none was specified.
+      if (organizationId) {
+        if (!managed.includes(organizationId)) {
+          res.status(403).json({ error: "You can only assign users to an organization you manage." });
+          return;
+        }
+        newUserOrgId = organizationId;
+      } else {
+        newUserOrgId = managed[0];
+      }
+    } else if (organizationId) {
+      // Super Admin picked an organization — validate it exists.
+      const [org] = await db
+        .select({ organizationId: organizationsTable.organizationId })
+        .from(organizationsTable)
+        .where(eq(organizationsTable.organizationId, organizationId))
+        .limit(1);
+      if (!org) {
+        res.status(400).json({ error: "That organization doesn't exist." });
+        return;
+      }
+      newUserOrgId = organizationId;
+    }
 
     const existing = await db
       .select()
@@ -59,6 +354,10 @@ router.post(
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
+    // Also issue a set-password invite token so the new person sets their own
+    // password rather than relying on the admin-typed temporary one.
+    const inviteToken = randomBytes(32).toString("hex");
+    const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const [user] = await db
       .insert(usersTable)
       .values({
@@ -67,8 +366,25 @@ router.post(
         email: email.toLowerCase(),
         passwordHash,
         role: role as "participant" | "supervisor" | "admin",
+        phone: phone?.trim() || null,
+        organizationId: newUserOrgId,
+        resetToken: inviteToken,
+        resetTokenExpiresAt: inviteExpires,
       })
       .returning();
+
+    // Fire-and-forget the invite email (no-op if email isn't configured).
+    sendAccountInvite(user.email!, user.firstName, ROLE_LABELS[user.role] ?? user.role, inviteToken)
+      .catch((err) => req.log.error({ err }, "account invite email failed"));
+
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "user.create",
+      targetType: "user",
+      targetId: user.userId,
+      targetLabel: `${user.firstName} ${user.lastName}`,
+      summary: `Created ${ROLE_LABELS[user.role] ?? user.role} account for ${user.firstName} ${user.lastName} (${user.email})`,
+    });
 
     res.status(201).json({
       userId: user.userId,
@@ -76,8 +392,199 @@ router.post(
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
+      phone: user.phone ?? null,
       createdAt: user.createdAt.toISOString(),
     });
+  },
+);
+
+// PATCH /api/v1/admin/users/:userId — edit a user's name and/or phone.
+router.patch("/v1/admin/users/:userId", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
+  const { userId } = req.params as { userId: string };
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+  if (managed !== null) {
+    const [t] = await db.select({ role: usersTable.role, organizationId: usersTable.organizationId })
+      .from(usersTable).where(eq(usersTable.userId, userId)).limit(1);
+    if (!t) { res.status(404).json({ error: "User not found." }); return; }
+    if (!canActOnUser(managed, t.role, t.organizationId)) {
+      res.status(403).json({ error: "You can only manage users in your organization." });
+      return;
+    }
+  }
+  const body = (req.body ?? {}) as { firstName?: unknown; lastName?: unknown; phone?: unknown };
+  const updates: { firstName?: string; lastName?: string; phone?: string | null } = {};
+  if (typeof body.firstName === "string" && body.firstName.trim()) updates.firstName = body.firstName.trim();
+  if (typeof body.lastName === "string" && body.lastName.trim()) updates.lastName = body.lastName.trim();
+  if ("phone" in body) {
+    updates.phone = typeof body.phone === "string" && body.phone.trim() ? body.phone.trim() : null;
+  }
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ error: "Nothing to update." });
+    return;
+  }
+  const [user] = await db
+    .update(usersTable)
+    .set(updates)
+    .where(eq(usersTable.userId, userId))
+    .returning();
+  if (!user) {
+    res.status(404).json({ error: "User not found." });
+    return;
+  }
+  res.json({
+    userId: user.userId,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+    phone: user.phone ?? null,
+    createdAt: user.createdAt.toISOString(),
+  });
+});
+
+// GET /api/v1/admin/users/:userId/hours — list manual credits for a participant
+router.get(
+  "/v1/admin/users/:userId/hours",
+  authenticate,
+  requireRole("admin", "org_admin"),
+  async (req, res) => {
+    const { userId } = req.params as { userId: string };
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null) {
+      const [t] = await db.select({ role: usersTable.role, organizationId: usersTable.organizationId })
+        .from(usersTable).where(eq(usersTable.userId, userId)).limit(1);
+      if (!t || !canActOnUser(managed, t.role, t.organizationId)) {
+        res.status(403).json({ error: "You can only manage users in your organization." });
+        return;
+      }
+    }
+    const awarder = alias(usersTable, "awarder");
+    const rows = await db
+      .select({
+        manualHoursId: manualHoursTable.manualHoursId,
+        userId: manualHoursTable.userId,
+        hours: manualHoursTable.hours,
+        description: manualHoursTable.description,
+        dateAwarded: manualHoursTable.dateAwarded,
+        createdAt: manualHoursTable.createdAt,
+        awardedByFirst: awarder.firstName,
+        awardedByLast: awarder.lastName,
+      })
+      .from(manualHoursTable)
+      .leftJoin(awarder, eq(manualHoursTable.awardedByUserId, awarder.userId))
+      .where(eq(manualHoursTable.userId, userId))
+      .orderBy(desc(manualHoursTable.createdAt));
+
+    res.json(
+      rows.map((r) => ({
+        manualHoursId: r.manualHoursId,
+        userId: r.userId,
+        hours: Number(r.hours),
+        description: r.description,
+        dateAwarded: r.dateAwarded,
+        awardedByName:
+          r.awardedByFirst || r.awardedByLast
+            ? `${r.awardedByFirst ?? ""} ${r.awardedByLast ?? ""}`.trim()
+            : null,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    );
+  },
+);
+
+// POST /api/v1/admin/users/:userId/hours — grant a manual hour credit
+router.post(
+  "/v1/admin/users/:userId/hours",
+  authenticate,
+  requireRole("admin", "org_admin"),
+  async (req, res) => {
+    const { userId } = req.params as { userId: string };
+    const parsed = AddManualHoursBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });
+      return;
+    }
+
+    const [target] = await db
+      .select({ userId: usersTable.userId, role: usersTable.role, organizationId: usersTable.organizationId })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+    if (!target) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (!canActOnUser(managed, target.role, target.organizationId)) {
+      res.status(403).json({ error: "You can only add hours for users in your organization." });
+      return;
+    }
+
+    const { hours, description, dateAwarded } = parsed.data;
+    const [credit] = await db
+      .insert(manualHoursTable)
+      .values({
+        userId,
+        hours: String(hours),
+        description,
+        dateAwarded,
+        awardedByUserId: req.auth!.userId,
+      })
+      .returning();
+
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "hours.grant",
+      targetType: "user",
+      targetId: userId,
+      targetLabel: null,
+      summary: `Granted ${hours} manual hour(s): "${description}"`,
+    });
+
+    res.status(201).json({
+      manualHoursId: credit.manualHoursId,
+      userId: credit.userId,
+      hours: Number(credit.hours),
+      description: credit.description,
+      dateAwarded: credit.dateAwarded,
+      awardedByName: null,
+      createdAt: credit.createdAt.toISOString(),
+    });
+  },
+);
+
+// DELETE /api/v1/admin/hours/:creditId — remove a manual credit
+router.delete(
+  "/v1/admin/hours/:creditId",
+  authenticate,
+  requireRole("admin", "org_admin"),
+  async (req, res) => {
+    const { creditId } = req.params as { creditId: string };
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null) {
+      const [credit] = await db
+        .select({ userId: manualHoursTable.userId })
+        .from(manualHoursTable)
+        .where(eq(manualHoursTable.manualHoursId, creditId))
+        .limit(1);
+      if (!credit) { res.json({ status: "success", message: "Manual hours removed" }); return; }
+      const [t] = await db.select({ role: usersTable.role, organizationId: usersTable.organizationId })
+        .from(usersTable).where(eq(usersTable.userId, credit.userId)).limit(1);
+      if (!t || !canActOnUser(managed, t.role, t.organizationId)) {
+        res.status(403).json({ error: "You can only manage users in your organization." });
+        return;
+      }
+    }
+    await db.delete(manualHoursTable).where(eq(manualHoursTable.manualHoursId, creditId));
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "hours.delete",
+      targetType: "hours",
+      targetId: creditId,
+      targetLabel: null,
+      summary: "Removed a manual hours credit",
+    });
+    res.json({ status: "success", message: "Manual hours removed" });
   },
 );
 
@@ -85,10 +592,49 @@ router.post(
 router.delete(
   "/v1/admin/users/:userId",
   authenticate,
-  requireRole("admin"),
+  requireRole("admin", "org_admin"),
   async (req, res) => {
     const { userId } = req.params as { userId: string };
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null) {
+      const [t] = await db.select({ role: usersTable.role, organizationId: usersTable.organizationId })
+        .from(usersTable).where(eq(usersTable.userId, userId)).limit(1);
+      if (!t) { res.json({ status: "success", message: "User deleted" }); return; }
+      if (!canActOnUser(managed, t.role, t.organizationId)) {
+        res.status(403).json({ error: "You can only delete users in your organization." });
+        return;
+      }
+    }
+    const [victim] = await db
+      .select({ firstName: usersTable.firstName, lastName: usersTable.lastName, email: usersTable.email, role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+
+    // A user who supervises events can't be deleted (events — and any approved
+    // hours on them — must be preserved). Reassign or remove those events first.
+    const [evCount] = await db
+      .select({ c: count() })
+      .from(eventsTable)
+      .where(eq(eventsTable.supervisorId, userId));
+    if (Number(evCount?.c ?? 0) > 0) {
+      res.status(400).json({
+        error: `This person supervises ${evCount.c} event(s) and can't be deleted. Reassign those events to another supervisor (edit each event) or delete the events first, then delete this user.`,
+      });
+      return;
+    }
+
     await db.delete(usersTable).where(eq(usersTable.userId, userId));
+    if (victim) {
+      recordAudit({
+        actorUserId: req.auth!.userId,
+        action: "user.delete",
+        targetType: "user",
+        targetId: userId,
+        targetLabel: `${victim.firstName} ${victim.lastName}`,
+        summary: `Deleted ${ROLE_LABELS[victim.role] ?? victim.role} ${victim.firstName} ${victim.lastName} (${victim.email ?? "no email"})`,
+      });
+    }
     res.json({ status: "success", message: "User deleted" });
   },
 );

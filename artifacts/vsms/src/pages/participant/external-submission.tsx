@@ -3,10 +3,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   useSubmitExternalActivity,
+  useEditExternalSubmission,
+  useWithdrawExternalSubmission,
   useListMyExternalSubmissions,
   useListMySubmissions,
   getListMyExternalSubmissionsQueryKey,
   getGetParticipantDashboardQueryKey,
+  type ExternalSubmission,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,12 +22,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Info, X } from "lucide-react";
+import { Info, Pencil, Trash2 } from "lucide-react";
+import { ProofUpload } from "@/components/proof-upload";
+import { ProofLink } from "@/components/proof-link";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PostEventHours } from "@/components/post-event-hours";
 import { useState } from "react";
 
 const GUIDELINES = [
   { id: "g1", label: "Helping individuals or families" },
-  { id: "g2", label: "Supporting Medina Academy" },
+  { id: "g2", label: "Supporting a school or place of worship" },
   { id: "g3", label: "Strengthening the community" },
   { id: "g4", label: "Supporting a registered nonprofit organization" },
 ] as const;
@@ -32,13 +39,36 @@ const GUIDELINES = [
 const schema = z.object({
   activityName: z.string().min(2, "Required").max(200),
   organizationName: z.string().min(2, "Required").max(200),
+  isNonprofit: z.boolean(),
+  ein: z.string().optional(),
   volunteerDate: z.string().min(1, "Required"),
   hoursWorked: z.coerce.number().min(0.5, "Min 0.5 hours").max(24, "Max 24 hours"),
   extSupervisorName: z.string().min(2, "Required").max(100),
   extSupervisorEmail: z.string().email("Enter a valid email"),
   description: z.string().optional(),
+  proofUrl: z.string().nullable().optional(),
   guidelines: z.array(z.string()).min(1, "Please check at least one guideline"),
-});
+}).refine(
+  (v) => !v.isNonprofit || ((v.ein ?? "").replace(/[^0-9]/g, "").length === 9),
+  { message: "Enter the 9-digit EIN (e.g. 12-3456789)", path: ["ein"] },
+).refine(
+  (v) => v.hoursWorked <= 5 || !!(v.proofUrl && v.proofUrl.length > 0),
+  { message: "Proof (a photo or letter) is required for submissions over 5 hours.", path: ["proofUrl"] },
+).refine(
+  (v) => !v.volunteerDate || v.volunteerDate <= new Date().toISOString().split("T")[0],
+  { message: "The date can't be in the future — log hours after you've volunteered.", path: ["volunteerDate"] },
+).refine(
+  (v) => {
+    if (!v.volunteerDate) return true;
+    const md = Number(v.volunteerDate.slice(5, 7)) * 100 + Number(v.volunteerDate.slice(8, 10));
+    // Award season runs Sept 23 – Jun 22; the summer gap is outside any window.
+    return md >= 923 || md <= 622;
+  },
+  {
+    message: "That date is outside the award season (Sept 23 – Jun 22).",
+    path: ["volunteerDate"],
+  },
+);
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "approved") return <Badge className="bg-green-100 text-green-700 border-0">Approved</Badge>;
@@ -49,67 +79,125 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function ExternalSubmissionPage() {
   const submitMutation = useSubmitExternalActivity();
+  const editMutation = useEditExternalSubmission();
+  const withdrawMutation = useWithdrawExternalSubmission();
   const { data: externals, isLoading } = useListMyExternalSubmissions();
-  const { data: calendarSubs } = useListMySubmissions();
+  const { data: internalSubs } = useListMySubmissions();
+
+  // Snapshot across internal + external claims.
+  const _all = [
+    ...(internalSubs ?? []).filter((s) => s.hoursWorked != null).map((s) => ({ status: s.status, hours: Number(s.hoursWorked ?? 0) })),
+    ...(externals ?? []).map((s) => ({ status: s.status, hours: Number(s.hoursWorked ?? 0) })),
+  ];
+  const snap = {
+    approvedHours: _all.filter((s) => s.status === "approved").reduce((n, s) => n + s.hours, 0),
+    waiting: _all.filter((s) => s.status === "pending" || s.status === "deferred_overflow").length,
+    rejected: _all.filter((s) => s.status === "rejected").length,
+  };
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [deferredBanner, setDeferredBanner] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       activityName: "",
       organizationName: "",
+      isNonprofit: false,
+      ein: "",
       volunteerDate: "",
       hoursWorked: 2,
       extSupervisorName: "",
       extSupervisorEmail: "",
       description: "",
+      proofUrl: null as string | null,
       guidelines: [] as string[],
     },
   });
 
-  const watchedHours = form.watch("hoursWorked");
   const watchedGuidelines = form.watch("guidelines");
 
-  const approvedCalendarHours = (calendarSubs ?? [])
-    .filter((s) => s.status === "approved")
-    .reduce((sum, s) => sum + (Number(s.hoursValue) || 0), 0);
+  const refreshLists = () => {
+    queryClient.invalidateQueries({ queryKey: getListMyExternalSubmissionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetParticipantDashboardQueryKey() });
+  };
 
-  const approvedExternalHours = (externals ?? [])
-    .filter((s) => s.status === "approved")
-    .reduce((sum, s) => sum + (s.hoursWorked || 0), 0);
+  function startEdit(s: ExternalSubmission) {
+    setEditingId(s.externalSubmissionId);
+    form.reset({
+      activityName: s.activityName,
+      organizationName: s.organizationName,
+      isNonprofit: s.isNonprofit ?? false,
+      ein: s.ein ?? "",
+      volunteerDate: s.volunteerDate,
+      hoursWorked: s.hoursWorked,
+      extSupervisorName: s.extSupervisorName,
+      extSupervisorEmail: s.extSupervisorEmail,
+      description: s.description ?? "",
+      proofUrl: s.proofUrl ?? null,
+      guidelines: [] as string[],
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
-  const pendingExternalHours = (externals ?? [])
-    .filter((s) => s.status === "pending")
-    .reduce((sum, s) => sum + (s.hoursWorked || 0), 0);
+  function cancelEdit() {
+    setEditingId(null);
+    form.reset();
+  }
 
-  const maxExternal = approvedCalendarHours * 0.25;
-  const usedExternal = approvedExternalHours + pendingExternalHours;
-  const remainingExternal = Math.max(0, maxExternal - usedExternal);
-
-  const wouldExceedCap =
-    approvedCalendarHours > 0 &&
-    Number(watchedHours) > 0 &&
-    usedExternal + Number(watchedHours) > maxExternal;
+  function withdraw(s: ExternalSubmission) {
+    if (!window.confirm(`Withdraw "${s.activityName}"? This can't be undone.`)) return;
+    withdrawMutation.mutate(
+      { externalSubmissionId: s.externalSubmissionId },
+      {
+        onSuccess: () => {
+          toast({ title: "Submission withdrawn" });
+          if (editingId === s.externalSubmissionId) cancelEdit();
+          refreshLists();
+        },
+        onError: (err: any) =>
+          toast({
+            title: "Could not withdraw",
+            description: err?.data?.error ?? "Something went wrong",
+            variant: "destructive",
+          }),
+      },
+    );
+  }
 
   function onSubmit(values: z.infer<typeof schema>) {
     const { guidelines: _g, ...rest } = values;
+
+    if (editingId) {
+      editMutation.mutate(
+        { externalSubmissionId: editingId, data: rest },
+        {
+          onSuccess: () => {
+            toast({ title: "Submission updated", description: "Your changes are pending review." });
+            setEditingId(null);
+            refreshLists();
+            form.reset();
+          },
+          onError: (err: any) =>
+            toast({
+              title: "Could not update",
+              description: err?.data?.error ?? "Something went wrong",
+              variant: "destructive",
+            }),
+        },
+      );
+      return;
+    }
+
     submitMutation.mutate(
       { data: rest },
       {
-        onSuccess: (data) => {
-          const isDeferred = data.status === "deferred_overflow";
-          if (isDeferred) {
-            setDeferredBanner(true);
-          } else {
-            toast({
-              title: "Activity submitted",
-              description: "Your external volunteer activity is pending review.",
-            });
-          }
-          queryClient.invalidateQueries({ queryKey: getListMyExternalSubmissionsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetParticipantDashboardQueryKey() });
+        onSuccess: () => {
+          toast({
+            title: "Activity submitted",
+            description: "Your external volunteer activity is pending review.",
+          });
+          refreshLists();
           form.reset();
         },
         onError: (err: any) => {
@@ -127,55 +215,53 @@ export default function ExternalSubmissionPage() {
     <AppLayout>
       <div className="space-y-6 max-w-2xl">
         <div>
-          <h1 className="text-2xl font-bold">External Volunteer Activity</h1>
+          <h1 className="text-2xl font-bold">Submit My Hours</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Report volunteer work completed outside Medina Academy
+            Two ways to log hours — use the tabs below. <span className="font-medium text-foreground">Post-event hours</span> is for
+            MedinaCares events you signed up for or attended. <span className="font-medium text-foreground">Outside volunteering</span> is
+            for service you did on your own with another nonprofit.
           </p>
         </div>
 
-        {deferredBanner && (
-          <div className="flex gap-3 bg-blue-50 border border-blue-300 rounded-xl px-4 py-3">
-            <Info className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-            <div className="flex-1 text-sm text-blue-800">
-              <p className="font-medium">Submission processed</p>
-              <p>
-                This entry has been placed in your Deferred Repository because it exceeds the 25%
-                external hours limit. It will be released once you complete more in-organization
-                volunteer hours.
-              </p>
-            </div>
-            <button
-              className="text-blue-400 hover:text-blue-700"
-              onClick={() => setDeferredBanner(false)}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        <div className="grid grid-cols-3 gap-3">
+          <Card><CardContent className="p-4"><p className="text-2xl font-bold tabular-nums text-green-600">{snap.approvedHours.toFixed(1)}</p><p className="text-xs font-medium mt-0.5">Approved hours</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-2xl font-bold tabular-nums text-yellow-600">{snap.waiting}</p><p className="text-xs font-medium mt-0.5">Waiting</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-2xl font-bold tabular-nums text-red-600">{snap.rejected}</p><p className="text-xs font-medium mt-0.5">Rejected</p></CardContent></Card>
+        </div>
 
-        {/* 25% Cap Info */}
+        <Tabs defaultValue="postevent">
+          <TabsList>
+            <TabsTrigger value="postevent" data-testid="tab-postevent">Post-event hours</TabsTrigger>
+            <TabsTrigger value="external" data-testid="tab-external">Outside volunteering</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="postevent" className="mt-4">
+            <PostEventHours />
+          </TabsContent>
+
+          <TabsContent value="external" className="mt-4 space-y-6">
+
         <div className="flex gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
           <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
           <div className="text-sm text-blue-800 space-y-1">
-            <p className="font-medium">External hour limit</p>
+            <p className="font-medium">Volunteering on your own counts too</p>
             <p>
-              External hours are capped at <strong>25% of your approved calendar hours</strong>.
-              You have {approvedCalendarHours.toFixed(1)}h approved calendar hours, so your external
-              limit is <strong>{maxExternal.toFixed(1)}h</strong>.
+              Report volunteer work you did with any registered non-profit. Once a supervisor
+              verifies it, the hours count toward your Bronze, Silver, or Gold medal.
             </p>
-            {approvedCalendarHours > 0 && (
-              <p>
-                Used (approved + pending): {usedExternal.toFixed(1)}h &nbsp;·&nbsp;
-                Remaining: <strong>{remainingExternal.toFixed(1)}h</strong>
-              </p>
-            )}
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Submit New Activity</CardTitle>
-            <CardDescription>All fields marked * are required</CardDescription>
+            <CardTitle className="text-base">
+              {editingId ? "Edit Submission" : "Submit New Activity"}
+            </CardTitle>
+            <CardDescription>
+              {editingId
+                ? "Update your pending submission — it stays pending review after saving."
+                : "All fields marked * are required"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -208,6 +294,54 @@ export default function ExternalSubmissionPage() {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="isNonprofit"
+                  render={({ field }) => (
+                    <FormItem className="rounded-lg border p-3">
+                      <div className="flex items-start gap-2.5">
+                        <FormControl>
+                          <Checkbox
+                            data-testid="checkbox-nonprofit"
+                            checked={field.value}
+                            onCheckedChange={(c) => field.onChange(Boolean(c))}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-tight">
+                          <FormLabel className="font-medium cursor-pointer">
+                            This organization is a registered 501(c)(3) non-profit
+                          </FormLabel>
+                          <FormDescription>
+                            Hours must be for a registered non-profit. Casual gatherings (e.g. a family picnic) don't qualify.
+                          </FormDescription>
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("isNonprofit") && (
+                  <FormField
+                    control={form.control}
+                    name="ein"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Non-profit EIN *</FormLabel>
+                        <FormControl>
+                          <Input data-testid="input-ein" placeholder="12-3456789" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          The non-profit's 9-digit IRS Employer Identification Number. You can
+                          usually find it on the organization's website (often in the footer or a
+                          "donate"/"about" page) — ask them if it's not listed.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
@@ -216,7 +350,7 @@ export default function ExternalSubmissionPage() {
                       <FormItem>
                         <FormLabel>Date of activity *</FormLabel>
                         <FormControl>
-                          <Input data-testid="input-volunteer-date" type="date" {...field} />
+                          <Input data-testid="input-volunteer-date" type="date" max={new Date().toISOString().split("T")[0]} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -243,17 +377,6 @@ export default function ExternalSubmissionPage() {
                     )}
                   />
                 </div>
-
-                {wouldExceedCap && (
-                  <div className="flex gap-3 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3" data-testid="cap-warning">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                    <p className="text-sm text-amber-800">
-                      <strong>Warning:</strong> This entry exceeds your 25% external hours capacity
-                      limit. If submitted, these hours will be safely held in your Deferred
-                      Repository until you complete more in-organization volunteer hours.
-                    </p>
-                  </div>
-                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <FormField
@@ -308,6 +431,29 @@ export default function ExternalSubmissionPage() {
 
                 <FormField
                   control={form.control}
+                  name="proofUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Proof{" "}
+                        <span className="text-muted-foreground font-normal">
+                          {form.watch("hoursWorked") > 5 ? "(required over 5 hours)" : "(optional)"}
+                        </span>
+                      </FormLabel>
+                      <FormControl>
+                        <ProofUpload value={field.value ?? null} onChange={field.onChange} />
+                      </FormControl>
+                      <FormDescription>
+                        A photo or a letter (PDF) confirming your volunteering. Required for any
+                        submission over 5 hours; recommended otherwise.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="guidelines"
                   render={() => (
                     <FormItem>
@@ -347,14 +493,37 @@ export default function ExternalSubmissionPage() {
                   )}
                 />
 
-                <Button
-                  data-testid="button-submit-external"
-                  type="submit"
-                  className="w-full"
-                  disabled={submitMutation.isPending || !watchedGuidelines?.length}
-                >
-                  {submitMutation.isPending ? "Submitting..." : "Submit for Review"}
-                </Button>
+                <div className="flex gap-2">
+                  {editingId && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={cancelEdit}
+                      data-testid="button-cancel-edit"
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                  <Button
+                    data-testid="button-submit-external"
+                    type="submit"
+                    className="flex-1"
+                    disabled={
+                      submitMutation.isPending ||
+                      editMutation.isPending ||
+                      !watchedGuidelines?.length
+                    }
+                  >
+                    {editingId
+                      ? editMutation.isPending
+                        ? "Saving…"
+                        : "Save changes"
+                      : submitMutation.isPending
+                        ? "Submitting..."
+                        : "Submit for Review"}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>
@@ -397,15 +566,44 @@ export default function ExternalSubmissionPage() {
                         {s.supervisorComments && (
                           <p className="text-xs text-muted-foreground mt-1 italic">"{s.supervisorComments}"</p>
                         )}
+                        {s.proofUrl && (
+                          <div className="mt-1">
+                            <ProofLink objectPath={s.proofUrl} />
+                          </div>
+                        )}
                       </div>
                       <StatusBadge status={s.status} />
                     </div>
+                    {(s.status === "pending" || s.status === "deferred_overflow") && (
+                      <div className="flex gap-2 mt-2 pt-2 border-t">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEdit(s)}
+                          data-testid={`button-edit-external-${s.externalSubmissionId}`}
+                        >
+                          <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => withdraw(s)}
+                          disabled={withdrawMutation.isPending}
+                          data-testid={`button-withdraw-external-${s.externalSubmissionId}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Withdraw
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );

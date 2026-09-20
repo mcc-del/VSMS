@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Image } from "lucide-react";
+import { AuthenticatedImage } from "@/components/authenticated-image";
 
 interface ImageUploadProps {
   value: string | null;
@@ -57,8 +58,6 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
     }
   }
 
-  const previewSrc = value ? `/api/storage${value}` : null;
-
   return (
     <div className="space-y-2">
       <input
@@ -73,10 +72,10 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         }}
       />
 
-      {previewSrc ? (
+      {value ? (
         <div className="relative inline-block w-full">
-          <img
-            src={previewSrc}
+          <AuthenticatedImage
+            objectPath={value}
             alt="Event image"
             className="w-full max-h-48 object-cover rounded-lg border"
           />
@@ -107,7 +106,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         </p>
       )}
 
-      {!previewSrc && !isUploading && (
+      {!value && !isUploading && (
         <Button
           type="button"
           variant="outline"

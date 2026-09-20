@@ -5,6 +5,444 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export interface ReportRow {
+  name: string;
+  school: string;
+  organization: string;
+  grade: string;
+  approvedHours: number;
+  medal: string;
+}
+
+export interface NameHours {
+  name: string;
+  hours: number;
+}
+
+export interface TopVolunteer {
+  name: string;
+  hours: number;
+  org: string;
+  medal: string;
+}
+
+export type AdminMetricsHoursBreakdown = {
+  internal: number;
+  manual: number;
+  external: number;
+};
+
+export type AdminMetricsMedalCounts = {
+  gold: number;
+  silver: number;
+  bronze: number;
+  none: number;
+};
+
+export type AdminMetricsEvents = {
+  total: number;
+  upcoming: number;
+  upcomingRegistrations: number;
+  totalCapacity: number;
+};
+
+export interface AdminMetrics {
+  participants: number;
+  activeVolunteers: number;
+  participationRate: number;
+  totalApprovedHours: number;
+  medalsAwarded: number;
+  pendingReviews: number;
+  hoursBreakdown: AdminMetricsHoursBreakdown;
+  medalCounts: AdminMetricsMedalCounts;
+  events: AdminMetricsEvents;
+  hoursByOrg: NameHours[];
+  hoursBySchool: NameHours[];
+  topVolunteers: TopVolunteer[];
+}
+
+export type SchoolStatus = typeof SchoolStatus[keyof typeof SchoolStatus];
+
+
+export const SchoolStatus = {
+  approved: 'approved',
+  pending: 'pending',
+} as const;
+
+export interface School {
+  schoolId: string;
+  name: string;
+  /** @nullable */
+  city?: string | null;
+  status: SchoolStatus;
+  createdAt: string;
+  alreadyApproved?: boolean;
+  alreadyRequested?: boolean;
+}
+
+export interface SchoolRequestInput {
+  /**
+     * @minLength 2
+     * @maxLength 120
+     */
+  name: string;
+  /** @maxLength 80 */
+  city?: string;
+}
+
+export interface SchoolMergeInput {
+  targetSchoolId: string;
+}
+
+export interface Organization {
+  organizationId: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  allowsElementary: boolean;
+  allowsMiddle: boolean;
+  allowsHigh: boolean;
+  competesOnLeaderboard?: boolean;
+  requiresJoinCode?: boolean;
+  /**
+     * Only returned from the admin organizations endpoint.
+     * @nullable
+     */
+  joinCode?: string | null;
+}
+
+export interface OrganizationInput {
+  /**
+     * @minLength 2
+     * @maxLength 150
+     */
+  name: string;
+  description?: string;
+  allowsElementary?: boolean;
+  allowsMiddle?: boolean;
+  allowsHigh?: boolean;
+  competesOnLeaderboard?: boolean;
+  /** @nullable */
+  joinCode?: string | null;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  displayName: string;
+  /** @nullable */
+  grade?: string | null;
+  totalApprovedHours: number;
+  /** @nullable */
+  medal?: string | null;
+  isMe: boolean;
+}
+
+export interface LeaderboardResponse {
+  /** @nullable */
+  myRank?: number | null;
+  myHours: number;
+  entries: LeaderboardEntry[];
+}
+
+export type ServiceRecordItemType = typeof ServiceRecordItemType[keyof typeof ServiceRecordItemType];
+
+
+export const ServiceRecordItemType = {
+  event: 'event',
+  external: 'external',
+  manual: 'manual',
+} as const;
+
+export interface ServiceRecordItem {
+  date: string;
+  activity: string;
+  organization: string;
+  hours: number;
+  verifiedBy: string;
+  type: ServiceRecordItemType;
+}
+
+export interface ServiceRecord {
+  studentName: string;
+  /** @nullable */
+  grade?: string | null;
+  /** @nullable */
+  school?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
+  season: string;
+  generatedAt: string;
+  totalApprovedHours: number;
+  /** @nullable */
+  medal?: string | null;
+  items: ServiceRecordItem[];
+}
+
+export interface OkResponse {
+  ok: boolean;
+}
+
+export interface RosterParticipant {
+  userId: string;
+  name: string;
+  /** @nullable */
+  grade?: string | null;
+  status: string;
+  /** @nullable */
+  hoursStatus?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
+  /** @nullable */
+  school?: string | null;
+}
+
+export interface EventRoster {
+  eventId: string;
+  eventTitle: string;
+  participants: RosterParticipant[];
+}
+
+export type AttendanceInputStatus = typeof AttendanceInputStatus[keyof typeof AttendanceInputStatus];
+
+
+export const AttendanceInputStatus = {
+  registered: 'registered',
+  attended: 'attended',
+  no_show: 'no_show',
+} as const;
+
+export interface AttendanceInput {
+  userId: string;
+  status: AttendanceInputStatus;
+}
+
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+export interface ResetPasswordInput {
+  token: string;
+  password: string;
+}
+
+export interface MyProfile {
+  firstName: string;
+  lastName: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  grade?: string | null;
+  /** @nullable */
+  school?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
+}
+
+export interface MyProfileInput {
+  firstName?: string;
+  lastName?: string;
+  /** @nullable */
+  phone?: string | null;
+  grade?: string;
+  school?: string;
+  /** @nullable */
+  organizationId?: string | null;
+  joinCode?: string;
+}
+
+export interface TestEmailBody {
+  to: string;
+}
+
+export interface TestEmailResult {
+  ok: boolean;
+  /** @nullable */
+  id?: string | null;
+  to?: string;
+}
+
+export interface TopGrade {
+  grade: string;
+  cans: number;
+}
+
+export interface RecyclingSummary {
+  name: string;
+  goal: number;
+  binSize: number;
+  totalCans: number;
+  topGrades: TopGrade[];
+}
+
+export interface LogBinBody {
+  grade: string;
+  cans?: number;
+}
+
+export interface ManagedOrganizations {
+  all: boolean;
+  organizationIds: string[];
+}
+
+export interface LeaderboardPreferences {
+  /** @nullable */
+  displayAlias?: string | null;
+  hideFromLeaderboard: boolean;
+}
+
+export interface LeaderboardPreferencesInput {
+  /** @nullable */
+  displayAlias?: string | null;
+  hideFromLeaderboard?: boolean;
+}
+
+export interface ParentChildRegistration {
+  registrationId: string;
+  eventId: string;
+  /** @nullable */
+  eventTitle?: string | null;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
+  /** @nullable */
+  location?: string | null;
+  status: string;
+  isNew: boolean;
+  /**
+     * The child's submission status for this event (pending/approved/rejected), or null if none yet.
+     * @nullable
+     */
+  hoursStatus?: string | null;
+}
+
+export interface AwardThresholds {
+  bronze: number;
+  silver: number;
+  gold: number;
+}
+
+export interface ParentChild {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  grade?: string | null;
+  /** @nullable */
+  school?: string | null;
+  isManaged: boolean;
+  totalApprovedHours: number;
+  upcomingRegistrations: ParentChildRegistration[];
+  pastRegistrations?: ParentChildRegistration[];
+  thresholds?: AwardThresholds;
+}
+
+export interface ChildHoursInput {
+  eventId: string;
+  /**
+     * @minimum 0.25
+     * @maximum 24
+     */
+  hoursWorked: number;
+}
+
+export interface ChildInput {
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
+  firstName: string;
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
+  lastName: string;
+  /**
+     * @minLength 1
+     * @maxLength 20
+     */
+  grade: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  school: string;
+  /** @nullable */
+  organizationId?: string | null;
+  joinCode?: string;
+}
+
+export interface ChildRegisterInput {
+  eventId: string;
+}
+
+export type CoGuardianStatus = typeof CoGuardianStatus[keyof typeof CoGuardianStatus];
+
+
+export const CoGuardianStatus = {
+  linked: 'linked',
+  pending: 'pending',
+} as const;
+
+export interface CoGuardian {
+  userId?: string;
+  name?: string;
+  /** @nullable */
+  email: string | null;
+  status: CoGuardianStatus;
+}
+
+export interface CoGuardiansResponse {
+  linked: CoGuardian[];
+  pending: CoGuardian[];
+}
+
+export interface CoGuardianInviteInput {
+  email: string;
+}
+
+export type CoGuardianInviteResultStatus = typeof CoGuardianInviteResultStatus[keyof typeof CoGuardianInviteResultStatus];
+
+
+export const CoGuardianInviteResultStatus = {
+  linked: 'linked',
+  invited: 'invited',
+} as const;
+
+export interface CoGuardianInviteResult {
+  status: CoGuardianInviteResultStatus;
+  linkedChildren?: number;
+}
+
+export interface ManualHoursInput {
+  /**
+     * @minimum 0.5
+     * @maximum 500
+     */
+  hours: number;
+  /**
+     * @minLength 2
+     * @maxLength 300
+     */
+  description: string;
+  dateAwarded: string;
+}
+
+export interface ManualHoursCredit {
+  manualHoursId: string;
+  userId: string;
+  hours: number;
+  description: string;
+  dateAwarded: string;
+  /** @nullable */
+  awardedByName?: string | null;
+  createdAt: string;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -17,6 +455,14 @@ export interface SuccessResponse {
   status: string;
   message: string;
 }
+
+export type RegisterInputAccountType = typeof RegisterInputAccountType[keyof typeof RegisterInputAccountType];
+
+
+export const RegisterInputAccountType = {
+  student: 'student',
+  parent: 'parent',
+} as const;
 
 export interface RegisterInput {
   /**
@@ -32,6 +478,13 @@ export interface RegisterInput {
   email: string;
   /** @minLength 8 */
   password: string;
+  accountType?: RegisterInputAccountType;
+  parentEmail?: string;
+  school?: string;
+  grade?: string;
+  /** @nullable */
+  organizationId?: string | null;
+  joinCode?: string;
 }
 
 export interface LoginInput {
@@ -48,11 +501,31 @@ export interface AuthResponse {
 
 export interface UserProfile {
   userId: string;
-  email: string;
+  /** @nullable */
+  email?: string | null;
   firstName: string;
   lastName: string;
   role: string;
+  /** @nullable */
+  phone?: string | null;
   createdAt: string;
+  managedOrganizationIds?: string[];
+}
+
+export interface SetOrgAdminInput {
+  organizationIds: string[];
+}
+
+export interface SetOrgAdminResult {
+  role: string;
+  organizationIds: string[];
+}
+
+export interface UpdateUserInput {
+  firstName?: string;
+  lastName?: string;
+  /** @nullable */
+  phone?: string | null;
 }
 
 export interface AdminCreateUserInput {
@@ -62,55 +535,109 @@ export interface AdminCreateUserInput {
   /** @minLength 8 */
   password: string;
   role: string;
+  phone?: string;
+  /**
+     * Organization to assign the new user to. Honored only for Super Admins; Admins always assign their own org.
+     * @nullable
+     */
+  organizationId?: string | null;
 }
 
 export interface Event {
   eventId: string;
   title: string;
   description: string;
+  /** @nullable */
+  slotLabel?: string | null;
   location: string;
+  /** @nullable */
+  street?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  zip?: string | null;
   eventDate: string;
   startTime: string;
   endTime: string;
   hoursValue: number;
   maxCapacity: number;
   /** @nullable */
+  minGrade?: number | null;
+  /** @nullable */
+  maxGrade?: number | null;
+  /** @nullable */
   imageUrl?: string | null;
   supervisorId: string;
   /** @nullable */
   supervisorName?: string | null;
+  /** @nullable */
+  supervisorEmail?: string | null;
+  /** @nullable */
+  supervisorPhone?: string | null;
   registrationCount: number;
   /** @nullable */
   myRegistrationStatus?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
+  eligibleForMe?: boolean;
 }
 
 export interface EventInput {
   /** @maxLength 150 */
   title: string;
   description: string;
+  /** @maxLength 80 */
+  slotLabel?: string;
   location: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   eventDate: string;
   startTime: string;
   endTime: string;
-  hoursValue: number;
   maxCapacity: number;
+  /** @nullable */
+  minGrade?: number | null;
+  /** @nullable */
+  maxGrade?: number | null;
   supervisorId: string;
   imageUrl?: string;
+  organizationId?: string;
 }
 
 export interface EventUpdateInput {
   /** @maxLength 150 */
   title?: string;
   description?: string;
+  /** @nullable */
+  slotLabel?: string | null;
   location?: string;
+  /** @nullable */
+  street?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  zip?: string | null;
   eventDate?: string;
   startTime?: string;
   endTime?: string;
-  hoursValue?: number;
   maxCapacity?: number;
+  /** @nullable */
+  minGrade?: number | null;
+  /** @nullable */
+  maxGrade?: number | null;
   supervisorId?: string;
   /** @nullable */
   imageUrl?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
 }
 
 export interface EventRegistration {
@@ -133,12 +660,17 @@ export interface EventRegistration {
   hoursValue?: number | null;
   /** @nullable */
   imageUrl?: string | null;
+  /** @nullable */
+  supervisorName?: string | null;
+  /** @nullable */
+  supervisorEmail?: string | null;
+  /** @nullable */
+  supervisorPhone?: string | null;
 }
 
 export interface CheckInResponse {
   status: string;
   message: string;
-  submissionId: string;
 }
 
 export interface Submission {
@@ -156,7 +688,9 @@ export interface Submission {
   /** @nullable */
   eventDate?: string | null;
   /** @nullable */
-  hoursValue?: number | null;
+  hoursWorked?: number | null;
+  /** @nullable */
+  plannedHours?: number | null;
 }
 
 export interface SubmissionDetail {
@@ -174,7 +708,9 @@ export interface SubmissionDetail {
   /** @nullable */
   eventDate?: string | null;
   /** @nullable */
-  hoursValue?: number | null;
+  hoursWorked?: number | null;
+  /** @nullable */
+  plannedHours?: number | null;
   /** @nullable */
   participantFirstName?: string | null;
   /** @nullable */
@@ -185,6 +721,11 @@ export interface SubmissionDetail {
 
 export interface SubmissionInput {
   eventId: string;
+  /**
+     * @minimum 0.25
+     * @maximum 24
+     */
+  hoursWorked: number;
 }
 
 export interface ReviewInput {
@@ -222,6 +763,10 @@ export interface ExternalSubmissionInput {
   extSupervisorName: string;
   extSupervisorEmail: string;
   description?: string;
+  isNonprofit?: boolean;
+  ein?: string;
+  /** @nullable */
+  proofUrl?: string | null;
 }
 
 export interface ExternalSubmission {
@@ -241,6 +786,11 @@ export interface ExternalSubmission {
   submittedAt: string;
   /** @nullable */
   reviewedAt?: string | null;
+  isNonprofit?: boolean;
+  /** @nullable */
+  ein?: string | null;
+  /** @nullable */
+  proofUrl?: string | null;
   /**
      * Present when status is deferred_overflow; explains why the submission was deferred.
      * @nullable
@@ -265,6 +815,11 @@ export interface ExternalSubmissionDetail {
   submittedAt: string;
   /** @nullable */
   reviewedAt?: string | null;
+  isNonprofit?: boolean;
+  /** @nullable */
+  ein?: string | null;
+  /** @nullable */
+  proofUrl?: string | null;
   /** @nullable */
   participantFirstName?: string | null;
   /** @nullable */
@@ -278,6 +833,117 @@ export interface ParticipantDashboard {
   pendingCount: number;
   approvedCount: number;
   rejectedCount: number;
+  thresholds?: AwardThresholds;
+}
+
+export interface AddAttendeeInput {
+  email: string;
+}
+
+export interface ReassignEventsInput {
+  toSupervisorId: string;
+}
+
+export interface AwardThresholdRow {
+  awardThresholdId: string;
+  /** @nullable */
+  level?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
+  bronze: number;
+  silver: number;
+  gold: number;
+}
+
+export interface AwardThresholdInput {
+  /** @nullable */
+  level?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
+  /** @minimum 1 */
+  bronze: number;
+  /** @minimum 1 */
+  silver: number;
+  /** @minimum 1 */
+  gold: number;
+}
+
+export interface AuditLogEntry {
+  auditLogId: string;
+  actorName: string;
+  actorRole: string;
+  action: string;
+  /** @nullable */
+  targetType?: string | null;
+  /** @nullable */
+  targetId?: string | null;
+  /** @nullable */
+  targetLabel?: string | null;
+  summary: string;
+  createdAt: string;
+}
+
+export interface NotificationPreferences {
+  emailNotifications: boolean;
+}
+
+export interface AdultHoursEntry {
+  adultHoursId: string;
+  activityName: string;
+  organizationName?: string | null;
+  volunteerDate: string;
+  hoursWorked: number;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface AdultHoursInput {
+  /**
+     * @minLength 2
+     * @maxLength 200
+     */
+  activityName: string;
+  /** @maxLength 200 */
+  organizationName?: string | null;
+  volunteerDate: string;
+  /**
+     * @minimum 0.25
+     * @maximum 24
+     */
+  hoursWorked: number;
+  /** @maxLength 500 */
+  notes?: string | null;
+}
+
+export type EventBroadcastInputAttachmentsItem = {
+  path: string;
+  filename: string;
+};
+
+export interface EventBroadcastInput {
+  /**
+     * @minLength 2
+     * @maxLength 150
+     */
+  subject: string;
+  /**
+     * @minLength 2
+     * @maxLength 4000
+     */
+  message: string;
+  /** Also email the guardians of managed (elementary) children. */
+  includeGuardians?: boolean;
+  /** Files to attach (uploaded to object storage first). */
+  attachments?: EventBroadcastInputAttachmentsItem[];
+}
+
+export interface BroadcastResult {
+  /** How many email addresses the message was sent to. */
+  recipients: number;
+  /** False when the server has no email provider configured. */
+  emailConfigured?: boolean;
 }
 
 export interface SupervisorDashboard {
@@ -310,4 +976,32 @@ export interface UploadUrlResponse {
   uploadURL: string;
   objectPath: string;
 }
+
+export type ListEventsParams = {
+/**
+ * When a parent browses on behalf of a managed child, filter eligibility and sign-ups by that child.
+ */
+childId?: string;
+};
+
+export type ListAllSchoolsParams = {
+status?: ListAllSchoolsStatus;
+};
+
+export type ListAllSchoolsStatus = typeof ListAllSchoolsStatus[keyof typeof ListAllSchoolsStatus];
+
+
+export const ListAllSchoolsStatus = {
+  approved: 'approved',
+  pending: 'pending',
+} as const;
+
+export type ReassignEvents200 = {
+  reassigned: number;
+};
+
+export type GetAuditLogParams = {
+limit?: number;
+action?: string;
+};
 

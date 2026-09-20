@@ -10,18 +10,41 @@ export interface Event {
   eventId: string;
   title: string;
   description: string;
+  /** @nullable */
+  slotLabel?: string | null;
   location: string;
+  /** @nullable */
+  street?: string | null;
+  /** @nullable */
+  city?: string | null;
+  /** @nullable */
+  state?: string | null;
+  /** @nullable */
+  zip?: string | null;
   eventDate: string;
   startTime: string;
   endTime: string;
   hoursValue: number;
   maxCapacity: number;
   /** @nullable */
+  minGrade?: number | null;
+  /** @nullable */
+  maxGrade?: number | null;
+  /** @nullable */
   imageUrl?: string | null;
   supervisorId: string;
   /** @nullable */
   supervisorName?: string | null;
+  /** @nullable */
+  supervisorEmail?: string | null;
+  /** @nullable */
+  supervisorPhone?: string | null;
   registrationCount: number;
   /** @nullable */
   myRegistrationStatus?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
+  eligibleForMe?: boolean;
 }

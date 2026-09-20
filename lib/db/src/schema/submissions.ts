@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, pgEnum, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -14,6 +14,7 @@ export const volunteerSubmissionsTable = pgTable("volunteer_submissions", {
   eventId: uuid("event_id")
     .notNull()
     .references(() => eventsTable.eventId, { onDelete: "cascade" }),
+  hoursWorked: decimal("hours_worked", { precision: 5, scale: 2 }),
   status: submissionStatusEnum("status").notNull().default("pending"),
   supervisorComments: text("supervisor_comments"),
   submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),

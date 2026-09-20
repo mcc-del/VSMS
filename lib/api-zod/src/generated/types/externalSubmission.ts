@@ -23,6 +23,11 @@ export interface ExternalSubmission {
   submittedAt: string;
   /** @nullable */
   reviewedAt?: string | null;
+  isNonprofit?: boolean;
+  /** @nullable */
+  ein?: string | null;
+  /** @nullable */
+  proofUrl?: string | null;
   /**
      * Present when status is deferred_overflow; explains why the submission was deferred.
      * @nullable

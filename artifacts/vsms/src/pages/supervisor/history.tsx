@@ -24,20 +24,20 @@ export default function SupervisorHistory() {
 
         <Tabs defaultValue="calendar">
           <TabsList>
-            <TabsTrigger value="calendar">Calendar Submissions</TabsTrigger>
+            <TabsTrigger value="calendar">Internal Event Hours</TabsTrigger>
             <TabsTrigger value="external">External Activities</TabsTrigger>
           </TabsList>
 
           <TabsContent value="calendar" className="mt-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Reviewed Calendar Submissions</CardTitle>
+                <CardTitle className="text-base">Reviewed Internal Event Hours</CardTitle>
               </CardHeader>
               <CardContent>
                 {calLoading ? (
                   <div className="space-y-2">{[0,1,2,3].map(i => <Skeleton key={i} className="h-12" />)}</div>
                 ) : calendarHistory?.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-8 text-center">No reviewed calendar submissions yet.</p>
+                  <p className="text-muted-foreground text-sm py-8 text-center">No reviewed internal event hours yet.</p>
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
@@ -56,7 +56,7 @@ export default function SupervisorHistory() {
                           <td className="py-3 font-medium">{s.participantFirstName} {s.participantLastName}</td>
                           <td className="py-3">{s.eventTitle}</td>
                           <td className="py-3 text-muted-foreground">{s.eventDate}</td>
-                          <td className="py-3">{s.hoursValue}h</td>
+                          <td className="py-3">{s.hoursWorked ?? "—"}h</td>
                           <td className="py-3"><StatusBadge status={s.status} /></td>
                           <td className="py-3 text-muted-foreground text-xs max-w-48 truncate">{s.supervisorComments ?? "—"}</td>
                         </tr>

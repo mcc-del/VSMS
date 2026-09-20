@@ -33,7 +33,13 @@ export const RegisterBody = zod.object({
   "firstName": zod.string().min(registerBodyFirstNameMin).max(registerBodyFirstNameMax),
   "lastName": zod.string().min(registerBodyLastNameMin).max(registerBodyLastNameMax),
   "email": zod.string().email(),
-  "password": zod.string().min(registerBodyPasswordMin)
+  "password": zod.string().min(registerBodyPasswordMin),
+  "accountType": zod.enum(['student', 'parent']).optional(),
+  "parentEmail": zod.string().email().optional(),
+  "school": zod.string().optional(),
+  "grade": zod.string().optional(),
+  "organizationId": zod.string().nullish(),
+  "joinCode": zod.string().optional()
 })
 
 
@@ -54,36 +60,79 @@ export const LoginResponse = zod.object({
 
 
 /**
+ * @summary Request a password reset email
+ */
+export const ForgotPasswordBody = zod.object({
+  "email": zod.string()
+})
+
+export const ForgotPasswordResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Set a new password using a reset token
+ */
+export const ResetPasswordBody = zod.object({
+  "token": zod.string(),
+  "password": zod.string()
+})
+
+export const ResetPasswordResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Get current user info
  */
 export const GetMeResponse = zod.object({
   "userId": zod.string(),
-  "email": zod.string(),
+  "email": zod.string().nullish(),
   "firstName": zod.string(),
   "lastName": zod.string(),
   "role": zod.string(),
-  "createdAt": zod.string()
+  "phone": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 
 
 /**
  * @summary List all calendar events
  */
+export const ListEventsQueryParams = zod.object({
+  "childId": zod.coerce.string().optional().describe('When a parent browses on behalf of a managed child, filter eligibility and sign-ups by that child.')
+})
+
 export const ListEventsResponseItem = zod.object({
   "eventId": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
+  "slotLabel": zod.string().nullish(),
   "location": zod.string(),
+  "street": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "zip": zod.string().nullish(),
   "eventDate": zod.string(),
   "startTime": zod.string(),
   "endTime": zod.string(),
   "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
+  "minGrade": zod.number().nullish(),
+  "maxGrade": zod.number().nullish(),
   "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
+  "supervisorEmail": zod.string().nullish(),
+  "supervisorPhone": zod.string().nullish(),
   "registrationCount": zod.number(),
-  "myRegistrationStatus": zod.string().nullish()
+  "myRegistrationStatus": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "eligibleForMe": zod.boolean().optional()
 })
 export const ListEventsResponse = zod.array(ListEventsResponseItem)
 
@@ -93,19 +142,28 @@ export const ListEventsResponse = zod.array(ListEventsResponseItem)
  */
 export const createEventBodyTitleMax = 150;
 
+export const createEventBodySlotLabelMax = 80;
+
 
 
 export const CreateEventBody = zod.object({
   "title": zod.string().max(createEventBodyTitleMax),
   "description": zod.string(),
+  "slotLabel": zod.string().max(createEventBodySlotLabelMax).optional(),
   "location": zod.string(),
+  "street": zod.string().optional(),
+  "city": zod.string().optional(),
+  "state": zod.string().optional(),
+  "zip": zod.string().optional(),
   "eventDate": zod.string(),
   "startTime": zod.string(),
   "endTime": zod.string(),
-  "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
+  "minGrade": zod.number().nullish(),
+  "maxGrade": zod.number().nullish(),
   "supervisorId": zod.string(),
-  "imageUrl": zod.string().optional()
+  "imageUrl": zod.string().optional(),
+  "organizationId": zod.string().optional()
 })
 
 
@@ -124,7 +182,10 @@ export const ListMyRegistrationsResponseItem = zod.object({
   "endTime": zod.string().nullish(),
   "location": zod.string().nullish(),
   "hoursValue": zod.number().nullish(),
-  "imageUrl": zod.string().nullish()
+  "imageUrl": zod.string().nullish(),
+  "supervisorName": zod.string().nullish(),
+  "supervisorEmail": zod.string().nullish(),
+  "supervisorPhone": zod.string().nullish()
 })
 export const ListMyRegistrationsResponse = zod.array(ListMyRegistrationsResponseItem)
 
@@ -140,17 +201,29 @@ export const GetEventResponse = zod.object({
   "eventId": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
+  "slotLabel": zod.string().nullish(),
   "location": zod.string(),
+  "street": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "zip": zod.string().nullish(),
   "eventDate": zod.string(),
   "startTime": zod.string(),
   "endTime": zod.string(),
   "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
+  "minGrade": zod.number().nullish(),
+  "maxGrade": zod.number().nullish(),
   "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
+  "supervisorEmail": zod.string().nullish(),
+  "supervisorPhone": zod.string().nullish(),
   "registrationCount": zod.number(),
-  "myRegistrationStatus": zod.string().nullish()
+  "myRegistrationStatus": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "eligibleForMe": zod.boolean().optional()
 })
 
 
@@ -168,31 +241,50 @@ export const updateEventBodyTitleMax = 150;
 export const UpdateEventBody = zod.object({
   "title": zod.string().max(updateEventBodyTitleMax).optional(),
   "description": zod.string().optional(),
+  "slotLabel": zod.string().nullish(),
   "location": zod.string().optional(),
+  "street": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "zip": zod.string().nullish(),
   "eventDate": zod.string().optional(),
   "startTime": zod.string().optional(),
   "endTime": zod.string().optional(),
-  "hoursValue": zod.number().optional(),
   "maxCapacity": zod.number().optional(),
+  "minGrade": zod.number().nullish(),
+  "maxGrade": zod.number().nullish(),
   "supervisorId": zod.string().optional(),
-  "imageUrl": zod.string().nullish()
+  "imageUrl": zod.string().nullish(),
+  "organizationId": zod.string().nullish()
 })
 
 export const UpdateEventResponse = zod.object({
   "eventId": zod.string(),
   "title": zod.string(),
   "description": zod.string(),
+  "slotLabel": zod.string().nullish(),
   "location": zod.string(),
+  "street": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "state": zod.string().nullish(),
+  "zip": zod.string().nullish(),
   "eventDate": zod.string(),
   "startTime": zod.string(),
   "endTime": zod.string(),
   "hoursValue": zod.number(),
   "maxCapacity": zod.number(),
+  "minGrade": zod.number().nullish(),
+  "maxGrade": zod.number().nullish(),
   "imageUrl": zod.string().nullish(),
   "supervisorId": zod.string(),
   "supervisorName": zod.string().nullish(),
+  "supervisorEmail": zod.string().nullish(),
+  "supervisorPhone": zod.string().nullish(),
   "registrationCount": zod.number(),
-  "myRegistrationStatus": zod.string().nullish()
+  "myRegistrationStatus": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "eligibleForMe": zod.boolean().optional()
 })
 
 
@@ -218,6 +310,18 @@ export const RegisterForEventParams = zod.object({
 
 
 /**
+ * @summary Withdraw your own sign-up (participant)
+ */
+export const WithdrawFromEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const WithdrawFromEventResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Check in to a day-of event (participant)
  */
 export const CheckInToEventParams = zod.object({
@@ -226,8 +330,46 @@ export const CheckInToEventParams = zod.object({
 
 export const CheckInToEventResponse = zod.object({
   "status": zod.string(),
-  "message": zod.string(),
-  "submissionId": zod.string()
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Participants signed up for an event (supervisor)
+ */
+export const GetEventRosterParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const GetEventRosterResponse = zod.object({
+  "eventId": zod.string(),
+  "eventTitle": zod.string(),
+  "participants": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "grade": zod.string().nullish(),
+  "status": zod.string(),
+  "hoursStatus": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "school": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Supervisor sets a participant's attendance
+ */
+export const SetAttendanceParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const SetAttendanceBody = zod.object({
+  "userId": zod.string(),
+  "status": zod.enum(['registered', 'attended', 'no_show'])
+})
+
+export const SetAttendanceResponse = zod.object({
+  "ok": zod.boolean()
 })
 
 
@@ -244,16 +386,24 @@ export const ListMySubmissionsResponseItem = zod.object({
   "reviewedAt": zod.string().nullish(),
   "eventTitle": zod.string().nullish(),
   "eventDate": zod.string().nullish(),
-  "hoursValue": zod.number().nullish()
+  "hoursWorked": zod.number().nullish(),
+  "plannedHours": zod.number().nullish()
 })
 export const ListMySubmissionsResponse = zod.array(ListMySubmissionsResponseItem)
 
 
 /**
- * @summary Claim hours for a past event
+ * @summary Submit actual hours worked for a past registered event
  */
-export const ClaimHoursBody = zod.object({
-  "eventId": zod.string()
+export const submitInternalHoursBodyHoursWorkedMin = 0.25;
+export const submitInternalHoursBodyHoursWorkedMax = 24;
+export const submitInternalHoursBodyHoursWorkedMultipleOf = 0.25;
+
+
+
+export const SubmitInternalHoursBody = zod.object({
+  "eventId": zod.string(),
+  "hoursWorked": zod.number().min(submitInternalHoursBodyHoursWorkedMin).max(submitInternalHoursBodyHoursWorkedMax).multipleOf(submitInternalHoursBodyHoursWorkedMultipleOf)
 })
 
 
@@ -270,7 +420,8 @@ export const ListPendingSubmissionsResponseItem = zod.object({
   "reviewedAt": zod.string().nullish(),
   "eventTitle": zod.string().nullish(),
   "eventDate": zod.string().nullish(),
-  "hoursValue": zod.number().nullish(),
+  "hoursWorked": zod.number().nullish(),
+  "plannedHours": zod.number().nullish(),
   "participantFirstName": zod.string().nullish(),
   "participantLastName": zod.string().nullish(),
   "participantEmail": zod.string().nullish()
@@ -309,7 +460,8 @@ export const ListReviewedSubmissionsResponseItem = zod.object({
   "reviewedAt": zod.string().nullish(),
   "eventTitle": zod.string().nullish(),
   "eventDate": zod.string().nullish(),
-  "hoursValue": zod.number().nullish(),
+  "hoursWorked": zod.number().nullish(),
+  "plannedHours": zod.number().nullish(),
   "participantFirstName": zod.string().nullish(),
   "participantLastName": zod.string().nullish(),
   "participantEmail": zod.string().nullish()
@@ -334,6 +486,9 @@ export const ListMyExternalSubmissionsResponseItem = zod.object({
   "supervisorComments": zod.string().nullish(),
   "submittedAt": zod.string(),
   "reviewedAt": zod.string().nullish(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().nullish(),
+  "proofUrl": zod.string().nullish(),
   "message": zod.string().nullish().describe('Present when status is deferred_overflow; explains why the submission was deferred.')
 })
 export const ListMyExternalSubmissionsResponse = zod.array(ListMyExternalSubmissionsResponseItem)
@@ -363,7 +518,78 @@ export const SubmitExternalActivityBody = zod.object({
   "hoursWorked": zod.number().min(submitExternalActivityBodyHoursWorkedMin).max(submitExternalActivityBodyHoursWorkedMax),
   "extSupervisorName": zod.string().min(submitExternalActivityBodyExtSupervisorNameMin).max(submitExternalActivityBodyExtSupervisorNameMax),
   "extSupervisorEmail": zod.string().email(),
-  "description": zod.string().optional()
+  "description": zod.string().optional(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().optional(),
+  "proofUrl": zod.string().nullish()
+})
+
+
+/**
+ * @summary Edit a still-pending external submission (participant)
+ */
+export const EditExternalSubmissionParams = zod.object({
+  "externalSubmissionId": zod.coerce.string()
+})
+
+export const editExternalSubmissionBodyActivityNameMin = 2;
+export const editExternalSubmissionBodyActivityNameMax = 200;
+
+export const editExternalSubmissionBodyOrganizationNameMin = 2;
+export const editExternalSubmissionBodyOrganizationNameMax = 200;
+
+export const editExternalSubmissionBodyHoursWorkedMin = 0.5;
+export const editExternalSubmissionBodyHoursWorkedMax = 24;
+
+export const editExternalSubmissionBodyExtSupervisorNameMin = 2;
+export const editExternalSubmissionBodyExtSupervisorNameMax = 100;
+
+
+
+export const EditExternalSubmissionBody = zod.object({
+  "activityName": zod.string().min(editExternalSubmissionBodyActivityNameMin).max(editExternalSubmissionBodyActivityNameMax),
+  "organizationName": zod.string().min(editExternalSubmissionBodyOrganizationNameMin).max(editExternalSubmissionBodyOrganizationNameMax),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number().min(editExternalSubmissionBodyHoursWorkedMin).max(editExternalSubmissionBodyHoursWorkedMax),
+  "extSupervisorName": zod.string().min(editExternalSubmissionBodyExtSupervisorNameMin).max(editExternalSubmissionBodyExtSupervisorNameMax),
+  "extSupervisorEmail": zod.string().email(),
+  "description": zod.string().optional(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().optional(),
+  "proofUrl": zod.string().nullish()
+})
+
+export const EditExternalSubmissionResponse = zod.object({
+  "externalSubmissionId": zod.string(),
+  "userId": zod.string(),
+  "activityName": zod.string(),
+  "organizationName": zod.string(),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number(),
+  "extSupervisorName": zod.string(),
+  "extSupervisorEmail": zod.string(),
+  "description": zod.string().nullish(),
+  "status": zod.string(),
+  "supervisorComments": zod.string().nullish(),
+  "submittedAt": zod.string(),
+  "reviewedAt": zod.string().nullish(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().nullish(),
+  "proofUrl": zod.string().nullish(),
+  "message": zod.string().nullish().describe('Present when status is deferred_overflow; explains why the submission was deferred.')
+})
+
+
+/**
+ * @summary Withdraw a still-pending external submission (participant)
+ */
+export const WithdrawExternalSubmissionParams = zod.object({
+  "externalSubmissionId": zod.coerce.string()
+})
+
+export const WithdrawExternalSubmissionResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
 })
 
 
@@ -384,6 +610,9 @@ export const ListPendingExternalSubmissionsResponseItem = zod.object({
   "supervisorComments": zod.string().nullish(),
   "submittedAt": zod.string(),
   "reviewedAt": zod.string().nullish(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().nullish(),
+  "proofUrl": zod.string().nullish(),
   "participantFirstName": zod.string().nullish(),
   "participantLastName": zod.string().nullish(),
   "participantEmail": zod.string().nullish()
@@ -426,6 +655,9 @@ export const ListReviewedExternalSubmissionsResponseItem = zod.object({
   "supervisorComments": zod.string().nullish(),
   "submittedAt": zod.string(),
   "reviewedAt": zod.string().nullish(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().nullish(),
+  "proofUrl": zod.string().nullish(),
   "participantFirstName": zod.string().nullish(),
   "participantLastName": zod.string().nullish(),
   "participantEmail": zod.string().nullish()
@@ -438,11 +670,13 @@ export const ListReviewedExternalSubmissionsResponse = zod.array(ListReviewedExt
  */
 export const ListUsersResponseItem = zod.object({
   "userId": zod.string(),
-  "email": zod.string(),
+  "email": zod.string().nullish(),
   "firstName": zod.string(),
   "lastName": zod.string(),
   "role": zod.string(),
-  "createdAt": zod.string()
+  "phone": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 export const ListUsersResponse = zod.array(ListUsersResponseItem)
 
@@ -459,7 +693,51 @@ export const CreateUserBody = zod.object({
   "lastName": zod.string(),
   "email": zod.string(),
   "password": zod.string().min(createUserBodyPasswordMin),
-  "role": zod.string()
+  "role": zod.string(),
+  "phone": zod.string().optional(),
+  "organizationId": zod.string().nullish().describe('Organization to assign the new user to. Honored only for Super Admins; Admins always assign their own org.')
+})
+
+
+/**
+ * @summary Promote a user to Organization Admin over orgs, or demote (empty list)
+ */
+export const SetOrgAdminParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const SetOrgAdminBody = zod.object({
+  "organizationIds": zod.array(zod.string())
+})
+
+export const SetOrgAdminResponse = zod.object({
+  "role": zod.string(),
+  "organizationIds": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Edit a user's name and/or phone (admin only)
+ */
+export const UpdateUserParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const UpdateUserBody = zod.object({
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
+  "phone": zod.string().nullish()
+})
+
+export const UpdateUserResponse = zod.object({
+  "userId": zod.string(),
+  "email": zod.string().nullish(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "role": zod.string(),
+  "phone": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 
 
@@ -471,6 +749,60 @@ export const DeleteUserParams = zod.object({
 })
 
 export const DeleteUserResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary List manual hour credits for a participant (admin only)
+ */
+export const ListManualHoursParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const ListManualHoursResponseItem = zod.object({
+  "manualHoursId": zod.string(),
+  "userId": zod.string(),
+  "hours": zod.number(),
+  "description": zod.string(),
+  "dateAwarded": zod.string(),
+  "awardedByName": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListManualHoursResponse = zod.array(ListManualHoursResponseItem)
+
+
+/**
+ * @summary Add a manual hour credit for a participant (admin only)
+ */
+export const AddManualHoursParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const addManualHoursBodyHoursMin = 0.5;
+export const addManualHoursBodyHoursMax = 500;
+
+export const addManualHoursBodyDescriptionMin = 2;
+export const addManualHoursBodyDescriptionMax = 300;
+
+
+
+export const AddManualHoursBody = zod.object({
+  "hours": zod.number().min(addManualHoursBodyHoursMin).max(addManualHoursBodyHoursMax),
+  "description": zod.string().min(addManualHoursBodyDescriptionMin).max(addManualHoursBodyDescriptionMax),
+  "dateAwarded": zod.string()
+})
+
+
+/**
+ * @summary Delete a manual hour credit (admin only)
+ */
+export const DeleteManualHoursParams = zod.object({
+  "creditId": zod.coerce.string()
+})
+
+export const DeleteManualHoursResponse = zod.object({
   "status": zod.string(),
   "message": zod.string()
 })
@@ -495,13 +827,870 @@ export const OverrideSubmissionResponse = zod.object({
 
 
 /**
+ * @summary Aggregated program metrics for the reports view (admin only)
+ */
+export const GetAdminMetricsResponse = zod.object({
+  "participants": zod.number(),
+  "activeVolunteers": zod.number(),
+  "participationRate": zod.number(),
+  "totalApprovedHours": zod.number(),
+  "medalsAwarded": zod.number(),
+  "pendingReviews": zod.number(),
+  "hoursBreakdown": zod.object({
+  "internal": zod.number(),
+  "manual": zod.number(),
+  "external": zod.number()
+}),
+  "medalCounts": zod.object({
+  "gold": zod.number(),
+  "silver": zod.number(),
+  "bronze": zod.number(),
+  "none": zod.number()
+}),
+  "events": zod.object({
+  "total": zod.number(),
+  "upcoming": zod.number(),
+  "upcomingRegistrations": zod.number(),
+  "totalCapacity": zod.number()
+}),
+  "hoursByOrg": zod.array(zod.object({
+  "name": zod.string(),
+  "hours": zod.number()
+})),
+  "hoursBySchool": zod.array(zod.object({
+  "name": zod.string(),
+  "hours": zod.number()
+})),
+  "topVolunteers": zod.array(zod.object({
+  "name": zod.string(),
+  "hours": zod.number(),
+  "org": zod.string(),
+  "medal": zod.string()
+}))
+})
+
+
+/**
+ * @summary Per-participant rows for drill-down reports + CSV export (admin only)
+ */
+export const GetReportRowsResponseItem = zod.object({
+  "name": zod.string(),
+  "school": zod.string(),
+  "organization": zod.string(),
+  "grade": zod.string(),
+  "approvedHours": zod.number(),
+  "medal": zod.string()
+})
+export const GetReportRowsResponse = zod.array(GetReportRowsResponseItem)
+
+
+/**
+ * @summary List approved schools for the enrollment picker
+ */
+export const ListSchoolsResponseItem = zod.object({
+  "schoolId": zod.string(),
+  "name": zod.string(),
+  "city": zod.string().nullish(),
+  "status": zod.enum(['approved', 'pending']),
+  "createdAt": zod.string(),
+  "alreadyApproved": zod.boolean().optional(),
+  "alreadyRequested": zod.boolean().optional()
+})
+export const ListSchoolsResponse = zod.array(ListSchoolsResponseItem)
+
+
+/**
+ * @summary Request a school that isn't listed (queued for admin review)
+ */
+export const requestSchoolBodyNameMin = 2;
+export const requestSchoolBodyNameMax = 120;
+
+export const requestSchoolBodyCityMax = 80;
+
+
+
+export const RequestSchoolBody = zod.object({
+  "name": zod.string().min(requestSchoolBodyNameMin).max(requestSchoolBodyNameMax),
+  "city": zod.string().max(requestSchoolBodyCityMax).optional()
+})
+
+export const RequestSchoolResponse = zod.object({
+  "schoolId": zod.string(),
+  "name": zod.string(),
+  "city": zod.string().nullish(),
+  "status": zod.enum(['approved', 'pending']),
+  "createdAt": zod.string(),
+  "alreadyApproved": zod.boolean().optional(),
+  "alreadyRequested": zod.boolean().optional()
+})
+
+
+/**
+ * @summary List all schools (admin), optionally filtered by status
+ */
+export const ListAllSchoolsQueryParams = zod.object({
+  "status": zod.enum(['approved', 'pending']).optional()
+})
+
+export const ListAllSchoolsResponseItem = zod.object({
+  "schoolId": zod.string(),
+  "name": zod.string(),
+  "city": zod.string().nullish(),
+  "status": zod.enum(['approved', 'pending']),
+  "createdAt": zod.string(),
+  "alreadyApproved": zod.boolean().optional(),
+  "alreadyRequested": zod.boolean().optional()
+})
+export const ListAllSchoolsResponse = zod.array(ListAllSchoolsResponseItem)
+
+
+/**
+ * @summary Approve a requested school (admin only)
+ */
+export const ApproveSchoolParams = zod.object({
+  "schoolId": zod.coerce.string()
+})
+
+export const ApproveSchoolResponse = zod.object({
+  "schoolId": zod.string(),
+  "name": zod.string(),
+  "city": zod.string().nullish(),
+  "status": zod.enum(['approved', 'pending']),
+  "createdAt": zod.string(),
+  "alreadyApproved": zod.boolean().optional(),
+  "alreadyRequested": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Merge a duplicate school into an approved one (admin only)
+ */
+export const MergeSchoolParams = zod.object({
+  "schoolId": zod.coerce.string()
+})
+
+export const MergeSchoolBody = zod.object({
+  "targetSchoolId": zod.string()
+})
+
+export const MergeSchoolResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Reject/remove a school request (admin only)
+ */
+export const DeleteSchoolParams = zod.object({
+  "schoolId": zod.coerce.string()
+})
+
+export const DeleteSchoolResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary List organizations
+ */
+export const ListOrganizationsResponseItem = zod.object({
+  "organizationId": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "allowsElementary": zod.boolean(),
+  "allowsMiddle": zod.boolean(),
+  "allowsHigh": zod.boolean(),
+  "competesOnLeaderboard": zod.boolean().optional(),
+  "requiresJoinCode": zod.boolean().optional(),
+  "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
+})
+export const ListOrganizationsResponse = zod.array(ListOrganizationsResponseItem)
+
+
+/**
+ * @summary List organizations with join codes (admin only)
+ */
+export const ListAdminOrganizationsResponseItem = zod.object({
+  "organizationId": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "allowsElementary": zod.boolean(),
+  "allowsMiddle": zod.boolean(),
+  "allowsHigh": zod.boolean(),
+  "competesOnLeaderboard": zod.boolean().optional(),
+  "requiresJoinCode": zod.boolean().optional(),
+  "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
+})
+export const ListAdminOrganizationsResponse = zod.array(ListAdminOrganizationsResponseItem)
+
+
+/**
+ * @summary Create an organization (admin only)
+ */
+export const createOrganizationBodyNameMin = 2;
+export const createOrganizationBodyNameMax = 150;
+
+
+
+export const CreateOrganizationBody = zod.object({
+  "name": zod.string().min(createOrganizationBodyNameMin).max(createOrganizationBodyNameMax),
+  "description": zod.string().optional(),
+  "allowsElementary": zod.boolean().optional(),
+  "allowsMiddle": zod.boolean().optional(),
+  "allowsHigh": zod.boolean().optional(),
+  "competesOnLeaderboard": zod.boolean().optional(),
+  "joinCode": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update an organization (admin only)
+ */
+export const UpdateOrganizationParams = zod.object({
+  "organizationId": zod.coerce.string()
+})
+
+export const updateOrganizationBodyNameMin = 2;
+export const updateOrganizationBodyNameMax = 150;
+
+
+
+export const UpdateOrganizationBody = zod.object({
+  "name": zod.string().min(updateOrganizationBodyNameMin).max(updateOrganizationBodyNameMax),
+  "description": zod.string().optional(),
+  "allowsElementary": zod.boolean().optional(),
+  "allowsMiddle": zod.boolean().optional(),
+  "allowsHigh": zod.boolean().optional(),
+  "competesOnLeaderboard": zod.boolean().optional(),
+  "joinCode": zod.string().nullish()
+})
+
+export const UpdateOrganizationResponse = zod.object({
+  "organizationId": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "allowsElementary": zod.boolean(),
+  "allowsMiddle": zod.boolean(),
+  "allowsHigh": zod.boolean(),
+  "competesOnLeaderboard": zod.boolean().optional(),
+  "requiresJoinCode": zod.boolean().optional(),
+  "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
+})
+
+
+/**
+ * @summary Overall individual leaderboard by approved hours
+ */
+export const GetLeaderboardResponse = zod.object({
+  "myRank": zod.number().nullish(),
+  "myHours": zod.number(),
+  "entries": zod.array(zod.object({
+  "rank": zod.number(),
+  "displayName": zod.string(),
+  "grade": zod.string().nullish(),
+  "totalApprovedHours": zod.number(),
+  "medal": zod.string().nullish(),
+  "isMe": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Send a test email to confirm sending works
+ */
+export const SendTestEmailBody = zod.object({
+  "to": zod.string()
+})
+
+export const SendTestEmailResponse = zod.object({
+  "ok": zod.boolean(),
+  "id": zod.string().nullish(),
+  "to": zod.string().optional()
+})
+
+
+/**
+ * @summary Public totals for the Million Cans Recycling Competition
+ */
+export const GetRecyclingSummaryResponse = zod.object({
+  "name": zod.string(),
+  "goal": zod.number(),
+  "binSize": zod.number(),
+  "totalCans": zod.number(),
+  "topGrades": zod.array(zod.object({
+  "grade": zod.string(),
+  "cans": zod.number()
+}))
+})
+
+
+/**
+ * @summary Log one collected bin toward the total (admin/supervisor)
+ */
+export const LogRecyclingBinBody = zod.object({
+  "grade": zod.string(),
+  "cans": zod.number().optional()
+})
+
+
+/**
+ * @summary My verified service record (approved hours, itemized & attributed)
+ */
+export const GetMyServiceRecordResponse = zod.object({
+  "studentName": zod.string(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "season": zod.string(),
+  "generatedAt": zod.string(),
+  "totalApprovedHours": zod.number(),
+  "medal": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "date": zod.string(),
+  "activity": zod.string(),
+  "organization": zod.string(),
+  "hours": zod.number(),
+  "verifiedBy": zod.string(),
+  "type": zod.enum(['event', 'external', 'manual'])
+}))
+})
+
+
+/**
+ * @summary Verified service record for a participant (admin)
+ */
+export const GetUserServiceRecordParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const GetUserServiceRecordResponse = zod.object({
+  "studentName": zod.string(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "season": zod.string(),
+  "generatedAt": zod.string(),
+  "totalApprovedHours": zod.number(),
+  "medal": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "date": zod.string(),
+  "activity": zod.string(),
+  "organization": zod.string(),
+  "hours": zod.number(),
+  "verifiedBy": zod.string(),
+  "type": zod.enum(['event', 'external', 'manual'])
+}))
+})
+
+
+/**
+ * @summary The current participant's editable profile
+ */
+export const GetMyProfileResponse = zod.object({
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "phone": zod.string().nullish(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "organizationId": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update own name, phone, grade, school, affiliation
+ */
+export const UpdateMyProfileBody = zod.object({
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional(),
+  "phone": zod.string().nullish(),
+  "grade": zod.string().optional(),
+  "school": zod.string().optional(),
+  "organizationId": zod.string().nullish(),
+  "joinCode": zod.string().optional()
+})
+
+export const UpdateMyProfileResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Org IDs the current admin manages (all=true for Super Admin)
+ */
+export const GetManagedOrganizationsResponse = zod.object({
+  "all": zod.boolean(),
+  "organizationIds": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Get my leaderboard alias + hide setting
+ */
+export const GetLeaderboardPreferencesResponse = zod.object({
+  "displayAlias": zod.string().nullish(),
+  "hideFromLeaderboard": zod.boolean()
+})
+
+
+/**
+ * @summary Set my leaderboard alias and/or hide setting
+ */
+export const UpdateLeaderboardPreferencesBody = zod.object({
+  "displayAlias": zod.string().nullish(),
+  "hideFromLeaderboard": zod.boolean().optional()
+})
+
+export const UpdateLeaderboardPreferencesResponse = zod.object({
+  "displayAlias": zod.string().nullish(),
+  "hideFromLeaderboard": zod.boolean()
+})
+
+
+/**
+ * @summary Get my email notification preference
+ */
+export const GetNotificationPreferencesResponse = zod.object({
+  "emailNotifications": zod.boolean()
+})
+
+
+/**
+ * @summary Turn my activity emails on or off
+ */
+export const UpdateNotificationPreferencesBody = zod.object({
+  "emailNotifications": zod.boolean()
+})
+
+export const UpdateNotificationPreferencesResponse = zod.object({
+  "emailNotifications": zod.boolean()
+})
+
+
+/**
+ * @summary List my self-logged adult volunteer hours (no approval; not competitive)
+ */
+export const ListMyAdultHoursResponseItem = zod.object({
+  "adultHoursId": zod.string(),
+  "activityName": zod.string(),
+  "organizationName": zod.string().nullish(),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListMyAdultHoursResponse = zod.array(ListMyAdultHoursResponseItem)
+
+
+/**
+ * @summary Log my own adult volunteer hours (auto-recorded, no review)
+ */
+export const logMyAdultHoursBodyActivityNameMin = 2;
+export const logMyAdultHoursBodyActivityNameMax = 200;
+
+export const logMyAdultHoursBodyOrganizationNameMax = 200;
+
+export const logMyAdultHoursBodyHoursWorkedMin = 0.25;
+export const logMyAdultHoursBodyHoursWorkedMax = 24;
+
+export const logMyAdultHoursBodyNotesMax = 500;
+
+
+
+export const LogMyAdultHoursBody = zod.object({
+  "activityName": zod.string().min(logMyAdultHoursBodyActivityNameMin).max(logMyAdultHoursBodyActivityNameMax),
+  "organizationName": zod.string().max(logMyAdultHoursBodyOrganizationNameMax).nullish(),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number().min(logMyAdultHoursBodyHoursWorkedMin).max(logMyAdultHoursBodyHoursWorkedMax),
+  "notes": zod.string().max(logMyAdultHoursBodyNotesMax).nullish()
+})
+
+
+/**
+ * @summary Delete one of my self-logged adult volunteer hour entries
+ */
+export const DeleteMyAdultHoursParams = zod.object({
+  "adultHoursId": zod.coerce.string()
+})
+
+export const DeleteMyAdultHoursResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Add a participant to an event by email (supervisor/org-admin/admin)
+ */
+export const AddEventAttendeeParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const AddEventAttendeeBody = zod.object({
+  "email": zod.string()
+})
+
+
+/**
+ * @summary Email everyone registered for an event (supervisor/org-admin/admin)
+ */
+export const BroadcastToEventParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const broadcastToEventBodySubjectMin = 2;
+export const broadcastToEventBodySubjectMax = 150;
+
+export const broadcastToEventBodyMessageMin = 2;
+export const broadcastToEventBodyMessageMax = 4000;
+
+
+
+export const BroadcastToEventBody = zod.object({
+  "subject": zod.string().min(broadcastToEventBodySubjectMin).max(broadcastToEventBodySubjectMax),
+  "message": zod.string().min(broadcastToEventBodyMessageMin).max(broadcastToEventBodyMessageMax),
+  "includeGuardians": zod.boolean().optional().describe('Also email the guardians of managed (elementary) children.'),
+  "attachments": zod.array(zod.object({
+  "path": zod.string(),
+  "filename": zod.string()
+})).optional().describe('Files to attach (uploaded to object storage first).')
+})
+
+export const BroadcastToEventResponse = zod.object({
+  "recipients": zod.number().describe('How many email addresses the message was sent to.'),
+  "emailConfigured": zod.boolean().optional().describe('False when the server has no email provider configured.')
+})
+
+
+/**
+ * @summary Move all of a supervisor's events to another supervisor
+ */
+export const ReassignEventsParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const ReassignEventsBody = zod.object({
+  "toSupervisorId": zod.string()
+})
+
+export const ReassignEventsResponse = zod.object({
+  "reassigned": zod.number()
+})
+
+
+/**
+ * @summary List award-threshold rows (Super Admin)
+ */
+export const GetAwardThresholdsResponseItem = zod.object({
+  "awardThresholdId": zod.string(),
+  "level": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number()
+})
+export const GetAwardThresholdsResponse = zod.array(GetAwardThresholdsResponseItem)
+
+
+/**
+ * @summary Create or update an award-threshold row (Super Admin)
+ */
+
+
+
+
+
+export const UpsertAwardThresholdBody = zod.object({
+  "level": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "bronze": zod.number().min(1),
+  "silver": zod.number().min(1),
+  "gold": zod.number().min(1)
+})
+
+export const UpsertAwardThresholdResponse = zod.object({
+  "awardThresholdId": zod.string(),
+  "level": zod.string().nullish(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number()
+})
+
+
+/**
+ * @summary Delete an award-threshold row (Super Admin)
+ */
+export const DeleteAwardThresholdParams = zod.object({
+  "awardThresholdId": zod.coerce.string()
+})
+
+export const DeleteAwardThresholdResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Recent admin activity (Super Admin only)
+ */
+export const GetAuditLogQueryParams = zod.object({
+  "limit": zod.coerce.number().optional(),
+  "action": zod.coerce.string().optional()
+})
+
+export const GetAuditLogResponseItem = zod.object({
+  "auditLogId": zod.string(),
+  "actorName": zod.string(),
+  "actorRole": zod.string(),
+  "action": zod.string(),
+  "targetType": zod.string().nullish(),
+  "targetId": zod.string().nullish(),
+  "targetLabel": zod.string().nullish(),
+  "summary": zod.string(),
+  "createdAt": zod.string()
+})
+export const GetAuditLogResponse = zod.array(GetAuditLogResponseItem)
+
+
+/**
+ * @summary List a parent's linked children with schedule and progress
+ */
+export const GetParentChildrenResponseItem = zod.object({
+  "userId": zod.string(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string().nullish(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "isManaged": zod.boolean(),
+  "totalApprovedHours": zod.number(),
+  "upcomingRegistrations": zod.array(zod.object({
+  "registrationId": zod.string(),
+  "eventId": zod.string(),
+  "eventTitle": zod.string().nullish(),
+  "eventDate": zod.string().nullish(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "status": zod.string(),
+  "isNew": zod.boolean(),
+  "hoursStatus": zod.string().nullish().describe('The child\'s submission status for this event (pending\/approved\/rejected), or null if none yet.')
+})),
+  "pastRegistrations": zod.array(zod.object({
+  "registrationId": zod.string(),
+  "eventId": zod.string(),
+  "eventTitle": zod.string().nullish(),
+  "eventDate": zod.string().nullish(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "status": zod.string(),
+  "isNew": zod.boolean(),
+  "hoursStatus": zod.string().nullish().describe('The child\'s submission status for this event (pending\/approved\/rejected), or null if none yet.')
+})).optional(),
+  "thresholds": zod.object({
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number()
+}).optional()
+})
+export const GetParentChildrenResponse = zod.array(GetParentChildrenResponseItem)
+
+
+/**
+ * @summary Add a managed child (no login of its own)
+ */
+export const addParentChildBodyFirstNameMax = 50;
+
+export const addParentChildBodyLastNameMax = 50;
+
+export const addParentChildBodyGradeMax = 20;
+
+export const addParentChildBodySchoolMax = 120;
+
+
+
+export const AddParentChildBody = zod.object({
+  "firstName": zod.string().min(1).max(addParentChildBodyFirstNameMax),
+  "lastName": zod.string().min(1).max(addParentChildBodyLastNameMax),
+  "grade": zod.string().min(1).max(addParentChildBodyGradeMax),
+  "school": zod.string().min(1).max(addParentChildBodySchoolMax),
+  "organizationId": zod.string().nullish(),
+  "joinCode": zod.string().optional()
+})
+
+
+/**
+ * @summary Edit a managed child's details
+ */
+export const UpdateParentChildParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const updateParentChildBodyFirstNameMax = 50;
+
+export const updateParentChildBodyLastNameMax = 50;
+
+export const updateParentChildBodyGradeMax = 20;
+
+export const updateParentChildBodySchoolMax = 120;
+
+
+
+export const UpdateParentChildBody = zod.object({
+  "firstName": zod.string().min(1).max(updateParentChildBodyFirstNameMax),
+  "lastName": zod.string().min(1).max(updateParentChildBodyLastNameMax),
+  "grade": zod.string().min(1).max(updateParentChildBodyGradeMax),
+  "school": zod.string().min(1).max(updateParentChildBodySchoolMax),
+  "organizationId": zod.string().nullish(),
+  "joinCode": zod.string().optional()
+})
+
+export const UpdateParentChildResponse = zod.object({
+  "status": zod.string(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Sign a managed child up for an event
+ */
+export const RegisterChildForEventParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const RegisterChildForEventBody = zod.object({
+  "eventId": zod.string()
+})
+
+
+/**
+ * @summary Submit a managed child's post-event hours for supervisor review
+ */
+export const SubmitChildHoursParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const submitChildHoursBodyHoursWorkedMin = 0.25;
+export const submitChildHoursBodyHoursWorkedMax = 24;
+
+
+
+export const SubmitChildHoursBody = zod.object({
+  "eventId": zod.string(),
+  "hoursWorked": zod.number().min(submitChildHoursBodyHoursWorkedMin).max(submitChildHoursBodyHoursWorkedMax)
+})
+
+
+/**
+ * @summary Submit a managed child's external/outside volunteer hours
+ */
+export const SubmitChildExternalHoursParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const submitChildExternalHoursBodyActivityNameMin = 2;
+export const submitChildExternalHoursBodyActivityNameMax = 200;
+
+export const submitChildExternalHoursBodyOrganizationNameMin = 2;
+export const submitChildExternalHoursBodyOrganizationNameMax = 200;
+
+export const submitChildExternalHoursBodyHoursWorkedMin = 0.5;
+export const submitChildExternalHoursBodyHoursWorkedMax = 24;
+
+export const submitChildExternalHoursBodyExtSupervisorNameMin = 2;
+export const submitChildExternalHoursBodyExtSupervisorNameMax = 100;
+
+
+
+export const SubmitChildExternalHoursBody = zod.object({
+  "activityName": zod.string().min(submitChildExternalHoursBodyActivityNameMin).max(submitChildExternalHoursBodyActivityNameMax),
+  "organizationName": zod.string().min(submitChildExternalHoursBodyOrganizationNameMin).max(submitChildExternalHoursBodyOrganizationNameMax),
+  "volunteerDate": zod.string(),
+  "hoursWorked": zod.number().min(submitChildExternalHoursBodyHoursWorkedMin).max(submitChildExternalHoursBodyHoursWorkedMax),
+  "extSupervisorName": zod.string().min(submitChildExternalHoursBodyExtSupervisorNameMin).max(submitChildExternalHoursBodyExtSupervisorNameMax),
+  "extSupervisorEmail": zod.string().email(),
+  "description": zod.string().optional(),
+  "isNonprofit": zod.boolean().optional(),
+  "ein": zod.string().optional(),
+  "proofUrl": zod.string().nullish()
+})
+
+
+/**
+ * @summary A managed child's verified service record (parent view)
+ */
+export const GetChildServiceRecordParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const GetChildServiceRecordResponse = zod.object({
+  "studentName": zod.string(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
+  "season": zod.string(),
+  "generatedAt": zod.string(),
+  "totalApprovedHours": zod.number(),
+  "medal": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "date": zod.string(),
+  "activity": zod.string(),
+  "organization": zod.string(),
+  "hours": zod.number(),
+  "verifiedBy": zod.string(),
+  "type": zod.enum(['event', 'external', 'manual'])
+}))
+})
+
+
+/**
+ * @summary List linked co-guardians and pending invites
+ */
+export const ListCoGuardiansResponse = zod.object({
+  "linked": zod.array(zod.object({
+  "userId": zod.string().optional(),
+  "name": zod.string().optional(),
+  "email": zod.string().nullable(),
+  "status": zod.enum(['linked', 'pending'])
+})),
+  "pending": zod.array(zod.object({
+  "userId": zod.string().optional(),
+  "name": zod.string().optional(),
+  "email": zod.string().nullable(),
+  "status": zod.enum(['linked', 'pending'])
+}))
+})
+
+
+/**
+ * @summary Invite a co-guardian by email (links now if they have an account)
+ */
+export const InviteCoGuardianBody = zod.object({
+  "email": zod.string()
+})
+
+export const InviteCoGuardianResponse = zod.object({
+  "status": zod.enum(['linked', 'invited']),
+  "linkedChildren": zod.number().optional()
+})
+
+
+/**
  * @summary Get participant dashboard summary
  */
 export const GetParticipantDashboardResponse = zod.object({
   "totalApprovedHours": zod.number(),
   "pendingCount": zod.number(),
   "approvedCount": zod.number(),
-  "rejectedCount": zod.number()
+  "rejectedCount": zod.number(),
+  "thresholds": zod.object({
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number()
+}).optional()
 })
 
 

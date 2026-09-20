@@ -10,12 +10,22 @@ export interface EventInput {
   /** @maxLength 150 */
   title: string;
   description: string;
+  /** @maxLength 80 */
+  slotLabel?: string;
   location: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   eventDate: string;
   startTime: string;
   endTime: string;
-  hoursValue: number;
   maxCapacity: number;
+  /** @nullable */
+  minGrade?: number | null;
+  /** @nullable */
+  maxGrade?: number | null;
   supervisorId: string;
   imageUrl?: string;
+  organizationId?: string;
 }

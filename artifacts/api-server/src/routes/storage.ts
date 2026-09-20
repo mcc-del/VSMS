@@ -5,7 +5,7 @@ import {
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
 import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
-import { authenticate, requireRole } from "../middlewares/auth";
+import { authenticate } from "../middlewares/auth";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -16,21 +16,23 @@ const ALLOWED_IMAGE_TYPES = new Set([
   "image/gif",
   "image/webp",
   "image/svg+xml",
+  // Documents (proof letters, message attachments like flyers).
+  "application/pdf",
 ]);
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 /**
  * POST /storage/uploads/request-url
  *
- * Admin-only: request a presigned PUT URL for an event image upload.
+ * Any signed-in user: request a presigned PUT URL for an image/proof upload
+ * (event images by admins/org-admins/supervisors; proof files by participants).
  * The client sends JSON metadata (name, size, contentType) — NOT the file.
  * Then uploads the file directly to the returned presigned URL.
  */
 router.post(
   "/storage/uploads/request-url",
   authenticate,
-  requireRole("admin"),
   async (req: Request, res: Response) => {
     const parsed = RequestUploadUrlBody.safeParse(req.body);
     if (!parsed.success) {
@@ -41,12 +43,12 @@ router.post(
     const { name, size, contentType } = parsed.data;
 
     if (!ALLOWED_IMAGE_TYPES.has(contentType)) {
-      res.status(400).json({ error: "Only image files are allowed (JPEG, PNG, GIF, WebP, SVG)." });
+      res.status(400).json({ error: "Only images (JPEG, PNG, GIF, WebP, SVG) or PDF files are allowed." });
       return;
     }
 
     if (size > MAX_IMAGE_SIZE) {
-      res.status(400).json({ error: "Image must be 5 MB or smaller." });
+      res.status(400).json({ error: "File must be 10 MB or smaller." });
       return;
     }
 

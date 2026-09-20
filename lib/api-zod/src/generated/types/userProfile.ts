@@ -8,9 +8,13 @@
 
 export interface UserProfile {
   userId: string;
-  email: string;
+  /** @nullable */
+  email?: string | null;
   firstName: string;
   lastName: string;
   role: string;
+  /** @nullable */
+  phone?: string | null;
   createdAt: string;
+  managedOrganizationIds?: string[];
 }

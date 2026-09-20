@@ -4,9 +4,12 @@ import {
   useDeleteEvent,
   useUpdateEvent,
   useListUsers,
+  useGetManagedOrganizations,
   getListEventsQueryKey,
+  getListUsersQueryKey,
   getGetAdminDashboardQueryKey,
 } from "@workspace/api-client-react";
+import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,19 +26,35 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, MapPin, Clock, Calendar } from "lucide-react";
+import { Pencil, Trash2, MapPin, Clock, Calendar, Plus, Users, Search, UserCheck, Building2 } from "lucide-react";
+import { Link } from "wouter";
+import { AuthenticatedImage } from "@/components/authenticated-image";
+import { calculateEventDuration, formatHours } from "@/lib/event-duration";
+import { ALL_GRADES } from "@/lib/schools";
+
+const NONE = "none";
 
 const editSchema = z.object({
   title: z.string().min(1, "Required").max(150),
   description: z.string().min(1, "Required"),
+  slotLabel: z.string().optional(),
   location: z.string().min(1, "Required"),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
   eventDate: z.string().min(1, "Required"),
   startTime: z.string().min(1, "Required"),
   endTime: z.string().min(1, "Required"),
-  hoursValue: z.coerce.number().positive("Must be > 0"),
   maxCapacity: z.coerce.number().int().positive("Must be positive"),
+  minGrade: z.string().optional(),
+  maxGrade: z.string().optional(),
   supervisorId: z.string().min(1, "Required"),
   imageUrl: z.string().nullable(),
+}).superRefine((values, ctx) => {
+  if (calculateEventDuration(values.startTime, values.endTime) === null) {
+    ctx.addIssue({ code: "custom", path: ["endTime"], message: "End time must be later than start time" });
+  }
 });
 
 function formatTime(t: string) {
@@ -49,27 +68,71 @@ function formatTime(t: string) {
 
 export default function AdminEventsPage() {
   const today = new Date().toISOString().split("T")[0];
+  const { role, userId } = useAuth();
+  const isOrgAdmin = role === "org_admin";
+  const isSupervisor = role === "supervisor";
+  const isSelfSupervised = isOrgAdmin || isSupervisor;
   const { data: events, isLoading } = useListEvents();
-  const { data: users } = useListUsers();
+  const { data: managed } = useGetManagedOrganizations();
+  const { data: users } = useListUsers({
+    query: { enabled: !isSelfSupervised, queryKey: getListUsersQueryKey() },
+  });
   const deleteEvent = useDeleteEvent();
   const updateEvent = useUpdateEvent();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
+  const [search, setSearch] = useState("");
+  const [whenFilter, setWhenFilter] = useState<"all" | "upcoming" | "past">("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const supervisors = (users ?? []).filter((u) => u.role === "supervisor");
+
+  // Org admins manage their own org's events; supervisors manage events they
+  // supervise; admins see everything.
+  const visibleEvents = isSupervisor
+    ? (events ?? []).filter((e) => e.supervisorId === userId)
+    : isOrgAdmin && managed && !managed.all
+      ? (events ?? []).filter(
+          (e) => e.organizationId && managed.organizationIds.includes(e.organizationId),
+        )
+      : events ?? [];
+
+  const q = search.trim().toLowerCase();
+  const filteredEvents = visibleEvents.filter((e) => {
+    if (whenFilter === "upcoming" && e.eventDate < today) return false;
+    if (whenFilter === "past" && e.eventDate >= today) return false;
+    if (fromDate && e.eventDate < fromDate) return false;
+    if (toDate && e.eventDate > toDate) return false;
+    if (q) {
+      const hay = [e.title, (e as any).supervisorName, (e as any).organizationName, e.location]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  const hasFilters = !!q || whenFilter !== "all" || !!fromDate || !!toDate;
 
   const form = useForm<z.infer<typeof editSchema>>({
     resolver: zodResolver(editSchema),
     defaultValues: {
       title: "",
       description: "",
+      slotLabel: "",
       location: "",
+      street: "",
+      city: "",
+      state: "",
+      zip: "",
       eventDate: "",
       startTime: "09:00",
       endTime: "17:00",
-      hoursValue: 4,
       maxCapacity: 50,
+      minGrade: NONE,
+      maxGrade: NONE,
       supervisorId: "",
       imageUrl: null,
     },
@@ -80,16 +143,23 @@ export default function AdminEventsPage() {
     form.reset({
       title: event.title,
       description: event.description,
+      slotLabel: event.slotLabel ?? "",
       location: event.location ?? "",
+      street: event.street ?? "",
+      city: event.city ?? "",
+      state: event.state ?? "",
+      zip: event.zip ?? "",
       eventDate: event.eventDate,
       startTime: (event.startTime ?? "09:00:00").slice(0, 5),
       endTime: (event.endTime ?? "17:00:00").slice(0, 5),
-      hoursValue: event.hoursValue,
       maxCapacity: event.maxCapacity,
+      minGrade: event.minGrade != null ? String(event.minGrade) : NONE,
+      maxGrade: event.maxGrade != null ? String(event.maxGrade) : NONE,
       supervisorId: event.supervisorId,
       imageUrl: event.imageUrl ?? null,
     });
   }
+  const plannedHours = calculateEventDuration(form.watch("startTime"), form.watch("endTime"));
 
   function handleDelete(eventId: string, title: string) {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
@@ -114,6 +184,13 @@ export default function AdminEventsPage() {
     if (payload.imageUrl === null || payload.imageUrl === undefined || payload.imageUrl === "") {
       payload.imageUrl = null;
     }
+    payload.slotLabel = values.slotLabel?.trim() || null;
+    payload.street = values.street?.trim() || null;
+    payload.city = values.city?.trim() || null;
+    payload.state = values.state?.trim() || null;
+    payload.zip = values.zip?.trim() || null;
+    payload.minGrade = values.minGrade && values.minGrade !== NONE ? Number(values.minGrade) : null;
+    payload.maxGrade = values.maxGrade && values.maxGrade !== NONE ? Number(values.maxGrade) : null;
 
     updateEvent.mutate(
       {
@@ -136,28 +213,93 @@ export default function AdminEventsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Manage Events</h1>
-          <p className="text-muted-foreground text-sm mt-1">Edit or delete volunteer events</p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold">Events</h1>
+            <p className="text-muted-foreground text-sm mt-1">Create, edit, or remove volunteer opportunities</p>
+          </div>
+          <Link href="/admin/events/new">
+            <Button data-testid="button-new-event"><Plus className="w-4 h-4 mr-1" /> New Event</Button>
+          </Link>
         </div>
+
+        {!isLoading && visibleEvents.length > 0 && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search by title, supervisor, organization, or location"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-events"
+                />
+              </div>
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex gap-1.5">
+                  {(["all", "upcoming", "past"] as const).map((w) => (
+                    <Button
+                      key={w}
+                      type="button"
+                      size="sm"
+                      variant={whenFilter === w ? "default" : "outline"}
+                      onClick={() => setWhenFilter(w)}
+                      className="capitalize"
+                    >
+                      {w}
+                    </Button>
+                  ))}
+                </div>
+                <div className="flex items-end gap-2">
+                  <div>
+                    <label className="text-xs text-muted-foreground">From</label>
+                    <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-9" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">To</label>
+                    <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-9" />
+                  </div>
+                </div>
+                {hasFilters && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => { setSearch(""); setWhenFilter("all"); setFromDate(""); setToDate(""); }}
+                  >
+                    Clear
+                  </Button>
+                )}
+                <span className="text-xs text-muted-foreground ml-auto self-center">
+                  {filteredEvents.length} of {visibleEvents.length}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {isLoading ? (
           <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-24" />)}</div>
-        ) : (events ?? []).length === 0 ? (
+        ) : visibleEvents.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">No events yet.</CardContent>
           </Card>
+        ) : filteredEvents.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center text-muted-foreground">No events match your filters.</CardContent>
+          </Card>
         ) : (
           <div className="space-y-3">
-            {[...(events ?? [])].sort((a, b) => b.eventDate.localeCompare(a.eventDate)).map((event) => {
+            {[...filteredEvents].sort((a, b) => b.eventDate.localeCompare(a.eventDate)).map((event) => {
               const isUpcoming = event.eventDate >= today;
               return (
                 <Card key={event.eventId}>
                   <CardContent className="flex items-start gap-4 p-4">
                     {event.imageUrl && (
-                      <img
-                        src={`/api/storage${event.imageUrl}`}
-                        alt=""
+                      <AuthenticatedImage
+                        objectPath={event.imageUrl}
+                        alt={event.title}
                         className="w-16 h-16 rounded-lg object-cover shrink-0"
                       />
                     )}
@@ -184,9 +326,24 @@ export default function AdminEventsPage() {
                         )}
                         <span>{event.registrationCount}/{event.maxCapacity} registered</span>
                         <span>{event.hoursValue}h credit</span>
+                        {(event as any).supervisorName && (
+                          <span className="flex items-center gap-1">
+                            <UserCheck className="w-3 h-3" /> {(event as any).supervisorName}
+                          </span>
+                        )}
+                        {(event as any).organizationName && (
+                          <span className="flex items-center gap-1">
+                            <Building2 className="w-3 h-3" /> {(event as any).organizationName}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 shrink-0">
+                      <Link href={`/supervisor/roster/${event.eventId}`}>
+                        <Button size="sm" variant="outline" data-testid={`button-roster-${event.eventId}`}>
+                          <Users className="w-3.5 h-3.5 mr-1" /> Roster
+                        </Button>
+                      </Link>
                       <Button
                         size="sm"
                         variant="outline"
@@ -236,30 +393,51 @@ export default function AdminEventsPage() {
                 </FormItem>
               )} />
 
-              <FormField control={form.control} name="location" render={({ field }) => (
+              <FormField control={form.control} name="slotLabel" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl><Input placeholder="Room 101 / Community Center" {...field} /></FormControl>
-                  <FormMessage />
+                  <FormLabel>Slot label <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                  <FormControl><Input placeholder="e.g. Checkout, Cleanup crew" {...field} /></FormControl>
                 </FormItem>
               )} />
 
-              <div className="grid grid-cols-2 gap-3">
-                <FormField control={form.control} name="eventDate" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date</FormLabel>
-                    <FormControl><Input type="date" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="hoursValue" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hours value</FormLabel>
-                    <FormControl><Input type="number" step="0.5" min="0.5" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+              <FormField control={form.control} name="location" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location name / venue</FormLabel>
+                  <FormControl><Input placeholder="Medina Academy — Main Hall" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="street" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Street address <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                  <FormControl><Input placeholder="123 Main St" {...field} /></FormControl>
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-6 gap-3">
+                <div className="col-span-3">
+                  <FormField control={form.control} name="city" render={({ field }) => (
+                    <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Redmond" {...field} /></FormControl></FormItem>
+                  )} />
+                </div>
+                <div className="col-span-1">
+                  <FormField control={form.control} name="state" render={({ field }) => (
+                    <FormItem><FormLabel>State</FormLabel><FormControl><Input placeholder="WA" {...field} /></FormControl></FormItem>
+                  )} />
+                </div>
+                <div className="col-span-2">
+                  <FormField control={form.control} name="zip" render={({ field }) => (
+                    <FormItem><FormLabel>ZIP</FormLabel><FormControl><Input placeholder="98052" {...field} /></FormControl></FormItem>
+                  )} />
+                </div>
               </div>
+
+              <FormField control={form.control} name="eventDate" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date</FormLabel>
+                  <FormControl><Input type="date" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
 
               <div className="grid grid-cols-2 gap-3">
                 <FormField control={form.control} name="startTime" render={({ field }) => (
@@ -277,6 +455,13 @@ export default function AdminEventsPage() {
                   </FormItem>
                 )} />
               </div>
+              <div className="rounded-lg border bg-muted/40 px-4 py-3">
+                <p className="text-sm font-medium">Planned service credit</p>
+                <p className="text-xl font-bold text-primary mt-1">
+                  {plannedHours === null ? "—" : `${formatHours(plannedHours)}h`}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Calculated from the event times.</p>
+              </div>
 
               <FormField control={form.control} name="maxCapacity" render={({ field }) => (
                 <FormItem>
@@ -286,26 +471,55 @@ export default function AdminEventsPage() {
                 </FormItem>
               )} />
 
-              <FormField control={form.control} name="supervisorId" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Supervisor</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a supervisor" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {supervisors.map((s) => (
-                        <SelectItem key={s.userId} value={s.userId}>
-                          {s.firstName} {s.lastName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="minGrade" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Minimum grade <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Any</SelectItem>
+                        {ALL_GRADES.map((g) => <SelectItem key={g} value={g}>Grade {g}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="maxGrade" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Maximum grade <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Any</SelectItem>
+                        {ALL_GRADES.map((g) => <SelectItem key={g} value={g}>Grade {g}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+              </div>
+
+              {!isSelfSupervised && (
+                <FormField control={form.control} name="supervisorId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Supervisor</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a supervisor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {supervisors.map((s) => (
+                          <SelectItem key={s.userId} value={s.userId}>
+                            {s.firstName} {s.lastName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
 
               <FormField control={form.control} name="imageUrl" render={({ field }) => (
                 <FormItem>

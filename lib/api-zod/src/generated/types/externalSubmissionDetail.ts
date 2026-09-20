@@ -23,6 +23,11 @@ export interface ExternalSubmissionDetail {
   submittedAt: string;
   /** @nullable */
   reviewedAt?: string | null;
+  isNonprofit?: boolean;
+  /** @nullable */
+  ein?: string | null;
+  /** @nullable */
+  proofUrl?: string | null;
   /** @nullable */
   participantFirstName?: string | null;
   /** @nullable */

@@ -5,10 +5,12 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+import type { AwardThresholds } from './awardThresholds';
 
 export interface ParticipantDashboard {
   totalApprovedHours: number;
   pendingCount: number;
   approvedCount: number;
   rejectedCount: number;
+  thresholds?: AwardThresholds;
 }

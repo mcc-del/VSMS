@@ -1,10 +1,21 @@
 import { Router } from "express";
-import { db, volunteerSubmissionsTable, eventsTable, usersTable, eventRegistrationsTable } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { db, volunteerSubmissionsTable, eventsTable, usersTable, eventRegistrationsTable, guardianshipsTable } from "@workspace/db";
+import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
-import { ClaimHoursBody, ReviewSubmissionBody, OverrideSubmissionBody } from "@workspace/api-zod";
+import { SubmitInternalHoursBody, ReviewSubmissionBody, OverrideSubmissionBody } from "@workspace/api-zod";
+import { managedOrgIds, canManageOrg } from "../lib/org-scope";
+import { sendHoursForReview, sendHoursReviewed } from "../lib/email";
 
 const router = Router();
+
+function calculateDurationHours(startTime: string, endTime: string): number | null {
+  const [startHour, startMinute] = startTime.slice(0, 5).split(":").map(Number);
+  const [endHour, endMinute] = endTime.slice(0, 5).split(":").map(Number);
+  if ([startHour, startMinute, endHour, endMinute].some(Number.isNaN)) return null;
+  const minutes = endHour * 60 + endMinute - (startHour * 60 + startMinute);
+  if (minutes <= 0) return null;
+  return Math.round((minutes / 60) * 100) / 100;
+}
 
 function formatSubmission(s: {
   submissionId: string;
@@ -16,8 +27,17 @@ function formatSubmission(s: {
   reviewedAt: Date | null;
   eventTitle: string | null;
   eventDate: string | null;
-  hoursValue: string | null;
+  hoursWorked: string | null;
+  plannedHours: string | null;
+  eventStartTime: string | null;
+  eventEndTime: string | null;
 }) {
+  const plannedHours =
+    s.eventStartTime && s.eventEndTime
+      ? calculateDurationHours(s.eventStartTime, s.eventEndTime)
+      : s.plannedHours
+        ? Number(s.plannedHours)
+        : null;
   return {
     submissionId: s.submissionId,
     userId: s.userId,
@@ -28,7 +48,12 @@ function formatSubmission(s: {
     reviewedAt: s.reviewedAt?.toISOString() ?? null,
     eventTitle: s.eventTitle,
     eventDate: s.eventDate,
-    hoursValue: s.hoursValue ? Number(s.hoursValue) : null,
+    hoursWorked: s.hoursWorked
+      ? Number(s.hoursWorked)
+      : s.status === "approved" && s.plannedHours
+        ? Number(s.plannedHours)
+        : null,
+    plannedHours,
   };
 }
 
@@ -45,7 +70,10 @@ router.get("/v1/submissions", authenticate, requireRole("participant"), async (r
       reviewedAt: volunteerSubmissionsTable.reviewedAt,
       eventTitle: eventsTable.title,
       eventDate: eventsTable.eventDate,
-      hoursValue: eventsTable.hoursValue,
+      hoursWorked: volunteerSubmissionsTable.hoursWorked,
+      plannedHours: eventsTable.hoursValue,
+      eventStartTime: eventsTable.startTime,
+      eventEndTime: eventsTable.endTime,
     })
     .from(volunteerSubmissionsTable)
     .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
@@ -55,18 +83,18 @@ router.get("/v1/submissions", authenticate, requireRole("participant"), async (r
   res.json(rows.map(formatSubmission));
 });
 
-// POST /api/v1/submissions — claim hours
+// POST /api/v1/submissions — submit actual hours worked
 router.post("/v1/submissions", authenticate, requireRole("participant"), async (req, res) => {
-  const parsed = ClaimHoursBody.safeParse(req.body);
+  const parsed = SubmitInternalHoursBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input" });
     return;
   }
 
-  const { eventId } = parsed.data;
+  const { eventId, hoursWorked } = parsed.data;
   const userId = req.auth!.userId;
 
-  // Check event exists and is in the past
+  // Check event exists and has ended
   const [event] = await db
     .select()
     .from(eventsTable)
@@ -78,13 +106,17 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     return;
   }
 
-  const today = new Date().toISOString().split("T")[0];
-  if (event.eventDate >= today) {
-    res.status(400).json({ error: "You can only claim hours for past events" });
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
+  const nowTime = now.toTimeString().slice(0, 5);
+  const eventHasEnded =
+    event.eventDate < today ||
+    (event.eventDate === today && nowTime > event.endTime.slice(0, 5));
+  if (!eventHasEnded) {
+    res.status(400).json({ error: "You can submit actual hours only after the event has ended." });
     return;
   }
 
-  // Require an attended registration — no-show or unregistered participants cannot claim hours
   const [registration] = await db
     .select()
     .from(eventRegistrationsTable)
@@ -96,19 +128,32 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     )
     .limit(1);
 
+  if (registration && registration.status === "no_show") {
+    res.status(400).json({ error: "You were marked as a no-show for this event and cannot submit hours." });
+    return;
+  }
+
+  // Walk-in: showed up without signing up. Allow submitting hours if they're
+  // eligible (org + grade), creating an attended registration on the fly. The
+  // supervisor still reviews and approves the hours.
   if (!registration) {
-    res.status(400).json({ error: "You are not registered for this event and cannot claim hours." });
-    return;
-  }
-
-  if (registration.status === "no_show") {
-    res.status(400).json({ error: "You were marked as a no-show for this event and cannot claim hours." });
-    return;
-  }
-
-  if (registration.status !== "attended") {
-    res.status(400).json({ error: "Hours can only be claimed after checking in to the event." });
-    return;
+    const [me] = await db
+      .select({ organizationId: usersTable.organizationId, grade: usersTable.grade })
+      .from(usersTable)
+      .where(eq(usersTable.userId, userId))
+      .limit(1);
+    if (event.organizationId && (me?.organizationId ?? null) !== event.organizationId) {
+      res.status(403).json({ error: "This opportunity isn't open to your organization." });
+      return;
+    }
+    if (event.minGrade != null || event.maxGrade != null) {
+      const g = me?.grade ? Number(me.grade) : null;
+      if (g == null || (event.minGrade != null && g < event.minGrade) || (event.maxGrade != null && g > event.maxGrade)) {
+        res.status(403).json({ error: "This opportunity's grade range doesn't include you." });
+        return;
+      }
+    }
+    await db.insert(eventRegistrationsTable).values({ eventId, userId, status: "attended" });
   }
 
   // Check for duplicate submission
@@ -123,15 +168,29 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     )
     .limit(1);
 
-  if (existing.length > 0) {
-    res.status(409).json({ error: "You have already claimed hours for this event" });
+  // Block re-submission only once the hours are APPROVED; a pending or rejected
+  // submission can be corrected and re-submitted (goes back to pending).
+  if (existing.length > 0 && existing[0].hoursWorked !== null && existing[0].status === "approved") {
+    res.status(409).json({ error: "These hours are already approved and can't be changed." });
     return;
   }
 
-  const [submission] = await db
-    .insert(volunteerSubmissionsTable)
-    .values({ userId, eventId, status: "pending" })
-    .returning();
+  const [submission] = existing.length > 0
+    ? await db
+        .update(volunteerSubmissionsTable)
+        .set({
+          hoursWorked: String(hoursWorked),
+          status: "pending",
+          supervisorComments: null,
+          submittedAt: new Date(),
+          reviewedAt: null,
+        })
+        .where(eq(volunteerSubmissionsTable.submissionId, existing[0].submissionId))
+        .returning()
+    : await db
+        .insert(volunteerSubmissionsTable)
+        .values({ userId, eventId, hoursWorked: String(hoursWorked), status: "pending" })
+        .returning();
 
   res.status(201).json({
     submissionId: submission.submissionId,
@@ -143,16 +202,46 @@ router.post("/v1/submissions", authenticate, requireRole("participant"), async (
     reviewedAt: null,
     eventTitle: event.title,
     eventDate: event.eventDate,
-    hoursValue: Number(event.hoursValue),
+    hoursWorked: Number(submission.hoursWorked),
+    plannedHours: calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue),
   });
+
+  // Notify the event's supervisor that hours are waiting for review.
+  const [sup] = await db
+    .select({ email: usersTable.email, firstName: usersTable.firstName, lastName: usersTable.lastName })
+    .from(usersTable)
+    .where(eq(usersTable.userId, event.supervisorId))
+    .limit(1);
+  const [participant] = await db
+    .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
+    .from(usersTable)
+    .where(eq(usersTable.userId, userId))
+    .limit(1);
+  if (sup?.email) {
+    const supName = [sup.firstName, sup.lastName].filter(Boolean).join(" ") || "Supervisor";
+    const partName = [participant?.firstName, participant?.lastName].filter(Boolean).join(" ") || "A participant";
+    sendHoursForReview(sup.email, supName, partName, event.title).catch((err) =>
+      req.log.error({ err }, "hours-for-review email failed"),
+    );
+  }
 });
 
 // GET /api/v1/supervisor/submissions — pending queue
 router.get(
   "/v1/supervisor/submissions",
   authenticate,
-  requireRole("supervisor", "admin"),
+  requireRole("supervisor", "admin", "org_admin"),
   async (req, res) => {
+    // Organization Admins only see submissions for events in the org(s) they
+    // manage; a Super Admin sees all; a supervisor sees their assigned events.
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    const orgFilter =
+      managed !== null
+        ? managed.length > 0
+          ? inArray(eventsTable.organizationId, managed)
+          : eq(eventsTable.eventId, "00000000-0000-0000-0000-000000000000") // none
+        : undefined;
+
     const rows = await db
       .select({
         submissionId: volunteerSubmissionsTable.submissionId,
@@ -164,7 +253,10 @@ router.get(
         reviewedAt: volunteerSubmissionsTable.reviewedAt,
         eventTitle: eventsTable.title,
         eventDate: eventsTable.eventDate,
-        hoursValue: eventsTable.hoursValue,
+        hoursWorked: volunteerSubmissionsTable.hoursWorked,
+        plannedHours: eventsTable.hoursValue,
+        eventStartTime: eventsTable.startTime,
+        eventEndTime: eventsTable.endTime,
         participantFirstName: usersTable.firstName,
         participantLastName: usersTable.lastName,
         participantEmail: usersTable.email,
@@ -172,7 +264,16 @@ router.get(
       .from(volunteerSubmissionsTable)
       .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
       .leftJoin(usersTable, eq(volunteerSubmissionsTable.userId, usersTable.userId))
-      .where(eq(volunteerSubmissionsTable.status, "pending"))
+      .where(
+        and(
+          eq(volunteerSubmissionsTable.status, "pending"),
+          isNotNull(volunteerSubmissionsTable.hoursWorked),
+          req.auth!.role === "supervisor"
+            ? eq(eventsTable.supervisorId, req.auth!.userId)
+            : undefined,
+          orgFilter,
+        ),
+      )
       .orderBy(volunteerSubmissionsTable.submittedAt);
 
     res.json(
@@ -190,7 +291,7 @@ router.get(
 router.put(
   "/v1/supervisor/submissions/:submissionId/review",
   authenticate,
-  requireRole("supervisor", "admin"),
+  requireRole("supervisor", "admin", "org_admin"),
   async (req, res) => {
     const { submissionId } = req.params as { submissionId: string };
 
@@ -215,13 +316,32 @@ router.put(
     }
 
     const [submission] = await db
-      .select()
+      .select({
+        submissionId: volunteerSubmissionsTable.submissionId,
+        userId: volunteerSubmissionsTable.userId,
+        eventId: volunteerSubmissionsTable.eventId,
+        supervisorId: eventsTable.supervisorId,
+        organizationId: eventsTable.organizationId,
+      })
       .from(volunteerSubmissionsTable)
+      .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
       .where(eq(volunteerSubmissionsTable.submissionId, submissionId))
       .limit(1);
 
     if (!submission) {
       res.status(404).json({ error: "Submission not found" });
+      return;
+    }
+
+    if (req.auth!.role === "supervisor" && submission.supervisorId !== req.auth!.userId) {
+      res.status(403).json({ error: "You can only review submissions for your assigned events." });
+      return;
+    }
+
+    // Organization Admins may only review submissions for events in their org(s).
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    if (managed !== null && !canManageOrg(managed, submission.organizationId)) {
+      res.status(403).json({ error: "You can only review submissions for your organization." });
       return;
     }
 
@@ -233,6 +353,42 @@ router.put(
         reviewedAt: new Date(),
       })
       .where(eq(volunteerSubmissionsTable.submissionId, submissionId));
+
+    // Notify the participant (and their parent/guardians) of the outcome.
+    const [participant] = await db
+      .select({
+        firstName: usersTable.firstName,
+        email: usersTable.email,
+        parentEmail: usersTable.parentEmail,
+        isManaged: usersTable.isManaged,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.userId, submission.userId))
+      .limit(1);
+    if (participant) {
+      const [ev] = await db
+        .select({ title: eventsTable.title })
+        .from(eventsTable)
+        .where(eq(eventsTable.eventId, submission.eventId))
+        .limit(1);
+      const recipients = [participant.email, participant.parentEmail].filter((e): e is string => !!e);
+      // A managed child has no email of their own — notify their guardians.
+      if (participant.isManaged) {
+        const guardians = await db
+          .select({ email: usersTable.email })
+          .from(guardianshipsTable)
+          .leftJoin(usersTable, eq(guardianshipsTable.guardianUserId, usersTable.userId))
+          .where(eq(guardianshipsTable.childUserId, submission.userId));
+        for (const g of guardians) if (g.email) recipients.push(g.email);
+      }
+      sendHoursReviewed(
+        recipients,
+        participant.firstName,
+        ev?.title ?? "your event",
+        status === "approved",
+        comments ?? null,
+      ).catch((err) => req.log.error({ err }, "hours-reviewed email failed"));
+    }
 
     res.json({ status: "success", message: "Submission evaluation processed successfully." });
   },
@@ -255,7 +411,10 @@ router.get(
         reviewedAt: volunteerSubmissionsTable.reviewedAt,
         eventTitle: eventsTable.title,
         eventDate: eventsTable.eventDate,
-        hoursValue: eventsTable.hoursValue,
+        hoursWorked: volunteerSubmissionsTable.hoursWorked,
+        plannedHours: eventsTable.hoursValue,
+        eventStartTime: eventsTable.startTime,
+        eventEndTime: eventsTable.endTime,
         participantFirstName: usersTable.firstName,
         participantLastName: usersTable.lastName,
         participantEmail: usersTable.email,
@@ -263,7 +422,14 @@ router.get(
       .from(volunteerSubmissionsTable)
       .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
       .leftJoin(usersTable, eq(volunteerSubmissionsTable.userId, usersTable.userId))
-      .where(inArray(volunteerSubmissionsTable.status, ["approved", "rejected"]))
+      .where(
+        and(
+          inArray(volunteerSubmissionsTable.status, ["approved", "rejected"]),
+          req.auth!.role === "supervisor"
+            ? eq(eventsTable.supervisorId, req.auth!.userId)
+            : undefined,
+        ),
+      )
       .orderBy(volunteerSubmissionsTable.reviewedAt);
 
     res.json(

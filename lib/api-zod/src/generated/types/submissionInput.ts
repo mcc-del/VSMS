@@ -8,4 +8,9 @@
 
 export interface SubmissionInput {
   eventId: string;
+  /**
+     * @minimum 0.25
+     * @maximum 24
+     */
+  hoursWorked: number;
 }

@@ -1,8 +1,12 @@
 import { useGetAdminDashboard } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
+import { RecyclingLogCard } from "@/components/recycling-log-card";
+import { EmailTestCard } from "@/components/email-test-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Calendar, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react";
+import { GettingStarted } from "@/components/getting-started";
+import { NotificationToggle } from "@/components/notification-toggle";
 
 interface StatCardProps {
   title: string;
@@ -32,6 +36,7 @@ export default function AdminDashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <GettingStarted role="admin" />
         <div>
           <h1 className="text-2xl font-bold">System Overview</h1>
           <p className="text-muted-foreground text-sm mt-1">Platform-wide metrics and activity</p>
@@ -70,6 +75,10 @@ export default function AdminDashboard() {
             </div>
           </>
         )}
+
+        <RecyclingLogCard />
+        <NotificationToggle description="Get an email when a new user signs up. Password resets always send." />
+        <EmailTestCard />
       </div>
     </AppLayout>
   );
