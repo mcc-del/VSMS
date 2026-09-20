@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListUsers, useCreateUser, useDeleteUser, useUpdateUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, useGetManagedOrganizations, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useListUsers, useCreateUser, useDeleteUser, useUpdateUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, useGetManagedOrganizations, useReassignEvents, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Clock, Building2, Pencil, FileText, Search, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, Clock, Building2, Pencil, FileText, Search, Eye, EyeOff, Calendar } from "lucide-react";
 import { useLocation } from "wouter";
 import { roleLabel } from "@/lib/roles";
 import { useAuth } from "@/hooks/use-auth";
@@ -66,9 +66,27 @@ export default function AdminUsers() {
   const addHours = useAddManualHours();
   const setOrgAdmin = useSetOrgAdmin();
   const updateUser = useUpdateUser();
+  const reassignEvents = useReassignEvents();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [reassign, setReassign] = useState<{ userId: string; name: string } | null>(null);
+  const [reassignTo, setReassignTo] = useState("");
+
+  function doReassign() {
+    if (!reassign || !reassignTo) { toast({ title: "Pick a supervisor", variant: "destructive" }); return; }
+    reassignEvents.mutate(
+      { userId: reassign.userId, data: { toSupervisorId: reassignTo } },
+      {
+        onSuccess: (res) => {
+          toast({ title: "Events reassigned", description: `${res.reassigned} event(s) moved.` });
+          queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+          setReassign(null); setReassignTo("");
+        },
+        onError: (e: any) => toast({ title: "Couldn't reassign", description: e?.data?.error ?? "Try again.", variant: "destructive" }),
+      },
+    );
+  }
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
@@ -124,7 +142,7 @@ export default function AdminUsers() {
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "participant" as const, phone: "", organizationId: "none" },
+    defaultValues: { firstName: "", lastName: "", email: "", password: "Supervisor123!", role: "participant" as const, phone: "", organizationId: "none" },
   });
 
   const hoursForm = useForm({
@@ -326,6 +344,16 @@ export default function AdminUsers() {
                           >
                             <Pencil className="w-4 h-4" /> Edit
                           </Button>
+                          {(u.role === "supervisor" || u.role === "org_admin") && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => { setReassign({ userId: u.userId, name: `${u.firstName} ${u.lastName}` }); setReassignTo(""); }}
+                              className="text-muted-foreground hover:text-primary gap-1"
+                            >
+                              <Calendar className="w-4 h-4" /> Reassign events
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -553,6 +581,36 @@ export default function AdminUsers() {
               </Button>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={reassign !== null} onOpenChange={(o) => !o && setReassign(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reassign events{reassign ? ` — ${reassign.name}` : ""}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground -mt-1">
+            Move all of this person's events to another supervisor. Do this before deleting them — a user who supervises events can't be deleted.
+          </p>
+          <div className="space-y-2 pt-2">
+            <label className="text-sm font-medium">Move events to</label>
+            <Select value={reassignTo} onValueChange={setReassignTo}>
+              <SelectTrigger><SelectValue placeholder="Choose a supervisor" /></SelectTrigger>
+              <SelectContent>
+                {(users ?? [])
+                  .filter((u) => (u.role === "supervisor" || u.role === "org_admin" || u.role === "admin") && u.userId !== reassign?.userId)
+                  .map((u) => (
+                    <SelectItem key={u.userId} value={u.userId}>{u.firstName} {u.lastName} ({roleLabel(u.role)})</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex gap-3 pt-3">
+            <Button className="flex-1" onClick={doReassign} disabled={reassignEvents.isPending}>
+              {reassignEvents.isPending ? "Moving…" : "Reassign events"}
+            </Button>
+            <Button variant="outline" onClick={() => setReassign(null)}>Cancel</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </AppLayout>

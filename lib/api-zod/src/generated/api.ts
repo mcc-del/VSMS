@@ -1351,6 +1351,22 @@ export const BroadcastToEventResponse = zod.object({
 
 
 /**
+ * @summary Move all of a supervisor's events to another supervisor
+ */
+export const ReassignEventsParams = zod.object({
+  "userId": zod.coerce.string()
+})
+
+export const ReassignEventsBody = zod.object({
+  "toSupervisorId": zod.string()
+})
+
+export const ReassignEventsResponse = zod.object({
+  "reassigned": zod.number()
+})
+
+
+/**
  * @summary List award-threshold rows (Super Admin)
  */
 export const GetAwardThresholdsResponseItem = zod.object({

@@ -8,7 +8,7 @@ import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
 import { sendTestEmail, sendAccountInvite } from "../lib/email";
 import { recordAudit } from "../lib/audit";
-import { managedOrgIds, canActOnUser } from "../lib/org-scope";
+import { managedOrgIds, canActOnUser, canManageOrg } from "../lib/org-scope";
 
 const ROLE_LABELS: Record<string, string> = {
   participant: "Participant",
@@ -33,6 +33,46 @@ router.post("/v1/admin/test-email", authenticate, requireRole("admin"), async (r
     return;
   }
   res.json({ ok: true, id: result.id ?? null, to });
+});
+
+// POST /v1/admin/users/:userId/reassign-events — move a supervisor's events to
+// another supervisor (e.g. before deleting them).
+router.post("/v1/admin/users/:userId/reassign-events", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
+  const { userId } = req.params as { userId: string };
+  const toSupervisorId = typeof (req.body as { toSupervisorId?: unknown })?.toSupervisorId === "string"
+    ? (req.body as { toSupervisorId: string }).toSupervisorId : "";
+  if (!toSupervisorId || toSupervisorId === userId) {
+    res.status(400).json({ error: "Choose a different supervisor to receive the events." });
+    return;
+  }
+  const [target] = await db
+    .select({ role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.userId, toSupervisorId))
+    .limit(1);
+  if (!target || !["supervisor", "org_admin", "admin"].includes(target.role)) {
+    res.status(400).json({ error: "The chosen recipient must be a supervisor or admin." });
+    return;
+  }
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+  // Which of this supervisor's events the actor may move.
+  const events = await db
+    .select({ eventId: eventsTable.eventId, organizationId: eventsTable.organizationId })
+    .from(eventsTable)
+    .where(eq(eventsTable.supervisorId, userId));
+  const movable = managed === null ? events : events.filter((e) => canManageOrg(managed, e.organizationId));
+  for (const e of movable) {
+    await db.update(eventsTable).set({ supervisorId: toSupervisorId }).where(eq(eventsTable.eventId, e.eventId));
+  }
+  recordAudit({
+    actorUserId: req.auth!.userId,
+    action: "events.reassign",
+    targetType: "user",
+    targetId: userId,
+    targetLabel: null,
+    summary: `Reassigned ${movable.length} event(s) to another supervisor`,
+  });
+  res.json({ reassigned: movable.length });
 });
 
 // ----- Award thresholds (Super Admin) -----

@@ -69,6 +69,8 @@ export * from './overrideInput';
 export * from './parentChild';
 export * from './parentChildRegistration';
 export * from './participantDashboard';
+export * from './reassignEvents200';
+export * from './reassignEventsInput';
 export * from './recyclingSummary';
 export * from './registerInput';
 export * from './registerInputAccountType';

@@ -71,6 +71,8 @@ import type {
   ParentChild,
   ParentChildRegistration,
   ParticipantDashboard,
+  ReassignEvents200,
+  ReassignEventsInput,
   RecyclingSummary,
   RegisterInput,
   ReportRow,
@@ -5052,6 +5054,78 @@ export const useBroadcastToEvent = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getBroadcastToEventMutationOptions(options));
+    }
+
+export const getReassignEventsUrl = (userId: string,) => {
+
+
+
+
+  return `/api/v1/admin/users/${userId}/reassign-events`
+}
+
+/**
+ * @summary Move all of a supervisor's events to another supervisor
+ */
+export const reassignEvents = async (userId: string,
+    reassignEventsInput: ReassignEventsInput, options?: RequestInit): Promise<ReassignEvents200> => {
+
+  return customFetch<ReassignEvents200>(getReassignEventsUrl(userId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reassignEventsInput,)
+  }
+);}
+
+
+
+
+export const getReassignEventsMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reassignEvents>>, TError,{userId: string;data: BodyType<ReassignEventsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reassignEvents>>, TError,{userId: string;data: BodyType<ReassignEventsInput>}, TContext> => {
+
+const mutationKey = ['reassignEvents'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reassignEvents>>, {userId: string;data: BodyType<ReassignEventsInput>}> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  reassignEvents(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReassignEventsMutationResult = NonNullable<Awaited<ReturnType<typeof reassignEvents>>>
+    export type ReassignEventsMutationBody = BodyType<ReassignEventsInput>
+    export type ReassignEventsMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Move all of a supervisor's events to another supervisor
+ */
+export const useReassignEvents = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reassignEvents>>, TError,{userId: string;data: BodyType<ReassignEventsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reassignEvents>>,
+        TError,
+        {userId: string;data: BodyType<ReassignEventsInput>},
+        TContext
+      > => {
+      return useMutation(getReassignEventsMutationOptions(options));
     }
 
 export const getGetAwardThresholdsUrl = () => {

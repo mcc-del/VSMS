@@ -836,6 +836,10 @@ export interface ParticipantDashboard {
   thresholds?: AwardThresholds;
 }
 
+export interface ReassignEventsInput {
+  toSupervisorId: string;
+}
+
 export interface AwardThresholdRow {
   awardThresholdId: string;
   /** @nullable */
@@ -987,6 +991,10 @@ export const ListAllSchoolsStatus = {
   approved: 'approved',
   pending: 'pending',
 } as const;
+
+export type ReassignEvents200 = {
+  reassigned: number;
+};
 
 export type GetAuditLogParams = {
 limit?: number;
