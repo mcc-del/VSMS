@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, volunteerSubmissionsTable, eventsTable, usersTable, eventRegistrationsTable } from "@workspace/db";
+import { db, volunteerSubmissionsTable, eventsTable, usersTable, eventRegistrationsTable, guardianshipsTable } from "@workspace/db";
 import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitInternalHoursBody, ReviewSubmissionBody, OverrideSubmissionBody } from "@workspace/api-zod";
@@ -354,12 +354,13 @@ router.put(
       })
       .where(eq(volunteerSubmissionsTable.submissionId, submissionId));
 
-    // Notify the participant (and their parent) of the outcome.
+    // Notify the participant (and their parent/guardians) of the outcome.
     const [participant] = await db
       .select({
         firstName: usersTable.firstName,
         email: usersTable.email,
         parentEmail: usersTable.parentEmail,
+        isManaged: usersTable.isManaged,
       })
       .from(usersTable)
       .where(eq(usersTable.userId, submission.userId))
@@ -370,8 +371,18 @@ router.put(
         .from(eventsTable)
         .where(eq(eventsTable.eventId, submission.eventId))
         .limit(1);
+      const recipients = [participant.email, participant.parentEmail].filter((e): e is string => !!e);
+      // A managed child has no email of their own — notify their guardians.
+      if (participant.isManaged) {
+        const guardians = await db
+          .select({ email: usersTable.email })
+          .from(guardianshipsTable)
+          .leftJoin(usersTable, eq(guardianshipsTable.guardianUserId, usersTable.userId))
+          .where(eq(guardianshipsTable.childUserId, submission.userId));
+        for (const g of guardians) if (g.email) recipients.push(g.email);
+      }
       sendHoursReviewed(
-        [participant.email, participant.parentEmail].filter((e): e is string => !!e),
+        recipients,
         participant.firstName,
         ev?.title ?? "your event",
         status === "approved",
