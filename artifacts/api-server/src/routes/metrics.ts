@@ -11,15 +11,10 @@ import {
 } from "@workspace/db";
 import { eq, and, inArray, sql, gte } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
+import { awardThresholdsTable } from "@workspace/db";
+import { thresholdsForGrade, medalFor as medalForT } from "../lib/thresholds";
 
 const router = Router();
-
-function medalFor(h: number): "gold" | "silver" | "bronze" | "none" {
-  if (h >= 80) return "gold";
-  if (h >= 60) return "silver";
-  if (h >= 40) return "bronze";
-  return "none";
-}
 
 // GET /api/v1/admin/metrics — aggregated program metrics for the reports view.
 router.get("/v1/admin/metrics", authenticate, requireRole("admin"), async (_req, res) => {
@@ -70,6 +65,13 @@ router.get("/v1/admin/metrics", authenticate, requireRole("admin"), async (_req,
     .from(organizationsTable);
   const orgName = new Map(orgs.map((o) => [o.organizationId, o.name]));
 
+  // Each participant's medal is judged against their own resolved thresholds.
+  const thresholdRows = await db.select().from(awardThresholdsTable);
+  const medalKey = (total: number, grade: string | null, orgId: string | null): "gold" | "silver" | "bronze" | "none" => {
+    const m = medalForT(total, thresholdsForGrade(thresholdRows, grade, orgId));
+    return m ? (m.toLowerCase() as "gold" | "silver" | "bronze") : "none";
+  };
+
   let internalTotal = 0;
   let externalTotal = 0;
   let manualTotal = 0;
@@ -88,7 +90,8 @@ router.get("/v1/admin/metrics", authenticate, requireRole("admin"), async (_req,
     manualTotal += manual;
     externalTotal += external;
     if (total > 0) activeVolunteers++;
-    medalCounts[medalFor(total)]++;
+    const medal = medalKey(total, p.grade ?? null, p.organizationId ?? null);
+    medalCounts[medal]++;
     const org = p.organizationId ? orgName.get(p.organizationId) ?? "Community" : "Community";
     byOrg.set(org, (byOrg.get(org) ?? 0) + total);
     if (p.school) bySchool.set(p.school, (bySchool.get(p.school) ?? 0) + total);
@@ -97,7 +100,7 @@ router.get("/v1/admin/metrics", authenticate, requireRole("admin"), async (_req,
       name: `${p.firstName} ${p.lastName}`.trim(),
       hours: total,
       org,
-      medal: medalFor(total),
+      medal,
     });
   }
 
@@ -214,18 +217,20 @@ router.get("/v1/admin/report-rows", authenticate, requireRole("admin"), async (_
     .select({ organizationId: organizationsTable.organizationId, name: organizationsTable.name })
     .from(organizationsTable);
   const orgName = new Map(orgs.map((o) => [o.organizationId, o.name]));
+  const thresholdRows = await db.select().from(awardThresholdsTable);
 
   const round = (n: number) => Math.round(n * 10) / 10;
   const rows = participants
     .map((p) => {
       const hours = round(sum3(p.userId));
+      const medal = medalForT(hours, thresholdsForGrade(thresholdRows, p.grade ?? null, p.organizationId ?? null));
       return {
         name: `${p.firstName} ${p.lastName}`.trim(),
         school: p.school ?? "—",
         organization: p.organizationId ? orgName.get(p.organizationId) ?? "Community" : "Community",
         grade: p.grade ?? "—",
         approvedHours: hours,
-        medal: medalFor(hours),
+        medal: medal ? medal.toLowerCase() : "none",
       };
     })
     .sort((a, b) => b.approvedHours - a.approvedHours);

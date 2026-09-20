@@ -1,8 +1,8 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
-import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable } from "@workspace/db";
-import { eq, desc, ilike, and, isNull } from "drizzle-orm";
+import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable, eventsTable } from "@workspace/db";
+import { eq, desc, ilike, and, isNull, count } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
@@ -570,6 +570,20 @@ router.delete(
       .from(usersTable)
       .where(eq(usersTable.userId, userId))
       .limit(1);
+
+    // A user who supervises events can't be deleted (events — and any approved
+    // hours on them — must be preserved). Reassign or remove those events first.
+    const [evCount] = await db
+      .select({ c: count() })
+      .from(eventsTable)
+      .where(eq(eventsTable.supervisorId, userId));
+    if (Number(evCount?.c ?? 0) > 0) {
+      res.status(400).json({
+        error: `This person supervises ${evCount.c} event(s) and can't be deleted. Reassign those events to another supervisor (edit each event) or delete the events first, then delete this user.`,
+      });
+      return;
+    }
+
     await db.delete(usersTable).where(eq(usersTable.userId, userId));
     if (victim) {
       recordAudit({
