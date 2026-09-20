@@ -836,6 +836,10 @@ export interface ParticipantDashboard {
   thresholds?: AwardThresholds;
 }
 
+export interface AddAttendeeInput {
+  email: string;
+}
+
 export interface ReassignEventsInput {
   toSupervisorId: string;
 }

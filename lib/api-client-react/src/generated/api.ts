@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AddAttendeeInput,
   AdminCreateUserInput,
   AdminDashboard,
   AdminMetrics,
@@ -78,6 +79,7 @@ import type {
   ReportRow,
   ResetPasswordInput,
   ReviewInput,
+  RosterParticipant,
   School,
   SchoolMergeInput,
   SchoolRequestInput,
@@ -4982,6 +4984,78 @@ export const useDeleteMyAdultHours = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getDeleteMyAdultHoursMutationOptions(options));
+    }
+
+export const getAddEventAttendeeUrl = (eventId: string,) => {
+
+
+
+
+  return `/api/v1/events/${eventId}/attendees`
+}
+
+/**
+ * @summary Add a participant to an event by email (supervisor/org-admin/admin)
+ */
+export const addEventAttendee = async (eventId: string,
+    addAttendeeInput: AddAttendeeInput, options?: RequestInit): Promise<RosterParticipant> => {
+
+  return customFetch<RosterParticipant>(getAddEventAttendeeUrl(eventId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      addAttendeeInput,)
+  }
+);}
+
+
+
+
+export const getAddEventAttendeeMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addEventAttendee>>, TError,{eventId: string;data: BodyType<AddAttendeeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addEventAttendee>>, TError,{eventId: string;data: BodyType<AddAttendeeInput>}, TContext> => {
+
+const mutationKey = ['addEventAttendee'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addEventAttendee>>, {eventId: string;data: BodyType<AddAttendeeInput>}> = (props) => {
+          const {eventId,data} = props ?? {};
+
+          return  addEventAttendee(eventId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddEventAttendeeMutationResult = NonNullable<Awaited<ReturnType<typeof addEventAttendee>>>
+    export type AddEventAttendeeMutationBody = BodyType<AddAttendeeInput>
+    export type AddEventAttendeeMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Add a participant to an event by email (supervisor/org-admin/admin)
+ */
+export const useAddEventAttendee = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addEventAttendee>>, TError,{eventId: string;data: BodyType<AddAttendeeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addEventAttendee>>,
+        TError,
+        {eventId: string;data: BodyType<AddAttendeeInput>},
+        TContext
+      > => {
+      return useMutation(getAddEventAttendeeMutationOptions(options));
     }
 
 export const getBroadcastToEventUrl = (eventId: string,) => {

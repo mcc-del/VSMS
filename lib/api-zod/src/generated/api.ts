@@ -1320,6 +1320,18 @@ export const DeleteMyAdultHoursResponse = zod.object({
 
 
 /**
+ * @summary Add a participant to an event by email (supervisor/org-admin/admin)
+ */
+export const AddEventAttendeeParams = zod.object({
+  "eventId": zod.coerce.string()
+})
+
+export const AddEventAttendeeBody = zod.object({
+  "email": zod.string()
+})
+
+
+/**
  * @summary Email everyone registered for an event (supervisor/org-admin/admin)
  */
 export const BroadcastToEventParams = zod.object({

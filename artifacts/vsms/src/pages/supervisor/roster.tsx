@@ -4,6 +4,7 @@ import {
   useGetEventRoster,
   useSetAttendance,
   useBroadcastToEvent,
+  useAddEventAttendee,
   getGetEventRosterQueryKey,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
@@ -34,6 +35,26 @@ export default function RosterPage() {
   });
   const setAttendance = useSetAttendance();
   const broadcast = useBroadcastToEvent();
+  const addAttendee = useAddEventAttendee();
+  const [addEmail, setAddEmail] = useState("");
+
+  function addByEmail() {
+    const email = addEmail.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      toast({ title: "Enter a valid email", variant: "destructive" }); return;
+    }
+    addAttendee.mutate(
+      { eventId, data: { email } },
+      {
+        onSuccess: () => {
+          toast({ title: "Participant added", description: "They've been added and emailed." });
+          queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
+          setAddEmail("");
+        },
+        onError: (e: any) => toast({ title: "Couldn't add", description: e?.data?.error ?? "Try again.", variant: "destructive" }),
+      },
+    );
+  }
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -130,6 +151,27 @@ export default function RosterPage() {
             <Mail className="w-4 h-4" /> Message attendees
           </Button>
         </div>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Add a participant</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-2">
+              Add someone to this event by their account email — useful for including a specific student from another organization without opening the event to everyone. They'll be emailed.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="student@email.com"
+                value={addEmail}
+                onChange={(e) => setAddEmail(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") addByEmail(); }}
+              />
+              <Button onClick={addByEmail} disabled={addAttendee.isPending} className="shrink-0">
+                {addAttendee.isPending ? "Adding…" : "Add"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader><CardTitle className="text-base">Participants</CardTitle></CardHeader>

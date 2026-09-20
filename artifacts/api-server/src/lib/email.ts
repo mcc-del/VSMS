@@ -239,6 +239,36 @@ export async function sendNewUserAlert(
   }
 }
 
+// A supervisor added a participant to an event (cross-org invite).
+export async function sendAddedToEvent(
+  recipients: string[],
+  participantName: string,
+  eventTitle: string,
+  eventDate: string,
+  byName: string,
+): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const to = recipients.filter(Boolean);
+  if (to.length === 0) return;
+  const text = [
+    `Hi ${participantName},`,
+    "",
+    `${byName} has added you to the volunteer event "${eventTitle}" on ${eventDate}.`,
+    "",
+    `It's now on your schedule — sign in to see the details and add it to your calendar: ${APP_URL}/dashboard`,
+    "",
+    "— MedinaCares Council",
+  ].join("\n");
+  for (const addr of to) {
+    try {
+      await client.emails.send({ from: FROM_ADDRESS, to: addr, subject: `You've been added to ${eventTitle}`, text });
+    } catch (err) {
+      logger.error({ err, addr }, "Failed to send added-to-event email");
+    }
+  }
+}
+
 function getClient(): Resend | null {
   const apiKey = process.env["RESEND_API_KEY"];
   if (!apiKey) {

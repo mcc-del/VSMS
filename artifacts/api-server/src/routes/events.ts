@@ -11,7 +11,7 @@ import {
 import { eq, count, sql, and, inArray } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
-import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification } from "../lib/email";
+import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification, sendAddedToEvent } from "../lib/email";
 import { recordAudit } from "../lib/audit";
 import { ObjectStorageService } from "../lib/objectStorage";
 
@@ -650,6 +650,67 @@ router.post(
       .returning();
     if (result.length === 0) { res.status(404).json({ error: "That participant isn't registered." }); return; }
     res.json({ ok: true, status });
+  },
+);
+
+// POST /api/v1/events/:eventId/attendees — a supervisor/org-admin adds a
+// participant to their event by email. This intentionally bypasses org-gating:
+// the supervisor is vouching for a specific student (e.g. a cohort program
+// including a guest from another org), without opening the event to everyone.
+router.post(
+  "/v1/events/:eventId/attendees",
+  authenticate,
+  requireRole("supervisor", "admin", "org_admin"),
+  async (req, res) => {
+    const { eventId } = req.params as { eventId: string };
+    const email = typeof (req.body as { email?: unknown })?.email === "string"
+      ? (req.body as { email: string }).email.trim().toLowerCase() : "";
+    if (!email) { res.status(400).json({ error: "Enter the participant's email." }); return; }
+
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
+    if (!event) { res.status(404).json({ error: "Event not found" }); return; }
+    if (!(await canManageEvent(req.auth!.role, req.auth!.userId, event))) {
+      res.status(403).json({ error: "You can only manage events you supervise." });
+      return;
+    }
+
+    const [participant] = await db
+      .select({ userId: usersTable.userId, firstName: usersTable.firstName, lastName: usersTable.lastName, role: usersTable.role, grade: usersTable.grade, parentEmail: usersTable.parentEmail })
+      .from(usersTable)
+      .where(eq(usersTable.email, email))
+      .limit(1);
+    if (!participant || participant.role !== "participant") {
+      res.status(404).json({ error: "No participant found with that email." });
+      return;
+    }
+
+    const [existing] = await db
+      .select({ id: eventRegistrationsTable.registrationId })
+      .from(eventRegistrationsTable)
+      .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, participant.userId)))
+      .limit(1);
+    if (existing) { res.status(409).json({ error: "That participant is already on this event." }); return; }
+
+    await db.insert(eventRegistrationsTable).values({ eventId, userId: participant.userId, status: "registered" });
+
+    const [adder] = await db
+      .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
+      .from(usersTable).where(eq(usersTable.userId, req.auth!.userId)).limit(1);
+    const byName = adder ? `${adder.firstName} ${adder.lastName}`.trim() : "A supervisor";
+    sendAddedToEvent(
+      [email, participant.parentEmail].filter((e): e is string => !!e),
+      participant.firstName, event.title, event.eventDate, byName,
+    ).catch((err) => req.log.error({ err }, "added-to-event email failed"));
+
+    res.status(201).json({
+      userId: participant.userId,
+      name: `${participant.firstName} ${participant.lastName}`.trim(),
+      grade: participant.grade ?? null,
+      status: "registered",
+      hoursStatus: null,
+      organizationName: null,
+      school: null,
+    });
   },
 );
 

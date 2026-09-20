@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './addAttendeeInput';
 export * from './adminCreateUserInput';
 export * from './adminDashboard';
 export * from './adminMetrics';
