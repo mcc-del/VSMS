@@ -225,6 +225,14 @@ export default function ParentDashboard() {
       });
       return;
     }
+    if (!editing && (!form.organizationId || !form.joinCode.trim())) {
+      toast({
+        title: "Organization & code required",
+        description: "Select the child's organization and enter its join code.",
+        variant: "destructive",
+      });
+      return;
+    }
     const data = {
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
@@ -617,16 +625,15 @@ export default function ParentDashboard() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Organization (optional)</Label>
+              <Label>Organization</Label>
               <Select
-                value={form.organizationId || "none"}
-                onValueChange={(v) => setForm({ ...form, organizationId: v === "none" ? "" : v })}
+                value={form.organizationId || ""}
+                onValueChange={(v) => setForm({ ...form, organizationId: v, joinCode: "" })}
               >
                 <SelectTrigger data-testid="select-child-org">
-                  <SelectValue placeholder="None / Community" />
+                  <SelectValue placeholder="Select the child's organization" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None / Community</SelectItem>
                   {(orgs ?? []).map((o) => (
                     <SelectItem key={o.organizationId} value={o.organizationId}>
                       {o.name}
@@ -638,7 +645,7 @@ export default function ParentDashboard() {
 
             {(() => {
               const selOrg = (orgs ?? []).find((o) => o.organizationId === form.organizationId);
-              if (!selOrg?.requiresJoinCode) return null;
+              if (!selOrg) return null;
               return (
                 <div className="space-y-1.5">
                   <Label>{selOrg.name} join code</Label>

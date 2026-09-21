@@ -265,22 +265,32 @@ router.post("/v1/parent/children", authenticate, requireRole("parent"), async (r
   }
   const { firstName, lastName, grade, school, organizationId } = parsed.value;
 
-  // If the chosen org has a join code, the parent must supply it (same rule as
-  // student self-signup — keeps org membership honest).
-  if (organizationId) {
+  // Every managed child must belong to an organization and the parent must
+  // supply its join code (same rule as student self-signup).
+  if (!organizationId) {
+    res.status(400).json({ error: "Please select the child's organization." });
+    return;
+  }
+  {
     const [org] = await db
       .select({ joinCode: organizationsTable.joinCode, name: organizationsTable.name })
       .from(organizationsTable)
       .where(eq(organizationsTable.organizationId, organizationId))
       .limit(1);
-    if (org?.joinCode) {
-      const code = typeof (req.body as { joinCode?: unknown })?.joinCode === "string"
-        ? (req.body as { joinCode: string }).joinCode.trim()
-        : "";
-      if (code.toLowerCase() !== org.joinCode.toLowerCase()) {
-        res.status(400).json({ error: `Incorrect join code for ${org.name}. Ask the program for the code.` });
-        return;
-      }
+    if (!org) {
+      res.status(400).json({ error: "That organization doesn't exist." });
+      return;
+    }
+    const code = typeof (req.body as { joinCode?: unknown })?.joinCode === "string"
+      ? (req.body as { joinCode: string }).joinCode.trim()
+      : "";
+    if (!code) {
+      res.status(400).json({ error: "A join code is required. Ask the program for it." });
+      return;
+    }
+    if (!org.joinCode || code.toLowerCase() !== org.joinCode.toLowerCase()) {
+      res.status(400).json({ error: `Incorrect join code for ${org.name}. Ask the program for the code.` });
+      return;
     }
   }
 

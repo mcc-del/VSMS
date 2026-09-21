@@ -44,6 +44,15 @@ router.post("/v1/auth/register", async (req, res) => {
   let finalOrganizationId: string | null = isParent ? null : (organizationId || null);
   if (!isParent) {
     const code = joinCode?.trim();
+    // Every participant must belong to an organization and enter its join code.
+    if (!organizationId) {
+      res.status(400).json({ error: "Please select your organization." });
+      return;
+    }
+    if (!code) {
+      res.status(400).json({ error: "A join code is required. Ask your school or program for it." });
+      return;
+    }
     if (organizationId) {
       const [org] = await db
         .select({ joinCode: organizationsTable.joinCode, name: organizationsTable.name })

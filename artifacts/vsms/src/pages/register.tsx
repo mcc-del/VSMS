@@ -66,9 +66,13 @@ const schema = z
     message: "Please select your grade",
     path: ["grade"],
   })
+  .refine((v) => v.signupType !== "student" || (v.organizationId != null && v.organizationId.length > 0), {
+    message: "Please select your organization",
+    path: ["organizationId"],
+  })
   .refine(
-    (v) => v.signupType !== "student" || !v.organizationId || (v.joinCode != null && v.joinCode.trim().length > 0),
-    { message: "A join code is required for this organization. Ask your school/program for it.", path: ["joinCode"] },
+    (v) => v.signupType !== "student" || (v.joinCode != null && v.joinCode.trim().length > 0),
+    { message: "A join code is required. Ask your school/program for it.", path: ["joinCode"] },
   );
 
 export default function RegisterPage() {
@@ -114,21 +118,21 @@ export default function RegisterPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStudent, medinaOrg?.organizationId]);
 
-  function onAffiliationChange(v: string) {
-    setAffiliation(v);
-    // Single org per student: "both" is primarily a Medina student (sees Medina +
-    // Open), "neither" is Community. EF Hygiene Champions pick "ef".
-    if (v === "medina" || v === "both") {
-      form.setValue("organizationId", medinaOrg?.organizationId ?? "");
+  // Every student belongs to an organization and enters its join code. The
+  // options are driven by the organizations list, so any org a Super Admin
+  // creates appears here automatically.
+  function onAffiliationChange(orgId: string) {
+    setAffiliation(orgId);
+    form.setValue("organizationId", orgId);
+    const org = (orgs ?? []).find((o) => o.organizationId === orgId);
+    if (org && /medina/i.test(org.name)) {
       form.setValue("school", MEDINA_SCHOOL);
       setOtherSchool(false);
-    } else if (v === "ef") {
-      form.setValue("organizationId", efOrg?.organizationId ?? "");
-      if (form.getValues("school") === MEDINA_SCHOOL) form.setValue("school", "");
-    } else {
-      form.setValue("organizationId", "");
-      if (form.getValues("school") === MEDINA_SCHOOL) form.setValue("school", "");
+    } else if (form.getValues("school") === MEDINA_SCHOOL) {
+      form.setValue("school", "");
     }
+    // Reset the code when switching orgs (a code is org-specific).
+    form.setValue("joinCode", "");
   }
 
   function selectType(t: SignupType) {
@@ -291,19 +295,18 @@ export default function RegisterPage() {
 
               {isStudent && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Program / affiliation</label>
-                  <Select value={affiliation} onValueChange={onAffiliationChange}>
+                  <label className="text-sm font-medium">Organization</label>
+                  <Select value={form.watch("organizationId") || ""} onValueChange={onAffiliationChange}>
                     <SelectTrigger data-testid="select-organization">
-                      <SelectValue />
+                      <SelectValue placeholder="Select your organization" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="medina">I'm a current Medina student</SelectItem>
-                      <SelectItem value="ef">I'm an Essentials First Hygiene Champion</SelectItem>
-                      <SelectItem value="both">I'm both!</SelectItem>
-                      <SelectItem value="neither">I'm neither</SelectItem>
+                      {(orgs ?? []).map((o) => (
+                        <SelectItem key={o.organizationId} value={o.organizationId}>{o.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">This decides which opportunities you see.</p>
+                  <p className="text-xs text-muted-foreground">Choose your school or program and enter its join code below.</p>
                 </div>
               )}
 
