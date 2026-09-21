@@ -177,7 +177,7 @@ router.get("/v1/events", authenticate, async (req, res) => {
     .from(eventsTable)
     .leftJoin(usersTable, eq(eventsTable.supervisorId, usersTable.userId))
     .leftJoin(organizationsTable, eq(eventsTable.organizationId, organizationsTable.organizationId))
-    .orderBy(sql`${eventsTable.eventDate} DESC`);
+    .orderBy(sql`${eventsTable.eventDate} ASC`, sql`${eventsTable.startTime} ASC`);
 
   // Fetch registration counts
   const regCounts: Record<string, number> = {};

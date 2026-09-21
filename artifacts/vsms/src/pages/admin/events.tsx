@@ -291,7 +291,7 @@ export default function AdminEventsPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {[...filteredEvents].sort((a, b) => b.eventDate.localeCompare(a.eventDate)).map((event) => {
+            {[...filteredEvents].sort((a, b) => a.eventDate.localeCompare(b.eventDate)).map((event) => {
               const isUpcoming = event.eventDate >= today;
               return (
                 <Card key={event.eventId}>

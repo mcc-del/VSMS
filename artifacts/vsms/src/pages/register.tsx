@@ -159,6 +159,11 @@ export default function RegisterPage() {
       },
       {
         onSuccess: (data) => {
+          // New participants land on their dashboard scrolled to "My sign-ups"
+          // so their next step (finding & joining events) is front and centre.
+          if (data.role === "participant") {
+            try { sessionStorage.setItem("mc_scroll_schedule", "1"); } catch { /* ignore */ }
+          }
           login(data.token, data.role, data.firstName, data.userId ?? "");
         },
         onError: (err: any) => {

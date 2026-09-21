@@ -94,7 +94,7 @@ export default function SupervisorAllOpportunities() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {[...filtered].sort((a, b) => b.eventDate.localeCompare(a.eventDate)).map((event) => {
+            {[...filtered].sort((a, b) => a.eventDate.localeCompare(b.eventDate)).map((event) => {
               const isUpcoming = event.eventDate >= today;
               return (
                 <Card key={event.eventId}>
