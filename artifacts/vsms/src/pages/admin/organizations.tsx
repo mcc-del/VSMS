@@ -244,7 +244,23 @@ export default function AdminOrganizations() {
                     placeholder="e.g. MEDINA"
                     data-testid="input-join-code"
                   />
-                  <Button type="button" variant="outline" onClick={() => setDraft({ ...draft, joinCode: randomCode() })}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      // Warn before replacing an existing code — the old one stops
+                      // working for anyone who hasn't joined yet.
+                      if (
+                        draft.joinCode.trim() &&
+                        !confirm(
+                          "Generate a new code?\n\nThe current code will stop working for anyone who hasn't joined yet — you'll need to re-share the new one. Members who already joined keep their access.\n\nYou still have to click Save to apply it.",
+                        )
+                      ) {
+                        return;
+                      }
+                      setDraft({ ...draft, joinCode: randomCode() });
+                    }}
+                  >
                     Generate
                   </Button>
                 </div>

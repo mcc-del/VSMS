@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useListEvents } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
+import { eventHasEnded } from "@/lib/event-time";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +20,6 @@ function formatTime(t: string) {
 }
 
 export default function SupervisorAllOpportunities() {
-  const today = new Date().toISOString().split("T")[0];
   const { data: events, isLoading } = useListEvents();
   const [search, setSearch] = useState("");
   const [whenFilter, setWhenFilter] = useState<"all" | "upcoming" | "past">("all");
@@ -27,8 +27,8 @@ export default function SupervisorAllOpportunities() {
   const q = search.trim().toLowerCase();
   const all = events ?? [];
   const filtered = all.filter((e) => {
-    if (whenFilter === "upcoming" && e.eventDate < today) return false;
-    if (whenFilter === "past" && e.eventDate >= today) return false;
+    if (whenFilter === "upcoming" && eventHasEnded(e.eventDate, (e as any).endTime)) return false;
+    if (whenFilter === "past" && !eventHasEnded(e.eventDate, (e as any).endTime)) return false;
     if (q) {
       const hay = [e.title, (e as any).supervisorName, (e as any).organizationName, e.location]
         .filter(Boolean)
@@ -95,7 +95,7 @@ export default function SupervisorAllOpportunities() {
         ) : (
           <div className="space-y-3">
             {[...filtered].sort((a, b) => a.eventDate.localeCompare(b.eventDate)).map((event) => {
-              const isUpcoming = event.eventDate >= today;
+              const isUpcoming = !eventHasEnded(event.eventDate, (event as any).endTime);
               return (
                 <Card key={event.eventId}>
                   <CardContent className="flex items-start gap-4 p-4">

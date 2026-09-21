@@ -30,6 +30,7 @@ import { Pencil, Trash2, MapPin, Clock, Calendar, Plus, Users, Search, UserCheck
 import { Link } from "wouter";
 import { AuthenticatedImage } from "@/components/authenticated-image";
 import { calculateEventDuration, formatHours } from "@/lib/event-duration";
+import { eventHasEnded } from "@/lib/event-time";
 import { ALL_GRADES } from "@/lib/schools";
 
 const NONE = "none";
@@ -67,7 +68,6 @@ function formatTime(t: string) {
 }
 
 export default function AdminEventsPage() {
-  const today = new Date().toISOString().split("T")[0];
   const { role, userId } = useAuth();
   const isOrgAdmin = role === "org_admin";
   const isSupervisor = role === "supervisor";
@@ -101,8 +101,8 @@ export default function AdminEventsPage() {
 
   const q = search.trim().toLowerCase();
   const filteredEvents = visibleEvents.filter((e) => {
-    if (whenFilter === "upcoming" && e.eventDate < today) return false;
-    if (whenFilter === "past" && e.eventDate >= today) return false;
+    if (whenFilter === "upcoming" && eventHasEnded(e.eventDate, (e as any).endTime)) return false;
+    if (whenFilter === "past" && !eventHasEnded(e.eventDate, (e as any).endTime)) return false;
     if (fromDate && e.eventDate < fromDate) return false;
     if (toDate && e.eventDate > toDate) return false;
     if (q) {
@@ -292,7 +292,7 @@ export default function AdminEventsPage() {
         ) : (
           <div className="space-y-3">
             {[...filteredEvents].sort((a, b) => a.eventDate.localeCompare(b.eventDate)).map((event) => {
-              const isUpcoming = event.eventDate >= today;
+              const isUpcoming = !eventHasEnded(event.eventDate, (event as any).endTime);
               return (
                 <Card key={event.eventId}>
                   <CardContent className="flex items-start gap-4 p-4">

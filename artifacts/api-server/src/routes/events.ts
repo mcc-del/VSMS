@@ -12,6 +12,7 @@ import { eq, count, sql, and, inArray } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification, sendAddedToEvent, sendWithdrawalNotification } from "../lib/email";
+import { eventHasEnded, todayPT, nowTimePT } from "../lib/event-time";
 import { recordAudit } from "../lib/audit";
 import { ObjectStorageService } from "../lib/objectStorage";
 
@@ -408,8 +409,7 @@ router.post(
       }
     }
 
-    const today = new Date().toISOString().split("T")[0];
-    if (event.eventDate < today) {
+    if (eventHasEnded(event.eventDate, event.endTime)) {
       res.status(400).json({ error: "Cannot register for a past event." });
       return;
     }
@@ -866,9 +866,8 @@ router.post(
       return;
     }
 
-    // Must be today
-    const today = new Date().toISOString().split("T")[0];
-    if (event.eventDate !== today) {
+    // Must be today (Pacific)
+    if (event.eventDate !== todayPT()) {
       res.status(400).json({
         error:
           "Check-in failed. You can only check in during the active hours indicated on the opportunity listing.",
@@ -876,9 +875,8 @@ router.post(
       return;
     }
 
-    // Must be within start_time–end_time window (compare HH:MM)
-    const nowUtc = new Date();
-    const nowTime = nowUtc.toTimeString().slice(0, 5); // "HH:MM"
+    // Must be within start_time–end_time window (compare HH:MM, Pacific)
+    const nowTime = nowTimePT().slice(0, 5); // "HH:MM"
     const startTime = event.startTime.slice(0, 5);
     const endTime = event.endTime.slice(0, 5);
 

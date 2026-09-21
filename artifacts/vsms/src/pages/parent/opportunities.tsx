@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import type { Event } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
+import { eventHasEnded } from "@/lib/event-time";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,9 +47,8 @@ export default function ParentOpportunities() {
     { query: { enabled: !!childId, queryKey: getListEventsQueryKey({ childId }) } },
   );
 
-  const today = new Date().toISOString().slice(0, 10);
   const upcoming = (events ?? [])
-    .filter((e) => e.eligibleForMe !== false && e.eventDate >= today)
+    .filter((e) => e.eligibleForMe !== false && !eventHasEnded(e.eventDate, (e as any).endTime))
     .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
 
   function signUp(e: Event) {

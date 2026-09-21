@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import type { Event } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
+import { eventHasEnded } from "@/lib/event-time";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +54,6 @@ function getDayOfWeek(dateStr: string) {
 }
 
 export default function OpportunitiesPage() {
-  const today = new Date().toISOString().split("T")[0];
   const { data: events, isLoading } = useListEvents();
   const { data: myRegistrations } = useListMyRegistrations();
   const registerMutation = useRegisterForEvent();
@@ -78,12 +78,12 @@ export default function OpportunitiesPage() {
     (e.location ?? "").toLowerCase().includes(q);
 
   const upcoming = [...(events ?? [])]
-    .filter((e) => e.eventDate >= today && matches(e) && e.eligibleForMe !== false
+    .filter((e) => !eventHasEnded(e.eventDate, (e as any).endTime) && matches(e) && e.eligibleForMe !== false
       && !(myRegMap[e.eventId] ?? e.myRegistrationStatus)) // signed-up ones live under "My sign-ups"
     .sort((a, b) => (a.eventDate < b.eventDate ? -1 : 1));
 
   const past = [...(events ?? [])]
-    .filter((e) => e.eventDate < today && matches(e) && e.eligibleForMe !== false)
+    .filter((e) => eventHasEnded(e.eventDate, (e as any).endTime) && matches(e) && e.eligibleForMe !== false)
     .sort((a, b) => (a.eventDate > b.eventDate ? -1 : 1));
 
   // My sign-ups (folds in the old Calendar page): events I'm registered for.
@@ -426,7 +426,7 @@ export default function OpportunitiesPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-4">{mine.map((e) => renderEvent(e, e.eventDate >= today))}</div>
+                <div className="space-y-4">{mine.map((e) => renderEvent(e, !eventHasEnded(e.eventDate, (e as any).endTime)))}</div>
               )}
             </TabsContent>
 

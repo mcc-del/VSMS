@@ -12,6 +12,7 @@ import {
 } from "@workspace/api-client-react";
 import type { EventRegistration } from "@workspace/api-client-react";
 import { GettingStarted } from "@/components/getting-started";
+import { eventHasEnded, todayPT, nowTimePT } from "@/lib/event-time";
 import { MedalBadge } from "@/components/medal-badge";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,18 +82,14 @@ export default function ParticipantDashboard() {
     }
   }, []);
 
-  const today = new Date().toISOString().split("T")[0];
-  const nowTime = new Date().toTimeString().slice(0, 5);
+  const today = todayPT();
+  const nowTime = nowTimePT().slice(0, 5);
 
   const pending = submissions?.filter((s) => s.status === "pending" && s.hoursWorked != null) ?? [];
 
   // Today's registrations that are still "registered" (not yet checked in)
   function hasEventEnded(registration: EventRegistration) {
-    if (!registration.eventDate) return false;
-    if (registration.eventDate < today) return true;
-    return registration.eventDate === today &&
-      !!registration.endTime &&
-      nowTime > registration.endTime.slice(0, 5);
+    return eventHasEnded(registration.eventDate, registration.endTime);
   }
 
   const todayRegistrations = (registrations ?? []).filter(
