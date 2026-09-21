@@ -10,6 +10,7 @@ import {
 import type { Event } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { eventHasEnded } from "@/lib/event-time";
+import { MonthCalendar } from "@/components/month-calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +65,7 @@ export default function OpportunitiesPage() {
 
   const [search, setSearch] = useState("");
   const [confirmEvent, setConfirmEvent] = useState<Event | null>(null);
+  const [mineView, setMineView] = useState<"list" | "calendar">("list");
 
   const myRegMap: Record<string, string> = {};
   (myRegistrations ?? []).forEach((r) => {
@@ -444,7 +446,36 @@ export default function OpportunitiesPage() {
                   </CardContent>
                 </Card>
               ) : (
-                <div className="space-y-4">{mine.map((e) => renderEvent(e, !eventHasEnded(e.eventDate, (e as any).endTime)))}</div>
+                <div className="space-y-4">
+                  <div className="inline-flex rounded-lg border p-0.5 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setMineView("list")}
+                      className={`px-3 py-1 rounded-md ${mineView === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                    >
+                      List
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMineView("calendar")}
+                      className={`px-3 py-1 rounded-md ${mineView === "calendar" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                    >
+                      Calendar
+                    </button>
+                  </div>
+                  {mineView === "calendar" ? (
+                    <MonthCalendar
+                      items={mine.map((e) => ({
+                        eventId: e.eventId,
+                        eventDate: e.eventDate,
+                        title: e.title,
+                        startTime: e.startTime,
+                      }))}
+                    />
+                  ) : (
+                    <div className="space-y-4">{mine.map((e) => renderEvent(e, !eventHasEnded(e.eventDate, (e as any).endTime)))}</div>
+                  )}
+                </div>
               )}
             </TabsContent>
 
