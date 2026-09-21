@@ -86,6 +86,7 @@ export default function AdminEventsPage() {
   const [whenFilter, setWhenFilter] = useState<"all" | "upcoming" | "past">("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [showOptional, setShowOptional] = useState(false);
 
   const supervisors = (users ?? []).filter((u) => u.role === "supervisor");
 
@@ -393,13 +394,6 @@ export default function AdminEventsPage() {
                 </FormItem>
               )} />
 
-              <FormField control={form.control} name="slotLabel" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Slot label <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                  <FormControl><Input placeholder="e.g. Checkout, Cleanup crew" {...field} /></FormControl>
-                </FormItem>
-              )} />
-
               <FormField control={form.control} name="location" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Location name / venue</FormLabel>
@@ -407,30 +401,6 @@ export default function AdminEventsPage() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="street" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Street address <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                  <FormControl><Input placeholder="123 Main St" {...field} /></FormControl>
-                </FormItem>
-              )} />
-              <div className="grid grid-cols-6 gap-3">
-                <div className="col-span-3">
-                  <FormField control={form.control} name="city" render={({ field }) => (
-                    <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Redmond" {...field} /></FormControl></FormItem>
-                  )} />
-                </div>
-                <div className="col-span-1">
-                  <FormField control={form.control} name="state" render={({ field }) => (
-                    <FormItem><FormLabel>State</FormLabel><FormControl><Input placeholder="WA" {...field} /></FormControl></FormItem>
-                  )} />
-                </div>
-                <div className="col-span-2">
-                  <FormField control={form.control} name="zip" render={({ field }) => (
-                    <FormItem><FormLabel>ZIP</FormLabel><FormControl><Input placeholder="98052" {...field} /></FormControl></FormItem>
-                  )} />
-                </div>
-              </div>
-
               <FormField control={form.control} name="eventDate" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Date</FormLabel>
@@ -471,33 +441,6 @@ export default function AdminEventsPage() {
                 </FormItem>
               )} />
 
-              <div className="grid grid-cols-2 gap-3">
-                <FormField control={form.control} name="minGrade" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Minimum grade <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value={NONE}>Any</SelectItem>
-                        {ALL_GRADES.map((g) => <SelectItem key={g} value={g}>Grade {g}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="maxGrade" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Maximum grade <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value={NONE}>Any</SelectItem>
-                        {ALL_GRADES.map((g) => <SelectItem key={g} value={g}>Grade {g}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )} />
-              </div>
-
               {!isSelfSupervised && (
                 <FormField control={form.control} name="supervisorId" render={({ field }) => (
                   <FormItem>
@@ -521,14 +464,83 @@ export default function AdminEventsPage() {
                 )} />
               )}
 
-              <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Event image</FormLabel>
-                  <FormControl>
-                    <ImageUpload value={field.value} onChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )} />
+              <div className="rounded-lg border">
+                <button
+                  type="button"
+                  onClick={() => setShowOptional((v) => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium"
+                >
+                  <span>Optional details <span className="text-muted-foreground font-normal">— slot label, address, grade limits, image</span></span>
+                  <span className="text-muted-foreground">{showOptional ? "−" : "+"}</span>
+                </button>
+                {showOptional && (
+                  <div className="px-4 pb-4 space-y-4 border-t pt-4">
+                    <FormField control={form.control} name="slotLabel" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Slot label</FormLabel>
+                        <FormControl><Input placeholder="e.g. Checkout, Cleanup crew" {...field} /></FormControl>
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="street" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Street address</FormLabel>
+                        <FormControl><Input placeholder="123 Main St" {...field} /></FormControl>
+                      </FormItem>
+                    )} />
+                    <div className="grid grid-cols-6 gap-3">
+                      <div className="col-span-3">
+                        <FormField control={form.control} name="city" render={({ field }) => (
+                          <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Redmond" {...field} /></FormControl></FormItem>
+                        )} />
+                      </div>
+                      <div className="col-span-1">
+                        <FormField control={form.control} name="state" render={({ field }) => (
+                          <FormItem><FormLabel>State</FormLabel><FormControl><Input placeholder="WA" {...field} /></FormControl></FormItem>
+                        )} />
+                      </div>
+                      <div className="col-span-2">
+                        <FormField control={form.control} name="zip" render={({ field }) => (
+                          <FormItem><FormLabel>ZIP</FormLabel><FormControl><Input placeholder="98052" {...field} /></FormControl></FormItem>
+                        )} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField control={form.control} name="minGrade" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Minimum grade</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              <SelectItem value={NONE}>Any</SelectItem>
+                              {ALL_GRADES.map((g) => <SelectItem key={g} value={g}>Grade {g}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="maxGrade" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Maximum grade</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Any" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              <SelectItem value={NONE}>Any</SelectItem>
+                              {ALL_GRADES.map((g) => <SelectItem key={g} value={g}>Grade {g}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )} />
+                    </div>
+                    <FormField control={form.control} name="imageUrl" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Event image</FormLabel>
+                        <FormControl>
+                          <ImageUpload value={field.value} onChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+                )}
+              </div>
 
               <div className="flex gap-3 pt-2">
                 <Button type="submit" className="flex-1" disabled={updateEvent.isPending}>

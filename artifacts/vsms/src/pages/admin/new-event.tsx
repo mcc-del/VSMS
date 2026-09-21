@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useCreateEvent, useListUsers, useListOrganizations, useGetManagedOrganizations, getListEventsQueryKey, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/layout";
@@ -58,6 +58,7 @@ const emptySlot = { slotLabel: "", eventDate: "", startTime: "09:00", endTime: "
 
 export default function AdminNewEvent() {
   const createEvent = useCreateEvent();
+  const [showOptional, setShowOptional] = useState(false);
   const { role, userId } = useAuth();
   const isOrgAdmin = role === "org_admin";
   const isSupervisor = role === "supervisor";
@@ -197,14 +198,26 @@ export default function AdminNewEvent() {
                     <FormMessage />
                   </FormItem>
                 )} />
+                <button
+                  type="button"
+                  onClick={() => setShowOptional((v) => !v)}
+                  className="w-full flex items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium"
+                >
+                  <span>Optional details <span className="text-muted-foreground font-normal">— address, grade limits, image</span></span>
+                  <span className="text-muted-foreground">{showOptional ? "−" : "+"}</span>
+                </button>
+
+                {showOptional && (
                 <FormField control={form.control} name="street" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Street address <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                    <FormLabel>Street address</FormLabel>
                     <FormControl>
                       <Input data-testid="input-street" placeholder="123 Main St" {...field} />
                     </FormControl>
                   </FormItem>
                 )} />
+                )}
+                {showOptional && (<>
                 <div className="grid grid-cols-6 gap-3">
                   <div className="col-span-3">
                     <FormField control={form.control} name="city" render={({ field }) => (
@@ -260,6 +273,7 @@ export default function AdminNewEvent() {
                     </FormItem>
                   )} />
                 </div>
+                </>)}
 
                 {/* Time slots */}
                 <div className="space-y-3">
@@ -385,14 +399,16 @@ export default function AdminNewEvent() {
                   </FormItem>
                 )} />
 
+                {showOptional && (
                 <FormField control={form.control} name="imageUrl" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Event image (optional)</FormLabel>
+                    <FormLabel>Event image</FormLabel>
                     <FormControl>
                       <ImageUpload value={field.value} onChange={field.onChange} />
                     </FormControl>
                   </FormItem>
                 )} />
+                )}
 
                 <Button data-testid="button-create-event" type="submit" className="w-full" disabled={createEvent.isPending}>
                   {createEvent.isPending

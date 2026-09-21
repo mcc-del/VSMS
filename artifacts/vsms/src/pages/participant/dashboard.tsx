@@ -12,6 +12,7 @@ import {
 } from "@workspace/api-client-react";
 import type { EventRegistration } from "@workspace/api-client-react";
 import { GettingStarted } from "@/components/getting-started";
+import { NewEventsBanner } from "@/components/new-events-banner";
 import { eventHasEnded, todayPT, nowTimePT } from "@/lib/event-time";
 import { MedalBadge } from "@/components/medal-badge";
 import { AppLayout } from "@/components/layout";
@@ -199,6 +200,7 @@ export default function ParticipantDashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <NewEventsBanner opportunitiesHref="/opportunities" />
         <GettingStarted role="participant" />
         <div>
           <h1 className="text-2xl font-bold text-foreground">My Dashboard</h1>

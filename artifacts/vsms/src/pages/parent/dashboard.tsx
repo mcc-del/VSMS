@@ -42,6 +42,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { SchoolSelect } from "@/components/school-select";
 import { GettingStarted } from "@/components/getting-started";
+import { NewEventsBanner } from "@/components/new-events-banner";
 import { ALL_GRADES } from "@/lib/schools";
 import { Clock, MapPin, CalendarDays, Trophy, Users, Plus, Pencil, UserPlus, Mail, CalendarPlus } from "lucide-react";
 import { downloadEventIcs } from "@/lib/calendar";
@@ -263,6 +264,7 @@ export default function ParentDashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        <NewEventsBanner opportunitiesHref="/parent/opportunities" />
         <GettingStarted role="parent" />
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
