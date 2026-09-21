@@ -365,13 +365,22 @@ router.post(
         lastName,
         email: email.toLowerCase(),
         passwordHash,
-        role: role as "participant" | "supervisor" | "admin",
+        role: role as "participant" | "supervisor" | "org_admin" | "admin",
         phone: phone?.trim() || null,
         organizationId: newUserOrgId,
         resetToken: inviteToken,
         resetTokenExpiresAt: inviteExpires,
       })
       .returning();
+
+    // An Admin (org_admin) manages the organization they were assigned to.
+    // Record the org-admin membership so their scope resolves correctly.
+    if (role === "org_admin" && newUserOrgId) {
+      await db
+        .insert(orgAdminsTable)
+        .values({ userId: user.userId, organizationId: newUserOrgId })
+        .onConflictDoNothing();
+    }
 
     // Fire-and-forget the invite email (no-op if email isn't configured).
     sendAccountInvite(user.email!, user.firstName, ROLE_LABELS[user.role] ?? user.role, inviteToken)

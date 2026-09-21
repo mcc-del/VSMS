@@ -25,10 +25,20 @@ const schema = z.object({
   lastName: z.string().min(2).max(50),
   email: z.string().email(),
   password: z.string().min(8, "Min 8 characters"),
-  role: z.enum(["participant", "supervisor", "admin"]),
+  role: z.enum(["participant", "supervisor", "org_admin", "admin"]),
   phone: z.string().optional(),
   organizationId: z.string().optional(),
 });
+
+// Sensible default temporary password per persona. Auto-fills when the role
+// is chosen; the admin can still edit it. The person gets an invite to set
+// their own password regardless.
+const DEFAULT_PASSWORD: Record<string, string> = {
+  participant: "Participant123!",
+  supervisor: "Supervisor123!",
+  org_admin: "Admin123!",
+  admin: "SuperAdmin123!",
+};
 
 const hoursSchema = z.object({
   hours: z.coerce.number().min(0.5, "Min 0.5 hours").max(500, "Max 500 hours"),
@@ -194,8 +204,12 @@ export default function AdminUsers() {
     );
   }
 
-  function handleDelete(userId: string, name: string) {
-    if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
+  function handleDelete(userId: string, name: string, role: string) {
+    const managesEvents = role === "supervisor" || role === "org_admin";
+    const message = managesEvents
+      ? `Delete ${name}?\n\nThis permanently removes their account and cannot be undone.\n\nIf they have created events or have hours to review, deletion will be blocked — use "Reassign events" to move those to another supervisor first.`
+      : `Delete ${name}?\n\nThis permanently removes their account and all of their data. This cannot be undone.`;
+    if (!confirm(message)) return;
     deleteUser.mutate(
       { userId },
       {
@@ -204,8 +218,14 @@ export default function AdminUsers() {
           queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetAdminDashboardQueryKey() });
         },
-        onError: () => {
-          toast({ title: "Error", description: "Failed to delete user", variant: "destructive" });
+        onError: (err: any) => {
+          toast({
+            title: "Couldn't delete user",
+            description:
+              err?.data?.error ??
+              "This user still has events or hours attached. Reassign their events first, then try again.",
+            variant: "destructive",
+          });
         },
       }
     );
@@ -358,7 +378,7 @@ export default function AdminUsers() {
                             variant="ghost"
                             size="icon"
                             data-testid={`button-delete-user-${u.userId}`}
-                            onClick={() => handleDelete(u.userId, `${u.firstName} ${u.lastName}`)}
+                            onClick={() => handleDelete(u.userId, `${u.firstName} ${u.lastName}`, u.role)}
                             className="text-muted-foreground hover:text-destructive"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -402,7 +422,7 @@ export default function AdminUsers() {
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Email</FormLabel>
-                  <FormControl><Input type="email" placeholder="jane@example.com" {...field} /></FormControl>
+                  <FormControl><Input type="email" placeholder="jane@example.com" autoComplete="off" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -411,7 +431,7 @@ export default function AdminUsers() {
                   <FormLabel>Temporary password</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input type={showCreatePw ? "text" : "password"} placeholder="Min 8 characters" className="pr-10" {...field} />
+                      <Input type={showCreatePw ? "text" : "password"} placeholder="Min 8 characters" className="pr-10" autoComplete="new-password" {...field} />
                       <button type="button" onClick={() => setShowCreatePw((v) => !v)} tabIndex={-1}
                         aria-label={showCreatePw ? "Hide password" : "Show password"}
                         className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground">
@@ -433,13 +453,21 @@ export default function AdminUsers() {
               <FormField control={form.control} name="role" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={(v) => {
+                      field.onChange(v);
+                      // Auto-fill the temp password to match the persona.
+                      form.setValue("password", DEFAULT_PASSWORD[v] ?? "Supervisor123!");
+                    }}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="participant">Participant</SelectItem>
                       <SelectItem value="supervisor">Supervisor</SelectItem>
+                      {isSuperAdmin && <SelectItem value="org_admin">Admin</SelectItem>}
                       {isSuperAdmin && <SelectItem value="admin">Super Admin</SelectItem>}
                     </SelectContent>
                   </Select>

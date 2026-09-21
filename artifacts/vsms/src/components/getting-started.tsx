@@ -41,11 +41,13 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
     ],
   },
   admin: {
-    title: "Welcome, admin — start here",
+    title: "Welcome, Super Admin — start here",
     steps: [
       { label: "Set up organizations & join codes", href: "/admin/organizations", hint: "Add partners; generate a join code per org." },
       { label: "Create events", href: "/admin/events/new", hint: "Post opportunities, with multiple time slots if needed." },
-      { label: "Manage users & assign org admins", href: "/admin/users", hint: "Add supervisors (with phone), promote org admins, grant hours." },
+      { label: "Manage users & assign admins", href: "/admin/users", hint: "Add supervisors and Admins (with phone), promote org admins, grant hours." },
+      { label: "Set award thresholds", href: "/admin/award-thresholds", hint: "Choose Bronze/Silver/Gold hour targets — globally, per org, or lower for younger grades." },
+      { label: "Review the audit log", href: "/admin/audit-log", hint: "See who changed what across every organization." },
     ],
   },
 };
