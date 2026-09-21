@@ -211,6 +211,33 @@ export async function sendSignupNotification(
   }
 }
 
+export async function sendWithdrawalNotification(
+  toEmail: string,
+  supervisorName: string,
+  participantName: string,
+  eventTitle: string,
+  eventDate: string,
+): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const text = [
+    `Hi ${supervisorName},`,
+    "",
+    `${participantName} has withdrawn from your event "${eventTitle}" (${eventDate}).`,
+    "",
+    `See the updated roster: ${APP_URL}/admin/events`,
+    "",
+    "You can turn these emails off in the app under Email notifications.",
+    "",
+    "— MedinaCares Council",
+  ].join("\n");
+  try {
+    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: `Withdrawal: ${eventTitle}`, text });
+  } catch (err) {
+    logger.error({ err, toEmail }, "Failed to send withdrawal notification");
+  }
+}
+
 // Alert Super Admins that a new account registered.
 export async function sendNewUserAlert(
   recipients: string[],

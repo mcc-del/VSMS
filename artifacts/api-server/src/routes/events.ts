@@ -11,7 +11,7 @@ import {
 import { eq, count, sql, and, inArray } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
-import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification, sendAddedToEvent } from "../lib/email";
+import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification, sendAddedToEvent, sendWithdrawalNotification } from "../lib/email";
 import { recordAudit } from "../lib/audit";
 import { ObjectStorageService } from "../lib/objectStorage";
 
@@ -554,6 +554,52 @@ router.delete(
       .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, userId)));
 
     res.json({ ok: true });
+
+    // Notify the event's supervisor that a participant withdrew (unless they've
+    // turned activity emails off). Fire-and-forget after responding.
+    try {
+      const [event] = await db
+        .select({
+          title: eventsTable.title,
+          eventDate: eventsTable.eventDate,
+          supervisorId: eventsTable.supervisorId,
+        })
+        .from(eventsTable)
+        .where(eq(eventsTable.eventId, eventId))
+        .limit(1);
+      if (event) {
+        const [supervisor] = await db
+          .select({
+            email: usersTable.email,
+            firstName: usersTable.firstName,
+            lastName: usersTable.lastName,
+            emailNotifications: usersTable.emailNotifications,
+          })
+          .from(usersTable)
+          .where(eq(usersTable.userId, event.supervisorId))
+          .limit(1);
+        const [participant] = await db
+          .select({ firstName: usersTable.firstName, lastName: usersTable.lastName, email: usersTable.email })
+          .from(usersTable)
+          .where(eq(usersTable.userId, userId))
+          .limit(1);
+        if (supervisor?.email && supervisor.emailNotifications) {
+          const participantName =
+            [participant?.firstName, participant?.lastName].filter(Boolean).join(" ") ||
+            participant?.email ||
+            "A participant";
+          sendWithdrawalNotification(
+            supervisor.email,
+            `${supervisor.firstName} ${supervisor.lastName}`.trim(),
+            participantName,
+            event.title,
+            event.eventDate,
+          ).catch((err) => req.log.error({ err }, "Unhandled error sending withdrawal notification"));
+        }
+      }
+    } catch (err) {
+      req.log.error({ err }, "Failed to build withdrawal notification");
+    }
   },
 );
 
