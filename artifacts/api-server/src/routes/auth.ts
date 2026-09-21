@@ -20,9 +20,22 @@ router.post("/v1/auth/register", async (req, res) => {
 
   const { firstName, lastName, email, password, accountType, parentEmail, school, grade, organizationId } =
     parsed.data;
-  const joinCode = (parsed.data as typeof parsed.data & { joinCode?: string }).joinCode;
+  const extra = parsed.data as typeof parsed.data & { joinCode?: string; phone?: string; parentPhone?: string };
+  const joinCode = extra.joinCode;
+  const phone = extra.phone?.trim();
+  const parentPhone = extra.parentPhone?.trim();
 
   const isParent = accountType === "parent";
+
+  // A phone number is required for everyone: a parent's own phone, or a
+  // student's parent phone.
+  const requiredPhone = isParent ? phone : parentPhone;
+  if (!requiredPhone) {
+    res.status(400).json({
+      error: isParent ? "A phone number is required." : "A parent phone number is required.",
+    });
+    return;
+  }
 
   // Students must provide a parent email so a parent account can be linked.
   if (!isParent && (!parentEmail || parentEmail.trim() === "")) {
@@ -104,7 +117,9 @@ router.post("/v1/auth/register", async (req, res) => {
       email: email.toLowerCase(),
       passwordHash,
       role: isParent ? "parent" : "participant",
+      phone: isParent ? (phone || null) : null,
       parentEmail: isParent ? null : parentEmail!.toLowerCase(),
+      parentPhone: isParent ? null : (parentPhone || null),
       school: isParent ? null : school!.trim(),
       grade: isParent ? null : (grade?.trim() || null),
       organizationId: finalOrganizationId,

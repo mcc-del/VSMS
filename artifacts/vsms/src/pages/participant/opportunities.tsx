@@ -92,6 +92,24 @@ export default function OpportunitiesPage() {
     .sort((a, b) => (a.eventDate < b.eventDate ? -1 : 1));
 
   function handleSignUp(eventId: string) {
+    // Double-booking alert: warn if this event's time overlaps one the
+    // participant is already signed up for (same date, overlapping times).
+    const target = (events ?? []).find((e) => e.eventId === eventId);
+    if (target?.eventDate && target.startTime && target.endTime) {
+      const clash = mine.find(
+        (m) =>
+          m.eventId !== eventId &&
+          m.eventDate === target.eventDate &&
+          m.startTime && m.endTime &&
+          target.startTime < m.endTime && m.startTime < target.endTime,
+      );
+      if (clash) {
+        const ok = confirm(
+          `Heads up: this overlaps "${clash.title}" on ${clash.eventDate} (${(clash.startTime ?? "").slice(0,5)}–${(clash.endTime ?? "").slice(0,5)}), which you're already signed up for.\n\nSign up anyway?`,
+        );
+        if (!ok) return;
+      }
+    }
     registerMutation.mutate(
       { eventId },
       {

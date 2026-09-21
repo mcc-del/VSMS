@@ -39,7 +39,9 @@ export const RegisterBody = zod.object({
   "school": zod.string().optional(),
   "grade": zod.string().optional(),
   "organizationId": zod.string().nullish(),
-  "joinCode": zod.string().optional()
+  "joinCode": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "parentPhone": zod.string().optional()
 })
 
 

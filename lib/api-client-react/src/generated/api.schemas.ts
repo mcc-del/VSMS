@@ -485,6 +485,8 @@ export interface RegisterInput {
   /** @nullable */
   organizationId?: string | null;
   joinCode?: string;
+  phone?: string;
+  parentPhone?: string;
 }
 
 export interface LoginInput {

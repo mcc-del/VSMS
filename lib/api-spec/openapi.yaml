@@ -2627,6 +2627,10 @@ components:
           type: ["string", "null"]
         joinCode:
           type: string
+        phone:
+          type: string
+        parentPhone:
+          type: string
 
     LoginInput:
       type: object

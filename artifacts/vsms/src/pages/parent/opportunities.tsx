@@ -53,6 +53,23 @@ export default function ParentOpportunities() {
 
   function signUp(e: Event) {
     if (!childId) return;
+    // Double-booking alert: warn if this overlaps an event the child is
+    // already registered for (same date, overlapping times).
+    if (e.eventDate && e.startTime && e.endTime) {
+      const clash = (child?.upcomingRegistrations ?? []).find(
+        (r: any) =>
+          r.eventId !== e.eventId &&
+          r.eventDate === e.eventDate &&
+          r.startTime && r.endTime &&
+          e.startTime < r.endTime && r.startTime < e.endTime,
+      );
+      if (clash) {
+        const ok = confirm(
+          `Heads up: this overlaps "${clash.eventTitle ?? "another event"}" on ${clash.eventDate} (${(clash.startTime ?? "").slice(0,5)}–${(clash.endTime ?? "").slice(0,5)}), which ${child?.firstName ?? "your child"} is already signed up for.\n\nSign up anyway?`,
+        );
+        if (!ok) return;
+      }
+    }
     registerChild.mutate(
       { childId, data: { eventId: e.eventId } },
       {

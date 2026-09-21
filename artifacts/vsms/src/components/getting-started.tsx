@@ -65,7 +65,7 @@ export function GettingStarted({ role }: { role: string | null | undefined }) {
     }
   });
 
-  if (!config || dismissed) return null;
+  if (!config) return null;
 
   const dismiss = () => {
     try {
@@ -75,6 +75,28 @@ export function GettingStarted({ role }: { role: string | null | undefined }) {
     }
     setDismissed(true);
   };
+
+  const restore = () => {
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      /* ignore */
+    }
+    setDismissed(false);
+  };
+
+  // When dismissed, leave a small link so the guide can be brought back.
+  if (dismissed) {
+    return (
+      <button
+        onClick={restore}
+        className="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1.5"
+        data-testid="button-show-getting-started"
+      >
+        <Sparkles className="w-4 h-4" /> Show the getting-started guide
+      </button>
+    );
+  }
 
   return (
     <Card className="border-primary/30 bg-primary/5" data-testid="getting-started">

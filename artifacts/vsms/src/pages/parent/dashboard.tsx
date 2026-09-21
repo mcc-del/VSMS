@@ -648,14 +648,14 @@ export default function ParentDashboard() {
               if (!selOrg) return null;
               return (
                 <div className="space-y-1.5">
-                  <Label>{selOrg.name} join code</Label>
+                  <Label>Program join code</Label>
                   <Input
                     value={form.joinCode}
                     onChange={(e) => setForm({ ...form, joinCode: e.target.value })}
                     placeholder="Enter the code from the program"
                     data-testid="input-child-join-code"
                   />
-                  <p className="text-xs text-muted-foreground">Required to place your child in {selOrg.name}.</p>
+                  <p className="text-xs text-muted-foreground">Required to place your child in {selOrg.name}. Don't have this code? Email mcc@medinaacademy.org.</p>
                 </div>
               );
             })()}

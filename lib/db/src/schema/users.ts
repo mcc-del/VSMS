@@ -27,6 +27,8 @@ export const usersTable = pgTable("users", {
   isManaged: boolean("is_managed").notNull().default(false),
   // For students: their parent's email, used to link a parent account.
   parentEmail: varchar("parent_email", { length: 255 }),
+  // For students: their parent's phone (collected at enrollment).
+  parentPhone: varchar("parent_phone", { length: 30 }),
   // For students: school and grade, used for the leaderboard and school standings.
   school: varchar("school", { length: 120 }),
   grade: varchar("grade", { length: 20 }),

@@ -53,6 +53,11 @@ const schema = z
     grade: z.string().optional(),
     organizationId: z.string().optional(),
     joinCode: z.string().optional(),
+    phone: z.string().optional(),
+  })
+  .refine((v) => v.phone != null && v.phone.trim().length > 0, {
+    message: "A phone number is required",
+    path: ["phone"],
   })
   .refine((v) => v.signupType !== "student" || (v.parentEmail && v.parentEmail.length > 0), {
     message: "A parent email is required",
@@ -98,6 +103,7 @@ export default function RegisterPage() {
       grade: "",
       organizationId: "",
       joinCode: "",
+      phone: "",
     },
   });
 
@@ -156,9 +162,10 @@ export default function RegisterPage() {
                 school: values.school,
                 grade: values.grade,
                 organizationId: values.organizationId || null,
+                parentPhone: values.phone,
                 ...(values.joinCode ? { joinCode: values.joinCode } : {}),
               }
-            : {}),
+            : { phone: values.phone }),
         },
       },
       {
@@ -293,6 +300,20 @@ export default function RegisterPage() {
                 />
               )}
 
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{isStudent ? "Parent's phone" : "Your phone"}</FormLabel>
+                    <FormControl>
+                      <Input data-testid="input-phone" type="tel" placeholder="(425) 555-0100" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {isStudent && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Organization</label>
@@ -318,12 +339,12 @@ export default function RegisterPage() {
                     name="joinCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{selectedOrg?.name ?? "Organization"} join code</FormLabel>
+                        <FormLabel>Program join code</FormLabel>
                         <FormControl>
                           <Input data-testid="input-join-code" placeholder="Enter the code from your school or program" {...field} />
                         </FormControl>
                         <FormDescription>
-                          {selectedOrg?.name ?? "Your organization"} gives this code to its students — it confirms you're really enrolled. Ask them if you don't have it.
+                          {selectedOrg?.name ?? "Your program"} gives this code to its members — it confirms you're really enrolled. Don't have this code? Email mcc@medinaacademy.org.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
