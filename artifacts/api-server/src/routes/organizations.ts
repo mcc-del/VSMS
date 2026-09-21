@@ -18,6 +18,7 @@ function format(o: typeof organizationsTable.$inferSelect) {
     allowsMiddle: o.allowsMiddle,
     allowsHigh: o.allowsHigh,
     competesOnLeaderboard: o.competesOnLeaderboard,
+    showInEnrollment: o.showInEnrollment,
     requiresJoinCode: Boolean(o.joinCode),
   };
 }
@@ -50,8 +51,8 @@ router.post("/v1/admin/organizations", authenticate, requireRole("admin"), async
     res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });
     return;
   }
-  const { name, description, allowsElementary, allowsMiddle, allowsHigh, competesOnLeaderboard, joinCode } =
-    parsed.data as typeof parsed.data & { competesOnLeaderboard?: boolean; joinCode?: string | null };
+  const { name, description, allowsElementary, allowsMiddle, allowsHigh, competesOnLeaderboard, showInEnrollment, joinCode } =
+    parsed.data as typeof parsed.data & { competesOnLeaderboard?: boolean; showInEnrollment?: boolean; joinCode?: string | null };
   try {
     const [org] = await db
       .insert(organizationsTable)
@@ -62,6 +63,7 @@ router.post("/v1/admin/organizations", authenticate, requireRole("admin"), async
         allowsMiddle: allowsMiddle ?? true,
         allowsHigh: allowsHigh ?? true,
         competesOnLeaderboard: competesOnLeaderboard ?? true,
+        showInEnrollment: showInEnrollment ?? true,
         joinCode: joinCode?.trim() || null,
       })
       .returning();
@@ -96,8 +98,8 @@ router.put(
       res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });
       return;
     }
-    const { name, description, allowsElementary, allowsMiddle, allowsHigh, competesOnLeaderboard, joinCode } =
-      parsed.data as typeof parsed.data & { competesOnLeaderboard?: boolean; joinCode?: string | null };
+    const { name, description, allowsElementary, allowsMiddle, allowsHigh, competesOnLeaderboard, showInEnrollment, joinCode } =
+      parsed.data as typeof parsed.data & { competesOnLeaderboard?: boolean; showInEnrollment?: boolean; joinCode?: string | null };
     const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name.trim();
     if (description !== undefined) updates.description = description ?? null;
@@ -105,6 +107,7 @@ router.put(
     if (allowsMiddle !== undefined) updates.allowsMiddle = allowsMiddle;
     if (allowsHigh !== undefined) updates.allowsHigh = allowsHigh;
     if (competesOnLeaderboard !== undefined) updates.competesOnLeaderboard = competesOnLeaderboard;
+    if (showInEnrollment !== undefined) updates.showInEnrollment = showInEnrollment;
     if (joinCode !== undefined) updates.joinCode = joinCode?.trim() || null;
 
     const [org] = await db

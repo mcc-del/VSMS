@@ -120,6 +120,7 @@ export interface Organization {
   allowsMiddle: boolean;
   allowsHigh: boolean;
   competesOnLeaderboard?: boolean;
+  showInEnrollment?: boolean;
   requiresJoinCode?: boolean;
   /**
      * Only returned from the admin organizations endpoint.
@@ -139,6 +140,7 @@ export interface OrganizationInput {
   allowsMiddle?: boolean;
   allowsHigh?: boolean;
   competesOnLeaderboard?: boolean;
+  showInEnrollment?: boolean;
   /** @nullable */
   joinCode?: string | null;
 }

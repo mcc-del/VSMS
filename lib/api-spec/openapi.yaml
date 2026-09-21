@@ -2179,6 +2179,8 @@ components:
           type: boolean
         competesOnLeaderboard:
           type: boolean
+        showInEnrollment:
+          type: boolean
         requiresJoinCode:
           type: boolean
         joinCode:
@@ -2201,6 +2203,8 @@ components:
         allowsHigh:
           type: boolean
         competesOnLeaderboard:
+          type: boolean
+        showInEnrollment:
           type: boolean
         joinCode:
           type: ["string", "null"]

@@ -627,16 +627,16 @@ export default function ParentDashboard() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Organization</Label>
+              <Label>Program / affiliation</Label>
               <Select
                 value={form.organizationId || ""}
                 onValueChange={(v) => setForm({ ...form, organizationId: v, joinCode: "" })}
               >
                 <SelectTrigger data-testid="select-child-org">
-                  <SelectValue placeholder="Select the child's organization" />
+                  <SelectValue placeholder="Select the child's program" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(orgs ?? []).map((o) => (
+                  {(orgs ?? []).filter((o) => (o as any).showInEnrollment !== false).map((o) => (
                     <SelectItem key={o.organizationId} value={o.organizationId}>
                       {o.name}
                     </SelectItem>

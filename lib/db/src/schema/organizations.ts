@@ -19,6 +19,10 @@ export const organizationsTable = pgTable("organizations", {
   // by default (they still earn accredited hours and see their own row). For
   // partner orgs whose students just want verified hours, not to compete.
   competesOnLeaderboard: boolean("competes_on_leaderboard").notNull().default(true),
+  // When false, this org is hidden from the enrollment/affiliation dropdown
+  // (students & parents won't see it as a choice at sign-up). It can still be
+  // used for events and existing members. Default: shown.
+  showInEnrollment: boolean("show_in_enrollment").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

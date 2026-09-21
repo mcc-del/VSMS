@@ -29,6 +29,7 @@ type Draft = {
   allowsMiddle: boolean;
   allowsHigh: boolean;
   competesOnLeaderboard: boolean;
+  showInEnrollment: boolean;
   joinCode: string;
 };
 
@@ -39,6 +40,7 @@ const emptyDraft: Draft = {
   allowsMiddle: true,
   allowsHigh: true,
   competesOnLeaderboard: true,
+  showInEnrollment: true,
   joinCode: "",
 };
 
@@ -77,6 +79,7 @@ export default function AdminOrganizations() {
       allowsMiddle: draft.allowsMiddle,
       allowsHigh: draft.allowsHigh,
       competesOnLeaderboard: draft.competesOnLeaderboard,
+      showInEnrollment: draft.showInEnrollment,
       joinCode: draft.joinCode.trim() || null,
     };
     const onDone = () => {
@@ -168,6 +171,7 @@ export default function AdminOrganizations() {
                           allowsMiddle: o.allowsMiddle,
                           allowsHigh: o.allowsHigh,
                           competesOnLeaderboard: o.competesOnLeaderboard ?? true,
+                          showInEnrollment: (o as any).showInEnrollment ?? true,
                           joinCode: o.joinCode ?? "",
                         })
                       }
@@ -228,6 +232,19 @@ export default function AdminOrganizations() {
                       Uncheck for partner orgs whose students just want verified hours, not to
                       compete — their members are hidden from the public board (they still earn
                       accredited hours and see their own rank).
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-2.5 text-sm cursor-pointer mt-3">
+                  <Checkbox
+                    checked={draft.showInEnrollment}
+                    onCheckedChange={(c) => setDraft({ ...draft, showInEnrollment: Boolean(c) })}
+                  />
+                  <span>
+                    Show in the enrollment dropdown
+                    <span className="block text-xs text-muted-foreground">
+                      Uncheck to hide this program from the sign-up / add-child affiliation list.
+                      Existing members and events are unaffected.
                     </span>
                   </span>
                 </label>

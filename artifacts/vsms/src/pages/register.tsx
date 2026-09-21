@@ -335,13 +335,13 @@ export default function RegisterPage() {
 
               {isStudent && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Organization</label>
+                  <label className="text-sm font-medium">Program / affiliation</label>
                   <Select value={form.watch("organizationId") || ""} onValueChange={onAffiliationChange}>
                     <SelectTrigger data-testid="select-organization">
-                      <SelectValue placeholder="Select your organization" />
+                      <SelectValue placeholder="Select your program" />
                     </SelectTrigger>
                     <SelectContent>
-                      {(orgs ?? []).map((o) => (
+                      {(orgs ?? []).filter((o) => (o as any).showInEnrollment !== false).map((o) => (
                         <SelectItem key={o.organizationId} value={o.organizationId}>{o.name}</SelectItem>
                       ))}
                     </SelectContent>
