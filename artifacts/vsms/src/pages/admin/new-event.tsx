@@ -31,12 +31,12 @@ const NONE = "none";
 const schema = z
   .object({
     title: z.string().min(1, "Title is required").max(150),
-    description: z.string().min(1, "Description is required"),
+    description: z.string().optional(),
     location: z.string().min(1, "Location is required"),
-    street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    zip: z.string().optional(),
+    street: z.string().min(1, "Street address is required"),
+    city: z.string().min(1, "City is required"),
+    state: z.string().min(1, "State is required"),
+    zip: z.string().min(1, "ZIP is required"),
     minGrade: z.string().optional(),
     maxGrade: z.string().optional(),
     supervisorId: z.string().min(1, "Select a supervisor"),
@@ -179,7 +179,7 @@ export default function AdminNewEvent() {
 
                 <FormField control={form.control} name="description" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Description <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
                     <FormControl>
                       <Textarea data-testid="input-description" placeholder="Describe the volunteer activity..." rows={3} {...field} />
                     </FormControl>
@@ -198,32 +198,22 @@ export default function AdminNewEvent() {
                     <FormMessage />
                   </FormItem>
                 )} />
-                <button
-                  type="button"
-                  onClick={() => setShowOptional((v) => !v)}
-                  className="w-full flex items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium"
-                >
-                  <span>Optional details <span className="text-muted-foreground font-normal">— address, grade limits, image</span></span>
-                  <span className="text-muted-foreground">{showOptional ? "−" : "+"}</span>
-                </button>
-
-                {showOptional && (
                 <FormField control={form.control} name="street" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Street address</FormLabel>
                     <FormControl>
                       <Input data-testid="input-street" placeholder="123 Main St" {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )} />
-                )}
-                {showOptional && (<>
                 <div className="grid grid-cols-6 gap-3">
                   <div className="col-span-3">
                     <FormField control={form.control} name="city" render={({ field }) => (
                       <FormItem>
                         <FormLabel>City</FormLabel>
                         <FormControl><Input data-testid="input-city" placeholder="Redmond" {...field} /></FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>
@@ -232,6 +222,7 @@ export default function AdminNewEvent() {
                       <FormItem>
                         <FormLabel>State</FormLabel>
                         <FormControl><Input data-testid="input-state" placeholder="WA" {...field} /></FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>
@@ -240,11 +231,22 @@ export default function AdminNewEvent() {
                       <FormItem>
                         <FormLabel>ZIP</FormLabel>
                         <FormControl><Input data-testid="input-zip" placeholder="98052" {...field} /></FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => setShowOptional((v) => !v)}
+                  className="w-full flex items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium"
+                >
+                  <span>Optional details <span className="text-muted-foreground font-normal">— grade limits, image</span></span>
+                  <span className="text-muted-foreground">{showOptional ? "−" : "+"}</span>
+                </button>
+
+                {showOptional && (<>
                 {/* Grade limits */}
                 <div className="grid grid-cols-2 gap-3">
                   <FormField control={form.control} name="minGrade" render={({ field }) => (

@@ -229,7 +229,7 @@ export default function RegisterPage() {
                   name="firstName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First name</FormLabel>
+                      <FormLabel>{isStudent ? "First name" : "Parent first name"}</FormLabel>
                       <FormControl>
                         <Input data-testid="input-first-name" placeholder="Jane" {...field} />
                       </FormControl>
@@ -242,7 +242,7 @@ export default function RegisterPage() {
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last name</FormLabel>
+                      <FormLabel>{isStudent ? "Last name" : "Parent last name"}</FormLabel>
                       <FormControl>
                         <Input data-testid="input-last-name" placeholder="Smith" {...field} />
                       </FormControl>
@@ -257,7 +257,7 @@ export default function RegisterPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Your email address</FormLabel>
+                    <FormLabel>{isStudent ? "Your email address" : "Parent email address"}</FormLabel>
                     <FormControl>
                       <Input data-testid="input-email" type="email" placeholder="you@example.com" {...field} />
                     </FormControl>

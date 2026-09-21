@@ -37,13 +37,13 @@ const NONE = "none";
 
 const editSchema = z.object({
   title: z.string().min(1, "Required").max(150),
-  description: z.string().min(1, "Required"),
+  description: z.string().optional(),
   slotLabel: z.string().optional(),
   location: z.string().min(1, "Required"),
-  street: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zip: z.string().optional(),
+  street: z.string().min(1, "Street address is required"),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  zip: z.string().min(1, "ZIP is required"),
   eventDate: z.string().min(1, "Required"),
   startTime: z.string().min(1, "Required"),
   endTime: z.string().min(1, "Required"),
@@ -388,7 +388,7 @@ export default function AdminEventsPage() {
 
               <FormField control={form.control} name="description" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Description <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
                   <FormControl><Textarea rows={3} {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
@@ -401,6 +401,30 @@ export default function AdminEventsPage() {
                   <FormMessage />
                 </FormItem>
               )} />
+              <FormField control={form.control} name="street" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Street address</FormLabel>
+                  <FormControl><Input placeholder="123 Main St" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-6 gap-3">
+                <div className="col-span-3">
+                  <FormField control={form.control} name="city" render={({ field }) => (
+                    <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Redmond" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </div>
+                <div className="col-span-1">
+                  <FormField control={form.control} name="state" render={({ field }) => (
+                    <FormItem><FormLabel>State</FormLabel><FormControl><Input placeholder="WA" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </div>
+                <div className="col-span-2">
+                  <FormField control={form.control} name="zip" render={({ field }) => (
+                    <FormItem><FormLabel>ZIP</FormLabel><FormControl><Input placeholder="98052" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </div>
+              </div>
               <FormField control={form.control} name="eventDate" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Date</FormLabel>
@@ -470,7 +494,7 @@ export default function AdminEventsPage() {
                   onClick={() => setShowOptional((v) => !v)}
                   className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium"
                 >
-                  <span>Optional details <span className="text-muted-foreground font-normal">— slot label, address, grade limits, image</span></span>
+                  <span>Optional details <span className="text-muted-foreground font-normal">— slot label, grade limits, image</span></span>
                   <span className="text-muted-foreground">{showOptional ? "−" : "+"}</span>
                 </button>
                 {showOptional && (
@@ -481,29 +505,6 @@ export default function AdminEventsPage() {
                         <FormControl><Input placeholder="e.g. Checkout, Cleanup crew" {...field} /></FormControl>
                       </FormItem>
                     )} />
-                    <FormField control={form.control} name="street" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Street address</FormLabel>
-                        <FormControl><Input placeholder="123 Main St" {...field} /></FormControl>
-                      </FormItem>
-                    )} />
-                    <div className="grid grid-cols-6 gap-3">
-                      <div className="col-span-3">
-                        <FormField control={form.control} name="city" render={({ field }) => (
-                          <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Redmond" {...field} /></FormControl></FormItem>
-                        )} />
-                      </div>
-                      <div className="col-span-1">
-                        <FormField control={form.control} name="state" render={({ field }) => (
-                          <FormItem><FormLabel>State</FormLabel><FormControl><Input placeholder="WA" {...field} /></FormControl></FormItem>
-                        )} />
-                      </div>
-                      <div className="col-span-2">
-                        <FormField control={form.control} name="zip" render={({ field }) => (
-                          <FormItem><FormLabel>ZIP</FormLabel><FormControl><Input placeholder="98052" {...field} /></FormControl></FormItem>
-                        )} />
-                      </div>
-                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <FormField control={form.control} name="minGrade" render={({ field }) => (
                         <FormItem>
