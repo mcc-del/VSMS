@@ -648,4 +648,45 @@ router.delete(
   },
 );
 
+// GET /api/v1/admin/duplicates — accounts that share a phone number (a parent's
+// own phone or a student's parent phone). Helps a Super Admin spot and merge
+// duplicate parent accounts.
+router.get("/v1/admin/duplicates", authenticate, requireRole("admin"), async (_req, res) => {
+  const rows = await db
+    .select({
+      userId: usersTable.userId,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+      email: usersTable.email,
+      role: usersTable.role,
+      phone: usersTable.phone,
+      parentPhone: usersTable.parentPhone,
+    })
+    .from(usersTable);
+
+  const norm = (p: string | null) => (p ? p.replace(/[^0-9]/g, "") : "");
+  const byPhone = new Map<string, typeof rows>();
+  for (const r of rows) {
+    const key = norm(r.phone) || norm(r.parentPhone);
+    if (!key) continue;
+    const list = byPhone.get(key) ?? [];
+    list.push(r);
+    byPhone.set(key, list);
+  }
+
+  const groups = [...byPhone.entries()]
+    .filter(([, list]) => list.length > 1)
+    .map(([phone, list]) => ({
+      phone,
+      accounts: list.map((u) => ({
+        userId: u.userId,
+        name: `${u.firstName} ${u.lastName}`.trim(),
+        email: u.email,
+        role: u.role,
+      })),
+    }));
+
+  res.json({ groups });
+});
+
 export default router;

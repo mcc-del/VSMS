@@ -39,6 +39,7 @@ import type {
   CoGuardianInviteInput,
   CoGuardianInviteResult,
   CoGuardiansResponse,
+  DuplicatesResponse,
   ErrorResponse,
   Event,
   EventBroadcastInput,
@@ -5492,6 +5493,83 @@ export function useGetAuditLog<TData = Awaited<ReturnType<typeof getAuditLog>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAuditLogQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetDuplicatesUrl = () => {
+
+
+
+
+  return `/api/v1/admin/duplicates`
+}
+
+/**
+ * @summary Accounts that share a phone number (Super Admin only)
+ */
+export const getDuplicates = async ( options?: RequestInit): Promise<DuplicatesResponse> => {
+
+  return customFetch<DuplicatesResponse>(getGetDuplicatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDuplicatesQueryKey = () => {
+    return [
+    `/api/v1/admin/duplicates`
+    ] as const;
+    }
+
+
+export const getGetDuplicatesQueryOptions = <TData = Awaited<ReturnType<typeof getDuplicates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDuplicates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDuplicatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDuplicates>>> = ({ signal }) => getDuplicates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDuplicates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDuplicatesQueryResult = NonNullable<Awaited<ReturnType<typeof getDuplicates>>>
+export type GetDuplicatesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Accounts that share a phone number (Super Admin only)
+ */
+
+export function useGetDuplicates<TData = Awaited<ReturnType<typeof getDuplicates>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDuplicates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDuplicatesQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

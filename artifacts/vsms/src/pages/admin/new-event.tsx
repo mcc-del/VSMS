@@ -277,40 +277,37 @@ export default function AdminNewEvent() {
                 </div>
                 </>)}
 
-                {/* Time slots */}
+                {/* When — single slot reads as a simple date/time; extra slots
+                    turn it into a multi-slot event for admins running many shifts. */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Time slots</span>
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ ...emptySlot })} data-testid="button-add-slot">
-                      <Plus className="w-4 h-4 mr-1" /> Add time slot
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground -mt-1">
-                    Each slot becomes its own sign-up. Add one per shift (e.g. setup, checkout, cleanup) across any days.
-                  </p>
+                  <span className="text-sm font-medium">{fields.length > 1 ? "Time slots" : "When"}</span>
 
                   {fields.map((f, i) => {
                     const s = form.watch(`slots.${i}`);
                     const hrs = s ? calculateEventDuration(s.startTime, s.endTime) : null;
+                    const multi = fields.length > 1;
                     return (
-                      <div key={f.id} className="rounded-lg border p-3 space-y-3" data-testid={`slot-${i}`}>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-muted-foreground">
-                            Slot {i + 1}{hrs !== null ? ` · ${formatHours(hrs)}h credit` : ""}
-                          </span>
-                          {fields.length > 1 && (
+                      <div key={f.id} className={multi ? "rounded-lg border p-3 space-y-3" : "space-y-3"} data-testid={`slot-${i}`}>
+                        {multi && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              Slot {i + 1}{hrs !== null ? ` · ${formatHours(hrs)}h credit` : ""}
+                            </span>
                             <button type="button" onClick={() => remove(i)} className="text-muted-foreground hover:text-destructive" data-testid={`button-remove-slot-${i}`}>
                               <Trash2 className="w-4 h-4" />
                             </button>
-                          )}
-                        </div>
-                        <FormField control={form.control} name={`slots.${i}.slotLabel`} render={({ field }) => (
-                          <FormItem>
-                            <FormControl><Input placeholder="Label (optional) — e.g. Checkout, Cleanup crew" {...field} /></FormControl>
-                          </FormItem>
-                        )} />
+                          </div>
+                        )}
+                        {multi && (
+                          <FormField control={form.control} name={`slots.${i}.slotLabel`} render={({ field }) => (
+                            <FormItem>
+                              <FormControl><Input placeholder="Label (optional) — e.g. Checkout, Cleanup crew" {...field} /></FormControl>
+                            </FormItem>
+                          )} />
+                        )}
                         <FormField control={form.control} name={`slots.${i}.eventDate`} render={({ field }) => (
                           <FormItem>
+                            {!multi && <FormLabel>Date</FormLabel>}
                             <FormControl><Input type="date" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -336,9 +333,19 @@ export default function AdminNewEvent() {
                             </FormItem>
                           )} />
                         </div>
+                        {!multi && hrs !== null && (
+                          <p className="text-xs text-muted-foreground">{formatHours(hrs)}h service credit.</p>
+                        )}
                       </div>
                     );
                   })}
+
+                  <Button type="button" variant="outline" size="sm" onClick={() => append({ ...emptySlot })} data-testid="button-add-slot">
+                    <Plus className="w-4 h-4 mr-1" /> Add another time slot
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Only needed for events with multiple shifts or that run over more than one day — each slot becomes its own sign-up.
+                  </p>
                 </div>
 
                 {!isSelfSupervised && (

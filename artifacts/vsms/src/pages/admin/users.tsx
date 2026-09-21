@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListUsers, useCreateUser, useDeleteUser, useUpdateUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, useGetManagedOrganizations, useReassignEvents, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useListUsers, useCreateUser, useDeleteUser, useUpdateUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, useGetManagedOrganizations, useReassignEvents, useGetDuplicates, getGetDuplicatesQueryKey, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ export default function AdminUsers() {
   const { role: currentRole } = useAuth();
   const isSuperAdmin = currentRole === "admin";
   const { data: users, isLoading } = useListUsers();
+  const { data: duplicates } = useGetDuplicates({ query: { enabled: isSuperAdmin, queryKey: getGetDuplicatesQueryKey() } });
   const { data: organizations } = useListOrganizations();
   const { data: managedOrgs } = useGetManagedOrganizations();
   // Orgs the acting admin may assign a new user to.
@@ -243,6 +244,34 @@ export default function AdminUsers() {
             <Plus className="w-4 h-4 mr-2" /> Add User
           </Button>
         </div>
+
+        {isSuperAdmin && (duplicates?.groups?.length ?? 0) > 0 && (
+          <Card className="border-amber-300 bg-amber-50/60">
+            <CardHeader>
+              <CardTitle className="text-base text-amber-900">
+                Possible duplicate accounts ({duplicates!.groups.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-xs text-amber-800">
+                These accounts share a phone number. Review and delete or merge any true duplicates.
+              </p>
+              {duplicates!.groups.map((g) => (
+                <div key={g.phone} className="rounded-lg bg-white/70 border border-amber-200 p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Phone ending …{g.phone.slice(-4)}</p>
+                  <ul className="text-sm space-y-0.5">
+                    {g.accounts.map((a) => (
+                      <li key={a.userId} className="flex items-center justify-between gap-2">
+                        <span>{a.name} <span className="text-muted-foreground">({a.email ?? "no email"})</span></span>
+                        <RoleBadge role={a.role} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {(() => {
           const q = search.trim().toLowerCase();

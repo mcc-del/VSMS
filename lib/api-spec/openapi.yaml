@@ -1661,6 +1661,19 @@ paths:
                 items:
                   $ref: "#/components/schemas/AuditLogEntry"
 
+  /v1/admin/duplicates:
+    get:
+      operationId: getDuplicates
+      tags: [admin]
+      summary: Accounts that share a phone number (Super Admin only)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuplicatesResponse"
+
   /v1/parent/children:
     get:
       operationId: getParentChildren
@@ -2014,6 +2027,36 @@ paths:
 
 components:
   schemas:
+    DuplicateAccount:
+      type: object
+      required: [userId, name, role]
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        role:
+          type: string
+    DuplicateGroup:
+      type: object
+      required: [phone, accounts]
+      properties:
+        phone:
+          type: string
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/DuplicateAccount"
+    DuplicatesResponse:
+      type: object
+      required: [groups]
+      properties:
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/DuplicateGroup"
     ReportRow:
       type: object
       required: [name, school, organization, grade, approvedHours, medal]

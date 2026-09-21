@@ -657,7 +657,7 @@ export default function ParentDashboard() {
                     placeholder="Enter the code from the program"
                     data-testid="input-child-join-code"
                   />
-                  <p className="text-xs text-muted-foreground">Required to place your child in {selOrg.name}. Don't have this code? Email mcc@medinaacademy.org.</p>
+                  <p className="text-xs text-muted-foreground">Each program gives this code to its members — it confirms you're really enrolled. Don't have this code? Email mcc@medinaacademy.org.</p>
                 </div>
               );
             })()}

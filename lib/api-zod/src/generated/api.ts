@@ -1457,6 +1457,22 @@ export const GetAuditLogResponse = zod.array(GetAuditLogResponseItem)
 
 
 /**
+ * @summary Accounts that share a phone number (Super Admin only)
+ */
+export const GetDuplicatesResponse = zod.object({
+  "groups": zod.array(zod.object({
+  "phone": zod.string(),
+  "accounts": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "email": zod.string().nullish(),
+  "role": zod.string()
+}))
+}))
+})
+
+
+/**
  * @summary List a parent's linked children with schedule and progress
  */
 export const GetParentChildrenResponseItem = zod.object({

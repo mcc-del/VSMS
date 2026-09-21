@@ -5,6 +5,23 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export interface DuplicateAccount {
+  userId: string;
+  name: string;
+  /** @nullable */
+  email?: string | null;
+  role: string;
+}
+
+export interface DuplicateGroup {
+  phone: string;
+  accounts: DuplicateAccount[];
+}
+
+export interface DuplicatesResponse {
+  groups: DuplicateGroup[];
+}
+
 export interface ReportRow {
   name: string;
   school: string;

@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "crypto";
 import { db, usersTable, guardianInvitesTable, organizationsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { authenticate, signToken } from "../middlewares/auth";
 import { RegisterBody, LoginBody } from "@workspace/api-zod";
 import { linkGuardianToInviterChildren } from "./parent";
@@ -106,6 +106,27 @@ router.post("/v1/auth/register", async (req, res) => {
   if (existing.length > 0) {
     res.status(400).json({ error: "Email address is already registered." });
     return;
+  }
+
+  // Possible-duplicate check: if this phone already exists on another account
+  // (as a parent's phone or a student's parent phone), warn once. The client
+  // can re-submit with confirmDuplicate:true to proceed anyway (e.g. a parent
+  // whose student already listed the same number).
+  const confirmDuplicate = (req.body as { confirmDuplicate?: unknown })?.confirmDuplicate === true;
+  if (!confirmDuplicate && requiredPhone) {
+    const phoneMatch = await db
+      .select({ userId: usersTable.userId })
+      .from(usersTable)
+      .where(or(eq(usersTable.phone, requiredPhone), eq(usersTable.parentPhone, requiredPhone)))
+      .limit(1);
+    if (phoneMatch.length > 0) {
+      res.status(409).json({
+        code: "possible_duplicate",
+        error:
+          "An account with this phone number already exists. If that's you, sign in instead. Continue creating a new account?",
+      });
+      return;
+    }
   }
 
   const passwordHash = await bcrypt.hash(password, 12);

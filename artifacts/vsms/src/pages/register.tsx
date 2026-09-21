@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useRegister, useListOrganizations } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -82,6 +82,7 @@ const schema = z
 
 export default function RegisterPage() {
   const { login } = useAuth();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const registerMutation = useRegister();
   const { data: orgs } = useListOrganizations();
@@ -146,7 +147,7 @@ export default function RegisterPage() {
     form.setValue("signupType", t);
   }
 
-  function onSubmit(values: z.infer<typeof schema>) {
+  function submitRegister(values: z.infer<typeof schema>, confirmDuplicate: boolean) {
     const accountType = values.signupType === "student" ? "student" : "parent";
     registerMutation.mutate(
       {
@@ -156,6 +157,7 @@ export default function RegisterPage() {
           email: values.email,
           password: values.password,
           accountType,
+          ...(confirmDuplicate ? { confirmDuplicate: true } : {}),
           ...(accountType === "student"
             ? {
                 parentEmail: values.parentEmail,
@@ -166,7 +168,7 @@ export default function RegisterPage() {
                 ...(values.joinCode ? { joinCode: values.joinCode } : {}),
               }
             : { phone: values.phone }),
-        },
+        } as any,
       },
       {
         onSuccess: (data) => {
@@ -178,10 +180,27 @@ export default function RegisterPage() {
           login(data.token, data.role, data.firstName, data.userId ?? "");
         },
         onError: (err: any) => {
+          // A phone that matches an existing account — let them proceed if it's
+          // really them, or bounce to sign-in.
+          if (err?.data?.code === "possible_duplicate") {
+            const ok = confirm(
+              `${err.data.error}\n\nClick OK to create a new account anyway, or Cancel to go sign in.`,
+            );
+            if (ok) {
+              submitRegister(values, true);
+            } else {
+              setLocation("/login");
+            }
+            return;
+          }
           toast({ title: "Registration failed", description: err?.data?.error ?? "Something went wrong", variant: "destructive" });
         },
       },
     );
+  }
+
+  function onSubmit(values: z.infer<typeof schema>) {
+    submitRegister(values, false);
   }
 
   return (
@@ -344,7 +363,7 @@ export default function RegisterPage() {
                           <Input data-testid="input-join-code" placeholder="Enter the code from your school or program" {...field} />
                         </FormControl>
                         <FormDescription>
-                          {selectedOrg?.name ?? "Your program"} gives this code to its members — it confirms you're really enrolled. Don't have this code? Email mcc@medinaacademy.org.
+                          Each program gives this code to its members — it confirms you're really enrolled. Don't have this code? Email mcc@medinaacademy.org.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
