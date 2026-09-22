@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarDays } from "lucide-react";
+import { eventHasEnded } from "@/lib/event-time";
 
 function statusBadge(s?: string | null) {
   if (s === "approved") return <Badge className="bg-green-100 text-green-700 border-0">Approved</Badge>;
@@ -38,7 +39,7 @@ export function PostEventHours() {
   const subMap = new Map((subs ?? []).filter((s) => s.hoursWorked != null).map((s) => [s.eventId, s]));
 
   const ended = (regs ?? [])
-    .filter((r) => (r.eventDate ?? "") <= today && r.status !== "no_show")
+    .filter((r) => eventHasEnded(r.eventDate, (r as any).endTime) && r.status !== "no_show")
     .sort((a, b) => (b.eventDate ?? "").localeCompare(a.eventDate ?? ""));
 
   const eventById = new Map((allEvents ?? []).map((e) => [e.eventId, e]));
@@ -47,7 +48,7 @@ export function PostEventHours() {
   // Walk-in: eligible past events the participant is NOT registered for.
   const regEventIds = new Set((regs ?? []).map((r) => r.eventId));
   const walkIns = (allEvents ?? [])
-    .filter((e) => e.eventDate <= today && e.eligibleForMe !== false && !regEventIds.has(e.eventId))
+    .filter((e) => eventHasEnded(e.eventDate, (e as any).endTime) && e.eligibleForMe !== false && !regEventIds.has(e.eventId))
     .sort((a, b) => b.eventDate.localeCompare(a.eventDate));
 
   function doSubmit(eventId: string) {
@@ -147,7 +148,10 @@ export function PostEventHours() {
               <Card key={e.eventId}>
                 <CardContent className="p-4">
                   <div className="min-w-0">
-                    <p className="font-semibold">{e.title}{e.slotLabel ? ` — ${e.slotLabel}` : ""}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold">{e.title}{e.slotLabel ? ` — ${e.slotLabel}` : ""}</p>
+                      <Badge className="bg-amber-100 text-amber-800 border-0 text-xs">Didn't sign up</Badge>
+                    </div>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <CalendarDays className="w-3.5 h-3.5" />{e.eventDate}
                     </p>
