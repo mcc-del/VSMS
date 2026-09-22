@@ -1,5 +1,15 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { RecyclingRibbon } from "@/components/recycling-ribbon";
+import { useGetPublicThresholds } from "@workspace/api-client-react";
+
+type Band = "elementary" | "middle" | "high";
+const BAND_LABELS: Record<Band, string> = { elementary: "Grades 2–5", middle: "Grades 6–8", high: "Grades 9–12" };
+const FALLBACK: Record<Band, { bronze: number; silver: number; gold: number }> = {
+  elementary: { bronze: 26, silver: 50, gold: 75 },
+  middle: { bronze: 50, silver: 75, gold: 100 },
+  high: { bronze: 100, silver: 175, gold: 250 },
+};
 
 const css = `
 .mc-landing {
@@ -103,6 +113,9 @@ const css = `
 .mc-landing .rmedal.g { background: linear-gradient(140deg, var(--gold-bright), var(--gold)); color: #3a2a06; }
 .mc-landing .rinfo b { font-family: var(--display); font-size: 17px; } .mc-landing .rinfo span { display: block; font-size: 12.5px; color: var(--ink-soft); }
 .mc-landing .rhrs { margin-left: auto; font-family: var(--mono); font-weight: 700; font-size: 22px; }
+.mc-landing .bandsel { display: inline-flex; gap: 4px; background: var(--surface-2); border: 2px solid var(--line); border-radius: 999px; padding: 4px; margin: 0 0 16px; }
+.mc-landing .bandsel button { border: 0; background: transparent; font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-soft); padding: 7px 12px; border-radius: 999px; cursor: pointer; transition: all .15s; }
+.mc-landing .bandsel button[aria-pressed="true"] { background: var(--blue-deep); color: #fff; box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--blue) 80%, transparent); }
 
 .mc-landing section { padding: 56px 0; }
 .mc-landing .section-band { margin-top: 48px; }
@@ -140,6 +153,14 @@ const css = `
 `;
 
 export default function LandingPage() {
+  const { data } = useGetPublicThresholds();
+  const [band, setBand] = useState<Band>("high");
+  const byLevel = (data?.levels ?? []).reduce(
+    (acc, l) => { acc[l.level as Band] = { bronze: l.bronze, silver: l.silver, gold: l.gold }; return acc; },
+    {} as Record<Band, { bronze: number; silver: number; gold: number }>,
+  );
+  const th = byLevel[band] ?? FALLBACK[band];
+
   return (
     <div className="mc-landing">
       <style dangerouslySetInnerHTML={{ __html: css }} />
@@ -171,14 +192,21 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="card" aria-hidden="true">
+          <div className="card">
             <span className="card-badge">★ The awards</span>
             <div className="lc-label">The ladder</div>
-            <div className="lc-sub">Reach the hours, earn the medal.</div>
+            <div className="lc-sub">Reach the hours, earn the medal — goals adjust by grade.</div>
+            <div className="bandsel" role="group" aria-label="Choose a grade band">
+              {(["elementary", "middle", "high"] as Band[]).map((b) => (
+                <button key={b} type="button" aria-pressed={band === b} onClick={() => setBand(b)}>
+                  {BAND_LABELS[b]}
+                </button>
+              ))}
+            </div>
             <ol className="ladder">
-              <li className="rung gold"><span className="rmedal g">G</span><span className="rinfo"><b>Gold</b><span>Highest service honor</span></span><span className="rhrs">80h+</span></li>
-              <li className="rung"><span className="rmedal s">S</span><span className="rinfo"><b>Silver</b><span>Serious commitment</span></span><span className="rhrs">60h+</span></li>
-              <li className="rung"><span className="rmedal b">B</span><span className="rinfo"><b>Bronze</b><span>Your first milestone</span></span><span className="rhrs">40h+</span></li>
+              <li className="rung gold"><span className="rmedal g">G</span><span className="rinfo"><b>Gold</b><span>Highest service honor</span></span><span className="rhrs">{th.gold}h+</span></li>
+              <li className="rung"><span className="rmedal s">S</span><span className="rinfo"><b>Silver</b><span>Serious commitment</span></span><span className="rhrs">{th.silver}h+</span></li>
+              <li className="rung"><span className="rmedal b">B</span><span className="rinfo"><b>Bronze</b><span>Your first milestone</span></span><span className="rhrs">{th.bronze}h+</span></li>
             </ol>
           </div>
         </header>
@@ -199,12 +227,12 @@ export default function LandingPage() {
 
       <section className="wrap section-band">
         <div className="band">
-          <span className="eyebrow">The milestones</span>
+          <span className="eyebrow">The milestones · {BAND_LABELS[band]}</span>
           <h2>Something to aim for.</h2>
           <div className="tiers">
-            <div className="tier"><h3>Bronze</h3><div className="hrs">First milestone</div><p>Your first big milestone — the habit is real.</p></div>
-            <div className="tier"><h3>Silver</h3><div className="hrs">Next milestone</div><p>Serious commitment to service.</p></div>
-            <div className="tier"><h3>Gold</h3><div className="hrs">Top honor</div><p>The highest honor — recognized leadership.</p></div>
+            <div className="tier"><h3>Bronze</h3><div className="hrs">{th.bronze}h+</div><p>Your first big milestone — the habit is real.</p></div>
+            <div className="tier"><h3>Silver</h3><div className="hrs">{th.silver}h+</div><p>Serious commitment to service.</p></div>
+            <div className="tier"><h3>Gold</h3><div className="hrs">{th.gold}h+</div><p>The highest honor — recognized leadership.</p></div>
           </div>
         </div>
       </section>

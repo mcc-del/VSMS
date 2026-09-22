@@ -78,6 +78,7 @@ import type {
   ParentChildRegistration,
   ParticipantDashboard,
   PendingReviewsResponse,
+  PublicThresholds,
   ReassignEvents200,
   ReassignEventsInput,
   RecyclingSummary,
@@ -6094,6 +6095,83 @@ export function useGetPendingReviews<TData = Awaited<ReturnType<typeof getPendin
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetPendingReviewsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetPublicThresholdsUrl = () => {
+
+
+
+
+  return `/api/v1/award-thresholds/public`
+}
+
+/**
+ * @summary Public medal hour goals per grade band (landing & login)
+ */
+export const getPublicThresholds = async ( options?: RequestInit): Promise<PublicThresholds> => {
+
+  return customFetch<PublicThresholds>(getGetPublicThresholdsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPublicThresholdsQueryKey = () => {
+    return [
+    `/api/v1/award-thresholds/public`
+    ] as const;
+    }
+
+
+export const getGetPublicThresholdsQueryOptions = <TData = Awaited<ReturnType<typeof getPublicThresholds>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicThresholds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPublicThresholdsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicThresholds>>> = ({ signal }) => getPublicThresholds({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPublicThresholds>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPublicThresholdsQueryResult = NonNullable<Awaited<ReturnType<typeof getPublicThresholds>>>
+export type GetPublicThresholdsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public medal hour goals per grade band (landing & login)
+ */
+
+export function useGetPublicThresholds<TData = Awaited<ReturnType<typeof getPublicThresholds>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPublicThresholds>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPublicThresholdsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

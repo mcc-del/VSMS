@@ -1812,6 +1812,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/PendingReviewsResponse"
 
+  /v1/award-thresholds/public:
+    get:
+      operationId: getPublicThresholds
+      tags: [admin]
+      summary: Public medal hour goals per grade band (landing & login)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicThresholds"
+
   /v1/supervisor/reports:
     get:
       operationId: getSupervisorReports
@@ -2217,6 +2230,22 @@ components:
           type: integer
         pendingReviews:
           type: integer
+    PublicThresholdLevel:
+      type: object
+      required: [level, bronze, silver, gold]
+      properties:
+        level: { type: string }
+        bronze: { type: number }
+        silver: { type: number }
+        gold: { type: number }
+    PublicThresholds:
+      type: object
+      required: [levels]
+      properties:
+        levels:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicThresholdLevel"
     ReportEvent:
       type: object
       required: [eventId, title, eventDate, supervisorId, supervisorName, capacity, signups, attended, noShow, approvedHours, pending, approved, rejected, onTime, tardy, overduePending]

@@ -1607,6 +1607,19 @@ export const GetPendingReviewsResponse = zod.object({
 
 
 /**
+ * @summary Public medal hour goals per grade band (landing & login)
+ */
+export const GetPublicThresholdsResponse = zod.object({
+  "levels": zod.array(zod.object({
+  "level": zod.string(),
+  "bronze": zod.number(),
+  "silver": zod.number(),
+  "gold": zod.number()
+}))
+})
+
+
+/**
  * @summary Deep-dive event & hours analytics (Supervisor / Org Admin / Super Admin)
  */
 export const GetSupervisorReportsResponse = zod.object({

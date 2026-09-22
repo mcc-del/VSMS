@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link } from "wouter";
-import { useLogin } from "@workspace/api-client-react";
+import { useLogin, useGetPublicThresholds } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -17,17 +17,31 @@ const schema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-const MEDALS = [
-  { label: "Bronze", hours: "40h+" },
-  { label: "Silver", hours: "60h+" },
-  { label: "Gold", hours: "80h+" },
-];
+type Band = "elementary" | "middle" | "high";
+const BAND_LABELS: Record<Band, string> = { elementary: "2–5", middle: "6–8", high: "9–12" };
+const FALLBACK: Record<Band, { bronze: number; silver: number; gold: number }> = {
+  elementary: { bronze: 26, silver: 50, gold: 75 },
+  middle: { bronze: 50, silver: 75, gold: 100 },
+  high: { bronze: 100, silver: 175, gold: 250 },
+};
 
 export default function LoginPage() {
   const { login } = useAuth();
   const { toast } = useToast();
   const loginMutation = useLogin();
   const [showPassword, setShowPassword] = useState(false);
+  const { data: thresholds } = useGetPublicThresholds();
+  const [band, setBand] = useState<Band>("high");
+  const byLevel = (thresholds?.levels ?? []).reduce(
+    (acc, l) => { acc[l.level as Band] = { bronze: l.bronze, silver: l.silver, gold: l.gold }; return acc; },
+    {} as Record<Band, { bronze: number; silver: number; gold: number }>,
+  );
+  const th = byLevel[band] ?? FALLBACK[band];
+  const MEDALS = [
+    { label: "Bronze", hours: `${th.bronze}h+` },
+    { label: "Silver", hours: `${th.silver}h+` },
+    { label: "Gold", hours: `${th.gold}h+` },
+  ];
 
   const form = useForm({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
 
@@ -74,7 +88,23 @@ export default function LoginPage() {
             Log volunteer hours, discover opportunities, and earn your Bronze, Silver, and Gold medals — all in one place.
           </p>
 
-          <div className="mt-8 flex gap-3">
+          <div className="mt-8 flex items-center gap-2">
+            <span className="text-xs text-primary-foreground/70">Goals for grades</span>
+            <div className="inline-flex gap-1 rounded-full bg-white/10 border border-white/15 p-1">
+              {(["elementary", "middle", "high"] as Band[]).map((b) => (
+                <button
+                  key={b}
+                  type="button"
+                  onClick={() => setBand(b)}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${band === b ? "bg-white text-primary" : "text-primary-foreground/80 hover:text-white"}`}
+                >
+                  {BAND_LABELS[b]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-3 flex gap-3">
             {MEDALS.map((m) => (
               <div key={m.label} className="flex-1 rounded-2xl bg-white/10 backdrop-blur px-4 py-3 border border-white/15">
                 <Award className="w-5 h-5 mb-2" />

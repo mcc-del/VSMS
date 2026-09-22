@@ -80,6 +80,8 @@ export * from './parentChildRegistration';
 export * from './participantDashboard';
 export * from './pendingReviewsResponse';
 export * from './pendingReviewSupervisor';
+export * from './publicThresholdLevel';
+export * from './publicThresholds';
 export * from './reassignEvents200';
 export * from './reassignEventsInput';
 export * from './recyclingSummary';

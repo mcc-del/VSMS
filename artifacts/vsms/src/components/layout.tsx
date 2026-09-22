@@ -70,10 +70,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   const brand = hasOrgBranding ? (
-    <div className="flex items-center gap-2.5">
-      <AuthenticatedImage objectPath={orgLogo!} alt={orgName ?? "Organization"} className="w-9 h-9 object-contain shrink-0 rounded" />
+    <div className="flex items-center gap-3">
+      <div className="w-12 h-12 rounded-xl bg-white ring-1 ring-border shadow-sm shrink-0 grid place-items-center overflow-hidden p-1">
+        <AuthenticatedImage objectPath={orgLogo!} alt={orgName ?? "Organization"} className="w-full h-full object-contain" />
+      </div>
       <div className="leading-tight">
-        <p className="font-bold text-sm truncate max-w-[150px]">{orgName ?? "Organization"}</p>
+        <p className="font-bold text-[15px] truncate max-w-[150px]">{orgName ?? "Organization"}</p>
         <p className="text-[11px] text-muted-foreground">Service Awards</p>
       </div>
     </div>
@@ -162,7 +164,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu className="w-5 h-5" />
           </button>
           {hasOrgBranding ? (
-            <AuthenticatedImage objectPath={orgLogo!} alt={orgName ?? "Organization"} className="w-8 h-8 object-contain rounded" />
+            <div className="w-10 h-10 rounded-lg bg-white ring-1 ring-border shadow-sm grid place-items-center overflow-hidden p-1">
+              <AuthenticatedImage objectPath={orgLogo!} alt={orgName ?? "Organization"} className="w-full h-full object-contain" />
+            </div>
           ) : (
             <img src="/medinacares-logo.png" alt="MedinaCares" className="w-8 h-8 object-contain" />
           )}

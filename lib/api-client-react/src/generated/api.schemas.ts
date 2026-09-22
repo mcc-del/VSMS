@@ -21,6 +21,17 @@ export interface OrgInsights {
   pendingReviews: number;
 }
 
+export interface PublicThresholdLevel {
+  level: string;
+  bronze: number;
+  silver: number;
+  gold: number;
+}
+
+export interface PublicThresholds {
+  levels: PublicThresholdLevel[];
+}
+
 export interface ReportEvent {
   eventId: string;
   title: string;

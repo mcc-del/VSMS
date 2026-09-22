@@ -60,7 +60,7 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 export default function AdminUsers() {
-  const { role: currentRole } = useAuth();
+  const { role: currentRole, userId: currentUserId } = useAuth();
   const isSuperAdmin = currentRole === "admin";
   const { data: users, isLoading } = useListUsers();
   const { data: duplicates } = useGetDuplicates({ query: { enabled: isSuperAdmin, queryKey: getGetDuplicatesQueryKey() } });
@@ -371,7 +371,7 @@ export default function AdminUsers() {
                               <FileText className="w-4 h-4" /> Service record
                             </Button>
                           )}
-                          {isSuperAdmin && (u.role === "participant" || u.role === "org_admin" || u.role === "supervisor") && (
+                          {isSuperAdmin && u.userId !== currentUserId && (u.role === "participant" || u.role === "org_admin" || u.role === "supervisor" || u.role === "admin") && (
                             <Button
                               variant="ghost"
                               size="sm"

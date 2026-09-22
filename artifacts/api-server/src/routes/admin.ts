@@ -8,7 +8,7 @@ import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
 import { sendTestEmail, sendAccountInvite } from "../lib/email";
 import { recordAudit } from "../lib/audit";
-import { thresholdsForGrade, medalFor } from "../lib/thresholds";
+import { thresholdsForGrade, medalFor, resolveThresholds } from "../lib/thresholds";
 import { managedOrgIds, canActOnUser, canManageOrg } from "../lib/org-scope";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -93,6 +93,29 @@ router.get("/v1/admin/award-thresholds", authenticate, requireRole("admin"), asy
     .from(awardThresholdsTable)
     .leftJoin(organizationsTable, eq(awardThresholdsTable.organizationId, organizationsTable.organizationId));
   res.json(rows.map((r) => ({ ...r, organizationName: r.organizationName ?? null })));
+});
+
+// GET /api/v1/award-thresholds/public — the general (non-org) medal hour goals
+// per grade band, for the public landing & login pages. No auth: it's marketing
+// copy, and reflects whatever a Super Admin has configured (falling back to the
+// program default). Org-specific overrides are intentionally not exposed here.
+router.get("/v1/award-thresholds/public", async (_req, res) => {
+  const rows = await db
+    .select({
+      level: awardThresholdsTable.level,
+      organizationId: awardThresholdsTable.organizationId,
+      bronze: awardThresholdsTable.bronze,
+      silver: awardThresholdsTable.silver,
+      gold: awardThresholdsTable.gold,
+    })
+    .from(awardThresholdsTable);
+  const levels = ["elementary", "middle", "high"] as const;
+  res.json({
+    levels: levels.map((level) => ({
+      level,
+      ...resolveThresholds(rows, level, null),
+    })),
+  });
 });
 
 router.put("/v1/admin/award-thresholds", authenticate, requireRole("admin"), async (req, res) => {
@@ -265,9 +288,22 @@ router.patch(
       res.status(404).json({ error: "User not found." });
       return;
     }
-    if (target.role === "admin") {
-      res.status(400).json({ error: "That user is a Super Admin." });
+    if (userId === req.auth!.userId) {
+      res.status(400).json({ error: "You can't change your own admin access." });
       return;
+    }
+    // A Super Admin can be re-scoped down to a single-org Admin (e.g. an account
+    // that was mistakenly created as a Super Admin), but never leave the program
+    // with no Super Admin at all.
+    if (target.role === "admin") {
+      const [{ value: superAdmins }] = await db
+        .select({ value: count() })
+        .from(usersTable)
+        .where(eq(usersTable.role, "admin"));
+      if (superAdmins <= 1) {
+        res.status(400).json({ error: "There must be at least one Super Admin. Promote someone else first." });
+        return;
+      }
     }
 
     // Replace this user's managed-org rows.
