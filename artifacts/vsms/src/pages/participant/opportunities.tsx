@@ -2,9 +2,13 @@ import { useState } from "react";
 import {
   useListEvents,
   useListMyRegistrations,
+  useListMySubmissions,
+  useSubmitInternalHours,
   useRegisterForEvent,
   useWithdrawFromEvent,
   getListMyRegistrationsQueryKey,
+  getListMySubmissionsQueryKey,
+  getGetParticipantDashboardQueryKey,
   getListEventsQueryKey,
 } from "@workspace/api-client-react";
 import type { Event } from "@workspace/api-client-react";
@@ -57,8 +61,10 @@ function getDayOfWeek(dateStr: string) {
 export default function OpportunitiesPage() {
   const { data: events, isLoading } = useListEvents();
   const { data: myRegistrations } = useListMyRegistrations();
+  const { data: mySubmissions } = useListMySubmissions();
   const registerMutation = useRegisterForEvent();
   const withdrawMutation = useWithdrawFromEvent();
+  const submitHoursMutation = useSubmitInternalHours();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -66,11 +72,34 @@ export default function OpportunitiesPage() {
   const [search, setSearch] = useState("");
   const [confirmEvent, setConfirmEvent] = useState<Event | null>(null);
   const [mineView, setMineView] = useState<"list" | "calendar">("list");
+  const [awsuHours, setAwsuHours] = useState<Record<string, string>>({});
 
   const myRegMap: Record<string, string> = {};
   (myRegistrations ?? []).forEach((r) => {
     myRegMap[r.eventId] = r.status;
   });
+
+  // Submission status per event (for AWSU log-hours on past events).
+  const subByEvent = new Map((mySubmissions ?? []).filter((s) => s.hoursWorked != null).map((s) => [s.eventId, s]));
+
+  function logAwsuHours(eventId: string) {
+    const val = Number(awsuHours[eventId]);
+    if (!Number.isFinite(val) || val < 0.25 || val > 24) {
+      toast({ title: "Enter valid hours", description: "0.25 to 24 hours.", variant: "destructive" });
+      return;
+    }
+    submitHoursMutation.mutate(
+      { data: { eventId, hoursWorked: val } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListMySubmissionsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetParticipantDashboardQueryKey() });
+          toast({ title: "Hours submitted", description: "Sent to the supervisor for review." });
+        },
+        onError: (err: any) => toast({ title: "Couldn't submit", description: err?.data?.error ?? "Try again.", variant: "destructive" }),
+      },
+    );
+  }
 
   const q = search.trim().toLowerCase();
   const matches = (e: Event) =>
@@ -335,7 +364,49 @@ export default function OpportunitiesPage() {
 
             <div className="mt-4 flex items-center gap-2 flex-wrap">
               {!isUpcoming ? (
-                <Badge className="bg-muted text-muted-foreground border-0">Event has passed</Badge>
+                (() => {
+                  const sub = subByEvent.get(event.eventId);
+                  // Signed up, or already logged hours → just show status.
+                  if (myStatus || sub) {
+                    return (
+                      <>
+                        <Badge className="bg-muted text-muted-foreground border-0">Event has passed</Badge>
+                        {sub && (
+                          <Badge className={
+                            sub.status === "approved" ? "bg-green-100 text-green-700 border-0"
+                            : sub.status === "rejected" ? "bg-red-100 text-red-700 border-0"
+                            : "bg-yellow-100 text-yellow-700 border-0"
+                          }>
+                            {sub.status === "approved" ? "Hours approved" : sub.status === "rejected" ? "Hours rejected" : "Hours waiting for review"}
+                          </Badge>
+                        )}
+                      </>
+                    );
+                  }
+                  // Didn't sign up and no submission yet → AWSU inline log-hours.
+                  return (
+                    <div className="w-full">
+                      <Badge className="bg-amber-100 text-amber-800 border-0 mb-2">Attended without signing up?</Badge>
+                      <div className="flex items-end gap-2">
+                        <div>
+                          <label className="text-xs text-muted-foreground">
+                            {Number(event.hoursValue ?? 0) > 0 ? `This was for ${event.hoursValue}h — hours you did` : "Hours you did"}
+                          </label>
+                          <Input
+                            type="number" min="0.25" max="24" step="0.25"
+                            className="w-28 h-9"
+                            placeholder={Number(event.hoursValue ?? 0) > 0 ? String(event.hoursValue) : "e.g. 2"}
+                            value={awsuHours[event.eventId] ?? ""}
+                            onChange={(e) => setAwsuHours({ ...awsuHours, [event.eventId]: e.target.value })}
+                          />
+                        </div>
+                        <Button size="sm" onClick={() => logAwsuHours(event.eventId)} disabled={submitHoursMutation.isPending}>
+                          Log hours
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })()
               ) : myStatus ? (
                 <>
                   <Badge className="bg-primary text-primary-foreground border-0 text-sm px-3 py-1">

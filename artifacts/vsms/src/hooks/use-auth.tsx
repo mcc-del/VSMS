@@ -42,8 +42,8 @@ export function useAuth() {
       setAuth({ token, role: role as Role, firstName, userId });
 
       if (role === "admin") setLocation("/admin/dashboard");
-      else if (role === "org_admin") setLocation("/supervisor/pending");
-      else if (role === "supervisor") setLocation("/supervisor/pending");
+      else if (role === "org_admin") setLocation("/supervisor/dashboard");
+      else if (role === "supervisor") setLocation("/supervisor/dashboard");
       else if (role === "parent") setLocation("/parent");
       else setLocation("/dashboard");
     },

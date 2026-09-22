@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarDays } from "lucide-react";
+import { Link } from "wouter";
 import { eventHasEnded } from "@/lib/event-time";
 
 function statusBadge(s?: string | null) {
@@ -137,51 +138,15 @@ export function PostEventHours() {
         );
       })}
 
-      <div className="pt-4 mt-2 border-t">
-        <p className="text-sm font-semibold">Attended without signing up?</p>
-        <p className="text-xs text-muted-foreground mb-2">Pick a past event you volunteered at and submit your hours — your supervisor will verify them.</p>
-        {walkIns.length === 0 ? (
-          <Card><CardContent className="p-4 text-xs text-muted-foreground text-center">No past events available to claim right now. If you volunteered at an event that isn't listed, use the Outside volunteering tab or email your supervisor.</CardContent></Card>
-        ) : (
-          <div className="space-y-3">
-            {walkIns.map((e) => (
-              <Card key={e.eventId}>
-                <CardContent className="p-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold">{e.title}{e.slotLabel ? ` — ${e.slotLabel}` : ""}</p>
-                      <Badge className="bg-amber-100 text-amber-800 border-0 text-xs">Didn't sign up</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <CalendarDays className="w-3.5 h-3.5" />{e.eventDate}
-                    </p>
-                  </div>
-                  <div className="mt-3">
-                    {Number(e.hoursValue ?? 0) > 0 && (
-                      <p className="text-sm mb-1.5">
-                        This opportunity was for <span className="font-semibold">{fmtHrs(Number(e.hoursValue))}h</span>. How many hours did you do?
-                      </p>
-                    )}
-                    <div className="flex items-end gap-2">
-                      <div>
-                        <label className="text-xs text-muted-foreground">Hours you worked</label>
-                        <Input
-                          type="number" min="0.25" max="24" step="0.25"
-                          className="w-28 h-9"
-                          placeholder={Number(e.hoursValue ?? 0) > 0 ? fmtHrs(Number(e.hoursValue)) : "e.g. 2"}
-                          value={hours[e.eventId] ?? ""}
-                          onChange={(ev) => setHours({ ...hours, [e.eventId]: ev.target.value })}
-                        />
-                      </div>
-                      <Button size="sm" onClick={() => doSubmit(e.eventId)} disabled={submit.isPending}>Submit hours</Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+      {walkIns.length > 0 && (
+        <Card className="border-dashed">
+          <CardContent className="p-4 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Attended an event you didn't sign up for?</span>{" "}
+            Go to <Link href="/opportunities" className="text-primary font-medium hover:underline">Sign Up → Past</Link>,
+            find the event (it'll show an <span className="font-medium">"Attended without signing up?"</span> tag), and log your hours there.
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

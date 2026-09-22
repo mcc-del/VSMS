@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db, usersTable, eventsTable, volunteerSubmissionsTable, manualHoursTable, awardThresholdsTable } from "@workspace/db";
 import { thresholdsForGrade } from "../lib/thresholds";
-import { eq, sum, count } from "drizzle-orm";
+import { eq, sum, count, and, inArray, isNotNull } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
+import { managedOrgIds } from "../lib/org-scope";
 
 const router = Router();
 
@@ -66,9 +67,27 @@ router.get(
   authenticate,
   requireRole("supervisor", "admin"),
   async (req, res) => {
+    // Scope the counts the same way the pending queue is scoped: a supervisor
+    // sees only their events; an Org Admin only their org(s); a Super Admin all.
+    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    const orgFilter =
+      managed !== null
+        ? managed.length > 0
+          ? inArray(eventsTable.organizationId, managed)
+          : eq(eventsTable.eventId, "00000000-0000-0000-0000-000000000000")
+        : undefined;
+
     const rows = await db
       .select({ status: volunteerSubmissionsTable.status, cnt: count() })
       .from(volunteerSubmissionsTable)
+      .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
+      .where(
+        and(
+          isNotNull(volunteerSubmissionsTable.hoursWorked),
+          req.auth!.role === "supervisor" ? eq(eventsTable.supervisorId, req.auth!.userId) : undefined,
+          orgFilter,
+        ),
+      )
       .groupBy(volunteerSubmissionsTable.status);
 
     let pendingCount = 0;
