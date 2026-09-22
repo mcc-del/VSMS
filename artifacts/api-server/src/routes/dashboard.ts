@@ -70,9 +70,10 @@ router.get(
     // Scope the counts the same way the pending queue is scoped: a supervisor
     // sees only their events; an Org Admin only their org(s); a Super Admin all.
     const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    // Only Org Admins are org-scoped; a supervisor is scoped by their events.
     const orgFilter =
-      managed !== null
-        ? managed.length > 0
+      req.auth!.role === "org_admin"
+        ? managed && managed.length > 0
           ? inArray(eventsTable.organizationId, managed)
           : eq(eventsTable.eventId, "00000000-0000-0000-0000-000000000000")
         : undefined;

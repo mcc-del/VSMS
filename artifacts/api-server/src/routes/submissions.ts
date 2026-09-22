@@ -248,9 +248,12 @@ router.get(
     // Organization Admins only see submissions for events in the org(s) they
     // manage; a Super Admin sees all; a supervisor sees their assigned events.
     const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+    // Only Org Admins are scoped by organization. A plain supervisor is scoped
+    // by their own events (supervisorId filter below), so the org filter must
+    // NOT apply to them — otherwise the empty managed=[] zeroes out the queue.
     const orgFilter =
-      managed !== null
-        ? managed.length > 0
+      req.auth!.role === "org_admin"
+        ? managed && managed.length > 0
           ? inArray(eventsTable.organizationId, managed)
           : eq(eventsTable.eventId, "00000000-0000-0000-0000-000000000000") // none
         : undefined;
