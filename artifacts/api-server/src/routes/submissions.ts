@@ -355,10 +355,14 @@ router.put(
     }
 
     // Organization Admins may only review submissions for events in their org(s).
-    const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
-    if (managed !== null && !canManageOrg(managed, submission.organizationId)) {
-      res.status(403).json({ error: "You can only review submissions for your organization." });
-      return;
+    // (A plain supervisor was already validated by supervisorId above, and has
+    // no managed orgs, so this check must not apply to them.)
+    if (req.auth!.role === "org_admin") {
+      const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+      if (!canManageOrg(managed, submission.organizationId)) {
+        res.status(403).json({ error: "You can only review submissions for your organization." });
+        return;
+      }
     }
 
     await db
