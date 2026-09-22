@@ -42,6 +42,10 @@ export default function AdminNonprofits() {
       toast({ title: "Name required", variant: "destructive" });
       return;
     }
+    if (draft.ein.trim() && draft.ein.replace(/[^0-9]/g, "").length !== 9) {
+      toast({ title: "Check the EIN", description: "An EIN is 9 digits (e.g. 12-3456789).", variant: "destructive" });
+      return;
+    }
     const data = { name: draft.name.trim(), ein: draft.ein.trim() || null, website: draft.website.trim() || null, active: draft.active };
     try {
       if (draft.nonprofitId) {

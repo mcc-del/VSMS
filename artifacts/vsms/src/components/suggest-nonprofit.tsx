@@ -22,6 +22,10 @@ export function SuggestNonprofit() {
       toast({ title: "Enter the nonprofit's name", variant: "destructive" });
       return;
     }
+    if (form.ein.trim() && form.ein.replace(/[^0-9]/g, "").length !== 9) {
+      toast({ title: "Check the EIN", description: "An EIN is 9 digits (e.g. 12-3456789).", variant: "destructive" });
+      return;
+    }
     suggest.mutate(
       { data: { name: form.name.trim(), ein: form.ein.trim() || null, website: form.website.trim() || null } },
       {
