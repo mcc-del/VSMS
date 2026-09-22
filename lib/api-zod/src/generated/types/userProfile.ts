@@ -16,5 +16,9 @@ export interface UserProfile {
   /** @nullable */
   phone?: string | null;
   createdAt: string;
+  /** @nullable */
+  organizationId?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
   managedOrganizationIds?: string[];
 }

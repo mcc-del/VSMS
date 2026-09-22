@@ -97,6 +97,8 @@ export const GetMeResponse = zod.object({
   "role": zod.string(),
   "phone": zod.string().nullish(),
   "createdAt": zod.string(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
   "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 
@@ -679,6 +681,8 @@ export const ListUsersResponseItem = zod.object({
   "role": zod.string(),
   "phone": zod.string().nullish(),
   "createdAt": zod.string(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
   "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 export const ListUsersResponse = zod.array(ListUsersResponseItem)
@@ -729,7 +733,8 @@ export const UpdateUserParams = zod.object({
 export const UpdateUserBody = zod.object({
   "firstName": zod.string().optional(),
   "lastName": zod.string().optional(),
-  "phone": zod.string().nullish()
+  "phone": zod.string().nullish(),
+  "organizationId": zod.string().nullish()
 })
 
 export const UpdateUserResponse = zod.object({
@@ -740,6 +745,8 @@ export const UpdateUserResponse = zod.object({
   "role": zod.string(),
   "phone": zod.string().nullish(),
   "createdAt": zod.string(),
+  "organizationId": zod.string().nullish(),
+  "organizationName": zod.string().nullish(),
   "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 

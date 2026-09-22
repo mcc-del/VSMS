@@ -102,12 +102,12 @@ export default function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [showCreatePw, setShowCreatePw] = useState(false);
-  const [editUser, setEditUser] = useState<{ userId: string; firstName: string; lastName: string; phone: string } | null>(null);
+  const [editUser, setEditUser] = useState<{ userId: string; firstName: string; lastName: string; phone: string; organizationId: string } | null>(null);
 
   function saveEditUser() {
     if (!editUser) return;
     updateUser.mutate(
-      { userId: editUser.userId, data: { firstName: editUser.firstName, lastName: editUser.lastName, phone: editUser.phone || null } },
+      { userId: editUser.userId, data: { firstName: editUser.firstName, lastName: editUser.lastName, phone: editUser.phone || null, ...(isSuperAdmin ? { organizationId: editUser.organizationId === "none" ? null : editUser.organizationId || null } : {}) } },
       {
         onSuccess: () => {
           toast({ title: "User updated" });
@@ -333,7 +333,12 @@ export default function AdminUsers() {
                   {filtered.map((u) => (
                     <tr key={u.userId} data-testid={`row-user-${u.userId}`}>
                       <td className="py-3 font-medium">{u.firstName} {u.lastName}</td>
-                      <td className="py-3 text-muted-foreground">{u.email}</td>
+                      <td className="py-3 text-muted-foreground">
+                        {u.email}
+                        {(u as any).organizationName && (
+                          <span className="block text-xs text-muted-foreground/80">{(u as any).organizationName}</span>
+                        )}
+                      </td>
                       <td className="py-3"><RoleBadge role={u.role} /></td>
                       <td className="py-3 text-muted-foreground">{new Date(u.createdAt).toLocaleDateString()}</td>
                       <td className="py-3">
@@ -387,6 +392,7 @@ export default function AdminUsers() {
                                 firstName: u.firstName,
                                 lastName: u.lastName,
                                 phone: u.phone ?? "",
+                                organizationId: (u as any).organizationId ?? "none",
                               })
                             }
                             className="text-muted-foreground hover:text-primary gap-1"
@@ -558,6 +564,21 @@ export default function AdminUsers() {
                 />
                 <p className="text-xs text-muted-foreground">Shown to participants for supervisors.</p>
               </div>
+              {isSuperAdmin && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Organization / affiliation</label>
+                  <Select value={editUser.organizationId || "none"} onValueChange={(v) => setEditUser({ ...editUser, organizationId: v })}>
+                    <SelectTrigger data-testid="select-edit-org"><SelectValue placeholder="No organization" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No organization (community)</SelectItem>
+                      {(organizations ?? []).map((o) => (
+                        <SelectItem key={o.organizationId} value={o.organizationId}>{o.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Reassigns which org this user belongs to (drives which opportunities they see).</p>
+                </div>
+              )}
               <Button className="w-full" onClick={saveEditUser} disabled={updateUser.isPending} data-testid="button-save-user">
                 {updateUser.isPending ? "Saving…" : "Save"}
               </Button>

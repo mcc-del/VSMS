@@ -11,4 +11,6 @@ export interface UpdateUserInput {
   lastName?: string;
   /** @nullable */
   phone?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
 }

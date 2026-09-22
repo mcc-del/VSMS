@@ -208,6 +208,12 @@ router.get("/v1/admin/users", authenticate, requireRole("admin", "org_admin"), a
     managedByUser.set(r.userId, list);
   }
 
+  // Org id -> name for showing each user's affiliation.
+  const orgs = await db
+    .select({ organizationId: organizationsTable.organizationId, name: organizationsTable.name })
+    .from(organizationsTable);
+  const orgName = new Map(orgs.map((o) => [o.organizationId, o.name]));
+
   // An Admin (org_admin) only sees non-admin users in their organization(s).
   const visible = managed === null
     ? users
@@ -221,6 +227,8 @@ router.get("/v1/admin/users", authenticate, requireRole("admin", "org_admin"), a
       lastName: u.lastName,
       role: u.role,
       createdAt: u.createdAt.toISOString(),
+      organizationId: u.organizationId ?? null,
+      organizationName: u.organizationId ? orgName.get(u.organizationId) ?? null : null,
       managedOrganizationIds: managedByUser.get(u.userId) ?? [],
     })),
   );
@@ -421,12 +429,16 @@ router.patch("/v1/admin/users/:userId", authenticate, requireRole("admin", "org_
       return;
     }
   }
-  const body = (req.body ?? {}) as { firstName?: unknown; lastName?: unknown; phone?: unknown };
-  const updates: { firstName?: string; lastName?: string; phone?: string | null } = {};
+  const body = (req.body ?? {}) as { firstName?: unknown; lastName?: unknown; phone?: unknown; organizationId?: unknown };
+  const updates: { firstName?: string; lastName?: string; phone?: string | null; organizationId?: string | null } = {};
   if (typeof body.firstName === "string" && body.firstName.trim()) updates.firstName = body.firstName.trim();
   if (typeof body.lastName === "string" && body.lastName.trim()) updates.lastName = body.lastName.trim();
   if ("phone" in body) {
     updates.phone = typeof body.phone === "string" && body.phone.trim() ? body.phone.trim() : null;
+  }
+  // Only a Super Admin may reassign a user's organization (affiliation).
+  if ("organizationId" in body && req.auth!.role === "admin") {
+    updates.organizationId = typeof body.organizationId === "string" && body.organizationId ? body.organizationId : null;
   }
   if (Object.keys(updates).length === 0) {
     res.status(400).json({ error: "Nothing to update." });

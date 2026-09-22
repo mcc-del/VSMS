@@ -599,6 +599,10 @@ export interface UserProfile {
   /** @nullable */
   phone?: string | null;
   createdAt: string;
+  /** @nullable */
+  organizationId?: string | null;
+  /** @nullable */
+  organizationName?: string | null;
   managedOrganizationIds?: string[];
 }
 
@@ -616,6 +620,8 @@ export interface UpdateUserInput {
   lastName?: string;
   /** @nullable */
   phone?: string | null;
+  /** @nullable */
+  organizationId?: string | null;
 }
 
 export interface AdminCreateUserInput {
