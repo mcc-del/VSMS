@@ -89,10 +89,10 @@ function Router() {
       <ProtectedRoute path="/supervisor/pending" component={SupervisorPending} allowedRoles={["supervisor", "admin", "org_admin"]} />
       <ProtectedRoute path="/supervisor/history" component={SupervisorHistory} allowedRoles={["supervisor", "admin", "org_admin"]} />
       <ProtectedRoute path="/supervisor/roster/:eventId" component={RosterPage} allowedRoles={["supervisor", "admin", "org_admin"]} />
-      <ProtectedRoute path="/supervisor/opportunities" component={SupervisorAllOpportunities} allowedRoles={["supervisor", "org_admin"]} />
+      <ProtectedRoute path="/supervisor/opportunities" component={SupervisorAllOpportunities} allowedRoles={["org_admin"]} />
       <ProtectedRoute path="/supervisor/my-hours" component={SupervisorMyHours} allowedRoles={["supervisor", "org_admin"]} />
       <ProtectedRoute path="/supervisor/check-in" component={SupervisorCheckIn} allowedRoles={["supervisor", "org_admin"]} />
-      <ProtectedRoute path="/supervisor/reports" component={SupervisorReports} allowedRoles={["supervisor", "org_admin"]} />
+      <ProtectedRoute path="/supervisor/reports" component={SupervisorReports} allowedRoles={["supervisor", "org_admin", "admin"]} />
 
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/users" component={AdminUsers} allowedRoles={["admin", "org_admin"]} />

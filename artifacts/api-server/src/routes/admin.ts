@@ -182,7 +182,16 @@ router.get("/v1/admin/audit-log", authenticate, requireRole("admin"), async (req
 
 // GET /api/v1/admin/users
 router.get("/v1/admin/users", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
-  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+  // Resolve scope from the requester's CURRENT database role, not the JWT role.
+  // A stale token (e.g. issued while the account was a Super Admin, or before an
+  // org_admin's access changed) must never widen what they can see.
+  const [me] = await db
+    .select({ role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.userId, req.auth!.userId))
+    .limit(1);
+  const effectiveRole = me?.role ?? req.auth!.role;
+  const managed = await managedOrgIds(req.auth!.userId, effectiveRole);
 
   const users = await db
     .select({
