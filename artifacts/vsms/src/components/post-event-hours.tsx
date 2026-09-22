@@ -78,7 +78,10 @@ export function PostEventHours() {
       {ended.map((r) => {
         const sub = subMap.get(r.eventId);
         const approved = sub?.status === "approved";
-        const canSubmit = !approved; // pending/rejected/never can (re)submit
+        const pending = sub?.status === "pending";
+        // Only a rejected (or never-submitted) entry needs the input. A pending
+        // one just shows its review status — no confusing "Resubmit".
+        const canSubmit = !sub || sub.status === "rejected";
         return (
           <Card key={r.registrationId}>
             <CardContent className="p-4">
@@ -91,6 +94,13 @@ export function PostEventHours() {
                 </div>
                 {sub && statusBadge(sub.status)}
               </div>
+              {pending && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  {sub?.hoursWorked != null ? `${fmtHrs(Number(sub.hoursWorked))}h submitted` : "Hours submitted"}
+                  {(sub as any)?.supervisorName ? ` · Reviewer: ${(sub as any).supervisorName}` : ""}
+                  {sub?.submittedAt ? ` · Submitted ${new Date(sub.submittedAt).toLocaleDateString()}` : ""}
+                </p>
+              )}
               {sub?.supervisorComments && (
                 <p className="text-xs text-muted-foreground italic mt-2">"{sub.supervisorComments}"</p>
               )}

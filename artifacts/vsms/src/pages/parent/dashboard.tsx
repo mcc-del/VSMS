@@ -466,7 +466,7 @@ export default function ParentDashboard() {
                                   {(r as any).submittedAt ? `Submitted ${new Date((r as any).submittedAt).toLocaleDateString()}` : ""}
                                 </p>
                               )}
-                              {!approved && (
+              {(!r.hoursStatus || r.hoursStatus === "rejected") && (
                                 <div className="mt-2">
                                   {Number((r as any).hoursValue ?? 0) > 0 && (
                                     <p className="text-sm mb-1.5">
