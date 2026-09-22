@@ -202,9 +202,9 @@ export default function LandingPage() {
           <span className="eyebrow">The milestones</span>
           <h2>Something to aim for.</h2>
           <div className="tiers">
-            <div className="tier"><h3>Bronze</h3><div className="hrs">40+ hrs</div><p>Your first big milestone — the habit is real.</p></div>
-            <div className="tier"><h3>Silver</h3><div className="hrs">60+ hrs</div><p>Serious commitment to service.</p></div>
-            <div className="tier"><h3>Gold</h3><div className="hrs">80+ hrs</div><p>The highest honor — recognized leadership.</p></div>
+            <div className="tier"><h3>Bronze</h3><div className="hrs">First milestone</div><p>Your first big milestone — the habit is real.</p></div>
+            <div className="tier"><h3>Silver</h3><div className="hrs">Next milestone</div><p>Serious commitment to service.</p></div>
+            <div className="tier"><h3>Gold</h3><div className="hrs">Top honor</div><p>The highest honor — recognized leadership.</p></div>
           </div>
         </div>
       </section>

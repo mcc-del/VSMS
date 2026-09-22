@@ -1,16 +1,18 @@
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mail, HelpCircle } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 type QA = { q: string; a: string };
 
-const SECTIONS: { title: string; items: QA[] }[] = [
+// `roles` limits who sees a section; omitted = everyone.
+const SECTIONS: { title: string; items: QA[]; roles?: string[] }[] = [
   {
     title: "Getting started",
     items: [
       { q: "How do I join?", a: "Create an account from the sign-up page. Students in middle/high school sign up themselves and add a parent's email; a parent of an elementary child (grades 2–5) creates the account and adds the child." },
       { q: "What is a join code and do I need one?", a: "A join code links you to a specific organization (for example your school or a partner nonprofit) so you can see and sign up for their private events. Enter it when you create your account, or later in My Profile under your affiliation. If your organization gave you a code, use it; if you don't have one, you can still join the general community and take part in open-to-all events. Ask your school/organization or email mcc@medinaacademy.org if you're not sure of your code." },
-      { q: "What are the awards?", a: "Log verified volunteer hours to earn Bronze (40+), Silver (60+) or Gold (80+), presented at the year-end ceremony." },
+      { q: "What are the awards?", a: "Log verified volunteer hours to earn Bronze, Silver or Gold medals, presented at the year-end ceremony. The hour goals for each medal are set by MedinaCares and can vary by grade level — your dashboard and reports always show your current goals and how close you are." },
     ],
   },
   {
@@ -54,6 +56,7 @@ const SECTIONS: { title: string; items: QA[] }[] = [
   },
   {
     title: "Supervisors & organizers",
+    roles: ["supervisor", "org_admin", "admin"],
     items: [
       { q: "How do I get a supervisor account?", a: "Supervisors are created by an administrator — you can't self-register as a supervisor. If you need an account, email mcc@medinaacademy.org and an admin will set you up." },
       { q: "Where do I start?", a: "Your Dashboard is home base — it shows submissions waiting for your review, your upcoming events, how many volunteers are registered, and the hours you've approved." },
@@ -68,6 +71,7 @@ const SECTIONS: { title: string; items: QA[] }[] = [
   },
   {
     title: "Admins & Super Admins",
+    roles: ["org_admin", "admin"],
     items: [
       { q: "What's the difference between an Admin and a Super Admin?", a: "An Admin manages a single organization: they can do everything a supervisor can, plus add supervisors, generate their org's join code, add participant hours, and manage their org's users and events. A Super Admin can do all of that across every organization, and additionally creates organizations and updates the recycling cans total." },
       { q: "How do I add a supervisor?", a: "Open Users → Add user, choose the Supervisor role, and save. The person is emailed an invite to set their own password (the temporary password you enter is just a fallback)." },
@@ -83,6 +87,8 @@ const SECTIONS: { title: string; items: QA[] }[] = [
 ];
 
 export default function HelpPage() {
+  const { role } = useAuth();
+  const sections = SECTIONS.filter((sec) => !sec.roles || sec.roles.includes(role ?? "participant"));
   return (
     <AppLayout>
       <div className="space-y-6 max-w-3xl">
@@ -91,7 +97,7 @@ export default function HelpPage() {
           <p className="text-muted-foreground text-sm mt-1">Short guides for everything you can do in MedinaCares.</p>
         </div>
 
-        {SECTIONS.map((sec) => (
+        {sections.map((sec) => (
           <Card key={sec.title}>
             <CardContent className="p-5">
               <h2 className="font-semibold mb-3">{sec.title}</h2>
