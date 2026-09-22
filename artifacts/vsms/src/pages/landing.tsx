@@ -146,9 +146,25 @@ const css = `
 .mc-landing footer { border-top: 2px solid var(--line); padding: 28px 0 48px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft); }
 
 @media (max-width: 860px) {
-  .mc-landing .hero { grid-template-columns: 1fr; gap: 36px; }
+  .mc-landing .hero { grid-template-columns: 1fr; gap: 32px; }
   .mc-landing .steps, .mc-landing .tiers, .mc-landing .trust { grid-template-columns: 1fr; }
-  .mc-landing .logo-img { height: 56px; }
+  .mc-landing .logo-img { height: 48px; }
+}
+@media (max-width: 560px) {
+  .mc-landing .wrap { padding: 0 22px; }
+  .mc-landing nav { padding: 14px 22px; }
+  .mc-landing .hero { padding: 20px 0 44px; gap: 26px; }
+  .mc-landing .hero h1 { font-size: clamp(30px, 8.5vw, 40px); line-height: 1.12; margin-top: 10px; }
+  .mc-landing .hero-sub { font-size: 16px; margin-top: 14px; }
+  .mc-landing .hero-cta { margin-top: 22px; }
+  .mc-landing .hero-elig { margin-top: 22px; padding-top: 20px; }
+  .mc-landing .btn-lg { padding: 14px 22px; font-size: 16px; }
+  .mc-landing section { padding: 36px 0; }
+  .mc-landing .section-band { margin-top: 28px; }
+  .mc-landing .sec-head { margin-bottom: 24px; }
+  .mc-landing .band { padding: 30px 22px; border-radius: 20px; }
+  .mc-landing .card { padding: 22px; }
+  .mc-landing .cta-final { padding: 48px 0 28px; }
 }
 `;
 
@@ -178,9 +194,8 @@ export default function LandingPage() {
             <span className="eyebrow">Volunteer Service Awards &middot; 2026&ndash;2027</span>
             <h1>Turn caring into hours,<br />all the way to <span className="gold">Gold.</span></h1>
             <p className="hero-sub">
-              Log the volunteer work you do &mdash; at school or in the community &mdash; get it
-              verified by a supervisor, and climb toward Bronze, Silver, and Gold. Recognized at our
-              annual awards ceremony.
+              Log your volunteer hours, get them verified, and earn Bronze, Silver &amp; Gold &mdash;
+              celebrated at our annual awards ceremony.
             </p>
             <div className="hero-cta">
               <Link href="/register" className="btn btn-primary btn-lg">Create your account</Link>
@@ -216,12 +231,11 @@ export default function LandingPage() {
         <div className="sec-head">
           <span className="eyebrow">How it works</span>
           <h2>Three steps, zero paperwork.</h2>
-          <p>Everything happens in one place — from the hours you log to the medal you earn.</p>
         </div>
         <div className="steps">
-          <div className="step"><div className="step-n">1</div><h3>Log your hours</h3><p>Sign up for school events or report volunteering you did with other organizations.</p></div>
-          <div className="step"><div className="step-n">2</div><h3>Get them verified</h3><p>A supervisor reviews and approves — real verification, no lost paper forms.</p></div>
-          <div className="step"><div className="step-n">3</div><h3>Earn your medal</h3><p>Watch your total climb and unlock Bronze, Silver, and Gold, celebrated at the ceremony.</p></div>
+          <div className="step"><div className="step-n">1</div><h3>Log your hours</h3><p>Sign up for events, or add outside volunteering.</p></div>
+          <div className="step"><div className="step-n">2</div><h3>Get them verified</h3><p>A supervisor reviews and approves — no paper forms.</p></div>
+          <div className="step"><div className="step-n">3</div><h3>Earn your medal</h3><p>Climb to Bronze, Silver &amp; Gold, honored at the ceremony.</p></div>
         </div>
       </section>
 
@@ -243,9 +257,9 @@ export default function LandingPage() {
           <h2>Built to make hours count — accurately.</h2>
         </div>
         <div className="trust">
-          <div className="trust-item"><div className="check">✓</div><h3>Supervisor-verified</h3><p>Every hour is reviewed and approved, so your record truly means something.</p></div>
-          <div className="trust-item"><div className="check">✓</div><h3>Outside hours count too</h3><p>Report volunteering with registered non-profits beyond school — accredited by Medina.</p></div>
-          <div className="trust-item"><div className="check">✓</div><h3>Everything in one place</h3><p>Schedule, hours, leaderboard, and progress — on any device.</p></div>
+          <div className="trust-item"><div className="check">✓</div><h3>Supervisor-verified</h3><p>Every hour is reviewed and approved.</p></div>
+          <div className="trust-item"><div className="check">✓</div><h3>Outside hours count</h3><p>Volunteering with approved non-profits counts too.</p></div>
+          <div className="trust-item"><div className="check">✓</div><h3>All in one place</h3><p>Events, hours, and progress on any device.</p></div>
         </div>
       </section>
 
