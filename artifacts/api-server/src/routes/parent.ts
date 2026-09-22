@@ -192,6 +192,7 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
         startTime: eventsTable.startTime,
         endTime: eventsTable.endTime,
         location: eventsTable.location,
+        hoursValue: eventsTable.hoursValue,
       })
       .from(eventRegistrationsTable)
       .leftJoin(eventsTable, eq(eventRegistrationsTable.eventId, eventsTable.eventId))
@@ -244,6 +245,7 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
         status: r.status,
         isNew: false,
         hoursStatus: subStatus.get(r.eventId) ?? null,
+        hoursValue: r.hoursValue != null ? Number(r.hoursValue) : null,
       })),
     });
   }

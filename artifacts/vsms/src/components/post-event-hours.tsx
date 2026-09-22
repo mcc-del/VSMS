@@ -41,6 +41,9 @@ export function PostEventHours() {
     .filter((r) => (r.eventDate ?? "") <= today && r.status !== "no_show")
     .sort((a, b) => (b.eventDate ?? "").localeCompare(a.eventDate ?? ""));
 
+  const eventById = new Map((allEvents ?? []).map((e) => [e.eventId, e]));
+  const fmtHrs = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, ""));
+
   // Walk-in: eligible past events the participant is NOT registered for.
   const regEventIds = new Set((regs ?? []).map((r) => r.eventId));
   const walkIns = (allEvents ?? [])
@@ -91,23 +94,33 @@ export function PostEventHours() {
               {sub?.supervisorComments && (
                 <p className="text-xs text-muted-foreground italic mt-2">"{sub.supervisorComments}"</p>
               )}
-              {canSubmit && (
-                <div className="flex items-end gap-2 mt-3">
-                  <div>
-                    <label className="text-xs text-muted-foreground">Hours you worked</label>
-                    <Input
-                      type="number" min="0.25" max="24" step="0.25"
-                      className="w-28 h-9"
-                      placeholder={sub ? String(sub.hoursWorked ?? "") : "e.g. 2"}
-                      value={hours[r.eventId] ?? ""}
-                      onChange={(e) => setHours({ ...hours, [r.eventId]: e.target.value })}
-                    />
+              {canSubmit && (() => {
+                const planned = Number(eventById.get(r.eventId)?.hoursValue ?? 0);
+                return (
+                  <div className="mt-3">
+                    {planned > 0 && (
+                      <p className="text-sm mb-1.5">
+                        This opportunity was for <span className="font-semibold">{fmtHrs(planned)}h</span>. How many hours did you do?
+                      </p>
+                    )}
+                    <div className="flex items-end gap-2">
+                      <div>
+                        <label className="text-xs text-muted-foreground">Hours you worked</label>
+                        <Input
+                          type="number" min="0.25" max="24" step="0.25"
+                          className="w-28 h-9"
+                          placeholder={sub ? String(sub.hoursWorked ?? "") : (planned > 0 ? fmtHrs(planned) : "e.g. 2")}
+                          value={hours[r.eventId] ?? ""}
+                          onChange={(e) => setHours({ ...hours, [r.eventId]: e.target.value })}
+                        />
+                      </div>
+                      <Button size="sm" onClick={() => doSubmit(r.eventId)} disabled={submit.isPending}>
+                        {sub ? "Resubmit" : "Submit hours"}
+                      </Button>
+                    </div>
                   </div>
-                  <Button size="sm" onClick={() => doSubmit(r.eventId)} disabled={submit.isPending}>
-                    {sub ? "Resubmit" : "Submit hours"}
-                  </Button>
-                </div>
-              )}
+                );
+              })()}
             </CardContent>
           </Card>
         );
@@ -129,18 +142,25 @@ export function PostEventHours() {
                       <CalendarDays className="w-3.5 h-3.5" />{e.eventDate}
                     </p>
                   </div>
-                  <div className="flex items-end gap-2 mt-3">
-                    <div>
-                      <label className="text-xs text-muted-foreground">Hours you worked</label>
-                      <Input
-                        type="number" min="0.25" max="24" step="0.25"
-                        className="w-28 h-9"
-                        placeholder="e.g. 2"
-                        value={hours[e.eventId] ?? ""}
-                        onChange={(ev) => setHours({ ...hours, [e.eventId]: ev.target.value })}
-                      />
+                  <div className="mt-3">
+                    {Number(e.hoursValue ?? 0) > 0 && (
+                      <p className="text-sm mb-1.5">
+                        This opportunity was for <span className="font-semibold">{fmtHrs(Number(e.hoursValue))}h</span>. How many hours did you do?
+                      </p>
+                    )}
+                    <div className="flex items-end gap-2">
+                      <div>
+                        <label className="text-xs text-muted-foreground">Hours you worked</label>
+                        <Input
+                          type="number" min="0.25" max="24" step="0.25"
+                          className="w-28 h-9"
+                          placeholder={Number(e.hoursValue ?? 0) > 0 ? fmtHrs(Number(e.hoursValue)) : "e.g. 2"}
+                          value={hours[e.eventId] ?? ""}
+                          onChange={(ev) => setHours({ ...hours, [e.eventId]: ev.target.value })}
+                        />
+                      </div>
+                      <Button size="sm" onClick={() => doSubmit(e.eventId)} disabled={submit.isPending}>Submit hours</Button>
                     </div>
-                    <Button size="sm" onClick={() => doSubmit(e.eventId)} disabled={submit.isPending}>Submit hours</Button>
                   </div>
                 </CardContent>
               </Card>

@@ -26,4 +26,9 @@ export interface ParentChildRegistration {
      * @nullable
      */
   hoursStatus?: string | null;
+  /**
+     * The opportunity's planned service-hour value.
+     * @nullable
+     */
+  hoursValue?: number | null;
 }

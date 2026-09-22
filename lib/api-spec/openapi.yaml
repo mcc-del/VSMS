@@ -2469,6 +2469,9 @@ components:
         hoursStatus:
           type: ["string", "null"]
           description: The child's submission status for this event (pending/approved/rejected), or null if none yet.
+        hoursValue:
+          type: ["number", "null"]
+          description: The opportunity's planned service-hour value.
     ParentChild:
       type: object
       required: [userId, firstName, lastName, isManaged, totalApprovedHours, upcomingRegistrations]

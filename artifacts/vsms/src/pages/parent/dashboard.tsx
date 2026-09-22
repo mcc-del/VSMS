@@ -460,20 +460,27 @@ export default function ParentDashboard() {
                                 {r.hoursStatus === "rejected" && <Badge className="bg-red-100 text-red-700 border-0 shrink-0">Rejected</Badge>}
                               </div>
                               {!approved && (
-                                <div className="mt-2 flex items-end gap-2">
-                                  <div>
-                                    <label className="text-xs text-muted-foreground">Hours worked</label>
-                                    <Input
-                                      type="number" min="0.25" max="24" step="0.25"
-                                      className="w-28 h-9"
-                                      placeholder="e.g. 2"
-                                      value={hoursDraft[r.eventId] ?? ""}
-                                      onChange={(e) => setHoursDraft((d) => ({ ...d, [r.eventId]: e.target.value }))}
-                                    />
+                                <div className="mt-2">
+                                  {Number((r as any).hoursValue ?? 0) > 0 && (
+                                    <p className="text-sm mb-1.5">
+                                      This opportunity was for <span className="font-semibold">{Number((r as any).hoursValue)}h</span>. How many hours did {child.firstName} do?
+                                    </p>
+                                  )}
+                                  <div className="flex items-end gap-2">
+                                    <div>
+                                      <label className="text-xs text-muted-foreground">Hours worked</label>
+                                      <Input
+                                        type="number" min="0.25" max="24" step="0.25"
+                                        className="w-28 h-9"
+                                        placeholder={Number((r as any).hoursValue ?? 0) > 0 ? String(Number((r as any).hoursValue)) : "e.g. 2"}
+                                        value={hoursDraft[r.eventId] ?? ""}
+                                        onChange={(e) => setHoursDraft((d) => ({ ...d, [r.eventId]: e.target.value }))}
+                                      />
+                                    </div>
+                                    <Button size="sm" onClick={() => submitHours(child.userId, r.eventId)} disabled={submitChildHours.isPending}>
+                                      {pending || r.hoursStatus === "rejected" ? "Resubmit" : "Submit"}
+                                    </Button>
                                   </div>
-                                  <Button size="sm" onClick={() => submitHours(child.userId, r.eventId)} disabled={submitChildHours.isPending}>
-                                    {pending || r.hoursStatus === "rejected" ? "Resubmit" : "Submit"}
-                                  </Button>
                                 </div>
                               )}
                             </div>
