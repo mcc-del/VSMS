@@ -87,7 +87,7 @@ export default function SupervisorDashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <GettingStarted role={role ?? "supervisor"} />
+        {!isOrgAdmin && <GettingStarted role={role ?? "supervisor"} />}
 
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
