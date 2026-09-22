@@ -20,7 +20,7 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
     title: "Welcome! Here's how to get started",
     steps: [
       { label: "Find & sign up for opportunities", href: "/parent/opportunities", hint: "Pick your child, then browse and sign them up for events." },
-      { label: "Submit hours & track progress", href: "/parent", hint: "After an event, log your child's hours and watch their medal progress on your dashboard." },
+      { label: "Submit hours & track progress", href: "/parent/hours", hint: "After an event, log your child's hours (event, walk-in, or outside volunteering) for approval." },
       { label: "See the leaderboard", href: "/leaderboard", hint: "Track how your child is doing toward Bronze, Silver, Gold." },
     ],
   },

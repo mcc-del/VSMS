@@ -553,13 +553,31 @@ router.post(
       .from(eventRegistrationsTable)
       .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, childId)))
       .limit(1);
-    if (!reg) {
-      res.status(400).json({ error: "Your child wasn't signed up for this event." });
-      return;
-    }
-    if (reg.status === "no_show") {
+    if (reg && reg.status === "no_show") {
       res.status(400).json({ error: "Your child was marked as a no-show for this event." });
       return;
+    }
+    // Walk-in (attended without signing up): if the child wasn't registered but
+    // is eligible for the event, create an attended registration on the fly.
+    // The supervisor still reviews the hours.
+    if (!reg) {
+      const [child] = await db
+        .select({ organizationId: usersTable.organizationId, grade: usersTable.grade })
+        .from(usersTable)
+        .where(eq(usersTable.userId, childId))
+        .limit(1);
+      if (event.organizationId && !event.openToAll && (child?.organizationId ?? null) !== event.organizationId) {
+        res.status(403).json({ error: "This opportunity isn't open to your child's organization." });
+        return;
+      }
+      if (event.minGrade != null || event.maxGrade != null) {
+        const g = child?.grade ? Number(child.grade) : null;
+        if (g == null || (event.minGrade != null && g < event.minGrade) || (event.maxGrade != null && g > event.maxGrade)) {
+          res.status(403).json({ error: "This opportunity's grade range doesn't include your child." });
+          return;
+        }
+      }
+      await db.insert(eventRegistrationsTable).values({ eventId, userId: childId, status: "attended" });
     }
 
     const [existing] = await db
