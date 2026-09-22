@@ -23,12 +23,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { Trophy, Medal, Settings } from "lucide-react";
 import { MedalBadge } from "@/components/medal-badge";
 
 export default function LeaderboardPage() {
+  const { role } = useAuth();
+  const isParticipant = role === "participant";
   const { data: board, isLoading } = useGetLeaderboard();
-  const { data: prefs } = useGetLeaderboardPreferences();
+  const { data: prefs } = useGetLeaderboardPreferences({ query: { enabled: isParticipant, queryKey: getGetLeaderboardPreferencesQueryKey() } });
   const updatePrefs = useUpdateLeaderboardPreferences();
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -68,12 +71,14 @@ export default function LeaderboardPage() {
               One board, everyone together — mostly, race yourself to the next medal.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setOpen(true)} data-testid="button-privacy">
-            <Settings className="w-4 h-4 mr-1" /> Name &amp; privacy
-          </Button>
+          {isParticipant && (
+            <Button variant="outline" size="sm" onClick={() => setOpen(true)} data-testid="button-privacy">
+              <Settings className="w-4 h-4 mr-1" /> Name &amp; privacy
+            </Button>
+          )}
         </div>
 
-        {!isLoading && board && (
+        {isParticipant && !isLoading && board && (
           <Card className="bg-primary/5 border-primary/20">
             <CardContent className="py-4 flex items-center gap-4">
               <Trophy className="w-7 h-7 text-primary shrink-0" />

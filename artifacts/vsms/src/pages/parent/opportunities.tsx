@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { downloadEventIcs } from "@/lib/calendar";
+import { Link } from "wouter";
 import { CalendarDays, MapPin, Clock, CheckCircle, CalendarPlus } from "lucide-react";
 
 function fmtDate(d: string) {
@@ -95,7 +96,17 @@ export default function ParentOpportunities() {
         {childrenLoading ? (
           <Skeleton className="h-10 w-64" />
         ) : (children ?? []).length === 0 ? (
-          <Card><CardContent className="p-6 text-sm text-muted-foreground">Add a child on your dashboard first, then come back to sign them up.</CardContent></Card>
+          <Card>
+            <CardContent className="p-6 text-center">
+              <p className="font-medium">Add a child first</p>
+              <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-sm mx-auto">
+                You sign your child up for opportunities, so add them to your account first — it only takes a minute.
+              </p>
+              <Link href="/parent">
+                <Button>Go to my dashboard to add a child</Button>
+              </Link>
+            </CardContent>
+          </Card>
         ) : (
           <>
             <div className="flex items-center gap-2">

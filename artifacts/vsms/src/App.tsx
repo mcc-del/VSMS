@@ -75,7 +75,7 @@ function Router() {
       <ProtectedRoute path="/calendar" component={CalendarPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/external" component={ExternalSubmissionPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/history" component={HistoryPage} allowedRoles={["participant"]} />
-      <ProtectedRoute path="/leaderboard" component={LeaderboardPage} allowedRoles={["participant"]} />
+      <ProtectedRoute path="/leaderboard" component={LeaderboardPage} allowedRoles={["participant", "parent"]} />
       <ProtectedRoute path="/service-record" component={ServiceRecordPage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/profile" component={ProfilePage} allowedRoles={["participant"]} />
       <ProtectedRoute path="/reports" component={ParticipantReports} allowedRoles={["participant"]} />

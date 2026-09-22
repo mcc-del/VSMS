@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { GRADES } from "@/lib/schools";
-import { GraduationCap, Users, Eye } from "lucide-react";
+import { GraduationCap, Users, Eye, EyeOff } from "lucide-react";
 
 // Three guided sign-up paths. "student" and the two parent kinds all map to the
 // backend's accountType (student | parent); the parent kinds differ only in
@@ -90,6 +90,7 @@ export default function RegisterPage() {
   const [signupType, setSignupType] = useState<SignupType>("student");
   const [affiliation, setAffiliation] = useState<string>("medina");
   const [otherSchool, setOtherSchool] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -434,7 +435,17 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input data-testid="input-password" type="password" placeholder="Min. 8 characters" {...field} />
+                      <div className="relative">
+                        <Input data-testid="input-password" type={showPassword ? "text" : "password"} placeholder="Min. 8 characters" {...field} className="pr-10" />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((v) => !v)}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormDescription>At least 8 characters. You'll use this with your email to sign in.</FormDescription>
                     <FormMessage />

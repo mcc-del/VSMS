@@ -11,7 +11,7 @@ import {
 import { eq, count, sql, and, inArray } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
-import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification, sendAddedToEvent, sendWithdrawalNotification } from "../lib/email";
+import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification, sendAddedToEvent, sendWithdrawalNotification, sendGuardianSignupNotification } from "../lib/email";
 import { eventHasEnded, todayPT, nowTimePT } from "../lib/event-time";
 import { recordAudit } from "../lib/audit";
 import { ObjectStorageService } from "../lib/objectStorage";
@@ -506,7 +506,7 @@ router.post(
 
     // Fire-and-forget confirmation email (does not block the HTTP response)
     const [user] = await db
-      .select({ email: usersTable.email, firstName: usersTable.firstName, lastName: usersTable.lastName })
+      .select({ email: usersTable.email, firstName: usersTable.firstName, lastName: usersTable.lastName, parentEmail: usersTable.parentEmail })
       .from(usersTable)
       .where(eq(usersTable.userId, userId))
       .limit(1);
@@ -542,6 +542,25 @@ router.post(
           event.title,
           event.eventDate,
         ).catch((err) => req.log.error({ err }, "Unhandled error sending signup notification"));
+      }
+
+      // Notify every parent/guardian of this participant — both a linked parent
+      // account (primary and any co-guardians) and the parent email listed on
+      // the student's own account. Deduplicated, fire-and-forget.
+      const childName = toName;
+      const guardianEmails = new Set<string>();
+      const linkedGuardians = await db
+        .select({ email: usersTable.email, emailNotifications: usersTable.emailNotifications })
+        .from(guardianshipsTable)
+        .innerJoin(usersTable, eq(guardianshipsTable.guardianUserId, usersTable.userId))
+        .where(eq(guardianshipsTable.childUserId, userId));
+      for (const g of linkedGuardians) {
+        if (g.email && g.emailNotifications) guardianEmails.add(g.email.toLowerCase());
+      }
+      if (user.parentEmail) guardianEmails.add(user.parentEmail.toLowerCase());
+      for (const email of guardianEmails) {
+        sendGuardianSignupNotification(email, childName, event.title, event.eventDate, event.location)
+          .catch((err) => req.log.error({ err }, "Unhandled error sending guardian signup notification"));
       }
     }
   },

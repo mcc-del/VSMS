@@ -211,6 +211,34 @@ export async function sendSignupNotification(
   }
 }
 
+// Notify a parent/guardian that their child signed up for an event.
+export async function sendGuardianSignupNotification(
+  toEmail: string,
+  childName: string,
+  eventTitle: string,
+  eventDate: string,
+  location?: string | null,
+): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const text = [
+    "Hi,",
+    "",
+    `${childName} just signed up to volunteer at "${eventTitle}" on ${eventDate}${location ? ` (${location})` : ""}.`,
+    "",
+    `See the details and add it to your calendar: ${APP_URL}/parent`,
+    "",
+    "You're receiving this because you're listed as a parent/guardian.",
+    "",
+    "— MedinaCares Council",
+  ].join("\n");
+  try {
+    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: `${childName} signed up: ${eventTitle}`, text });
+  } catch (err) {
+    logger.error({ err, toEmail }, "Failed to send guardian signup notification");
+  }
+}
+
 export async function sendWithdrawalNotification(
   toEmail: string,
   supervisorName: string,

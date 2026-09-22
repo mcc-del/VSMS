@@ -33,6 +33,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ...(role === "parent" ? [
       { label: "Dashboard", href: "/parent", icon: LayoutDashboard },
       { label: "Find Opportunities", href: "/parent/opportunities", icon: Calendar },
+      { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+      { label: "Help", href: "/help", icon: HelpCircle },
     ] : []),
     ...(role === "supervisor" ? [
       { label: "Dashboard", href: "/supervisor/dashboard", icon: LayoutDashboard },

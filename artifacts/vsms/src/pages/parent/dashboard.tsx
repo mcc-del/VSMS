@@ -41,11 +41,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ProofUpload } from "@/components/proof-upload";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { SchoolSelect } from "@/components/school-select";
 import { GettingStarted } from "@/components/getting-started";
 import { NewEventsBanner } from "@/components/new-events-banner";
 import { SuggestNonprofit } from "@/components/suggest-nonprofit";
-import { ALL_GRADES } from "@/lib/schools";
+import { ELEM_GRADES } from "@/lib/schools";
+
+const MEDINA_SCHOOL = "Medina Academy Redmond";
 import { Clock, MapPin, CalendarDays, Trophy, Users, Plus, Pencil, UserPlus, Mail, CalendarPlus } from "lucide-react";
 import { downloadEventIcs } from "@/lib/calendar";
 
@@ -160,6 +161,7 @@ export default function ParentDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ParentChild | null>(null);
   const [form, setForm] = useState<ChildForm>(EMPTY_FORM);
+  const [otherSchool, setOtherSchool] = useState(false);
 
   const addChild = useAddParentChild();
   const updateChild = useUpdateParentChild();
@@ -200,7 +202,8 @@ export default function ParentDashboard() {
 
   const openAdd = () => {
     setEditing(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, school: MEDINA_SCHOOL });
+    setOtherSchool(false);
     setDialogOpen(true);
   };
 
@@ -214,6 +217,7 @@ export default function ParentDashboard() {
       organizationId: "",
       joinCode: "",
     });
+    setOtherSchool(!!child.school && child.school !== MEDINA_SCHOOL);
     setDialogOpen(true);
   };
 
@@ -254,10 +258,10 @@ export default function ParentDashboard() {
       }
       setDialogOpen(false);
       invalidate();
-    } catch {
+    } catch (err: any) {
       toast({
         title: "Could not save",
-        description: "Something went wrong. Please try again.",
+        description: err?.data?.error ?? "Something went wrong. Please try again.",
         variant: "destructive",
       });
     }
@@ -624,22 +628,40 @@ export default function ParentDashboard() {
                   <SelectValue placeholder="Select grade" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ALL_GRADES.map((g) => (
+                  {ELEM_GRADES.map((g) => (
                     <SelectItem key={g} value={g}>
                       Grade {g}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground">Managed children are grades 2–5. Older students create their own account.</p>
             </div>
 
             <div className="space-y-1.5">
               <Label>School</Label>
-              <SchoolSelect
-                value={form.school}
-                onValueChange={(v) => setForm({ ...form, school: v })}
-                testId="select-child-school"
-              />
+              <Select
+                value={otherSchool ? "__other__" : (form.school === MEDINA_SCHOOL ? MEDINA_SCHOOL : (form.school ? "__other__" : ""))}
+                onValueChange={(v) => {
+                  if (v === "__other__") { setOtherSchool(true); setForm({ ...form, school: "" }); }
+                  else { setOtherSchool(false); setForm({ ...form, school: v }); }
+                }}
+              >
+                <SelectTrigger data-testid="select-child-school"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={MEDINA_SCHOOL}>Medina Academy Redmond</SelectItem>
+                  <SelectItem value="__other__">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              {otherSchool && (
+                <Input
+                  className="mt-2"
+                  placeholder="Enter your child's school"
+                  value={form.school}
+                  onChange={(e) => setForm({ ...form, school: e.target.value })}
+                  data-testid="input-child-other-school"
+                />
+              )}
             </div>
 
             <div className="space-y-1.5">
