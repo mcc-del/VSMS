@@ -709,9 +709,9 @@ export default function ParentDashboard() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Not in this list? <SuggestNonprofit /> — or have them complete the{" "}
-                <a href="/nonprofit-application.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">pre-approval form</a>{" "}
-                and email it to mcc@medinaacademy.org.
+                Not in this list? <SuggestNonprofit /> — or share this{" "}
+                <a href="/nonprofit-invitation.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">invitation</a>{" "}
+                with the nonprofit; they email mcc@medinaacademy.org describing how they meet our requirements.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
