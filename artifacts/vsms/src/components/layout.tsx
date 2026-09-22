@@ -2,15 +2,21 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { LogOut, Calendar, Clock, CheckSquare, Users, FileText, LayoutDashboard, ExternalLink, Menu, Trophy, Building2, TrendingUp, Settings, HelpCircle, ScrollText, Award } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useGetMe } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { RecyclingRibbon } from "@/components/recycling-ribbon";
+import { AuthenticatedImage } from "@/components/authenticated-image";
 import { roleLabel } from "@/lib/roles";
 
 type NavItem = { label: string; href: string; icon: React.ComponentType<{ className?: string }> };
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { role, firstName, logout } = useAuth();
+  const { data: me } = useGetMe();
+  const orgLogo = (me as any)?.organizationLogoUrl as string | null | undefined;
+  const orgName = (me as any)?.organizationName as string | null | undefined;
+  const hasOrgBranding = !!orgLogo;
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -63,7 +69,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     ] : []),
   ];
 
-  const brand = (
+  const brand = hasOrgBranding ? (
+    <div className="flex items-center gap-2.5">
+      <AuthenticatedImage objectPath={orgLogo!} alt={orgName ?? "Organization"} className="w-9 h-9 object-contain shrink-0 rounded" />
+      <div className="leading-tight">
+        <p className="font-bold text-sm truncate max-w-[150px]">{orgName ?? "Organization"}</p>
+        <p className="text-[11px] text-muted-foreground">Service Awards</p>
+      </div>
+    </div>
+  ) : (
     <div className="flex items-center gap-2.5">
       <img src="/medinacares-logo.png" alt="MedinaCares" className="w-9 h-9 object-contain shrink-0" />
       <div className="leading-tight">
@@ -104,6 +118,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <LogOut className="w-4 h-4" />
         Sign out
       </Button>
+      {hasOrgBranding && (
+        <div className="flex items-center gap-1.5 mt-3 pt-3 border-t text-[11px] text-muted-foreground">
+          <span>Powered by</span>
+          <img src="/medinacares-logo.png" alt="MedinaCares" className="w-4 h-4 object-contain" />
+          <span className="font-medium">MedinaCares</span>
+        </div>
+      )}
     </div>
   );
 
@@ -140,7 +161,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <img src="/medinacares-logo.png" alt="MedinaCares" className="w-8 h-8 object-contain" />
+          {hasOrgBranding ? (
+            <AuthenticatedImage objectPath={orgLogo!} alt={orgName ?? "Organization"} className="w-8 h-8 object-contain rounded" />
+          ) : (
+            <img src="/medinacares-logo.png" alt="MedinaCares" className="w-8 h-8 object-contain" />
+          )}
           <span className="w-9" />
         </header>
 

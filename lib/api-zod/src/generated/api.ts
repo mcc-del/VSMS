@@ -99,6 +99,7 @@ export const GetMeResponse = zod.object({
   "createdAt": zod.string(),
   "organizationId": zod.string().nullish(),
   "organizationName": zod.string().nullish(),
+  "organizationLogoUrl": zod.string().nullish(),
   "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 
@@ -684,6 +685,7 @@ export const ListUsersResponseItem = zod.object({
   "createdAt": zod.string(),
   "organizationId": zod.string().nullish(),
   "organizationName": zod.string().nullish(),
+  "organizationLogoUrl": zod.string().nullish(),
   "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 export const ListUsersResponse = zod.array(ListUsersResponseItem)
@@ -748,6 +750,7 @@ export const UpdateUserResponse = zod.object({
   "createdAt": zod.string(),
   "organizationId": zod.string().nullish(),
   "organizationName": zod.string().nullish(),
+  "organizationLogoUrl": zod.string().nullish(),
   "managedOrganizationIds": zod.array(zod.string()).optional()
 })
 
@@ -1111,6 +1114,7 @@ export const ListOrganizationsResponseItem = zod.object({
   "allowsHigh": zod.boolean(),
   "competesOnLeaderboard": zod.boolean().optional(),
   "showInEnrollment": zod.boolean().optional(),
+  "logoUrl": zod.string().nullish(),
   "requiresJoinCode": zod.boolean().optional(),
   "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
 })
@@ -1129,6 +1133,7 @@ export const ListAdminOrganizationsResponseItem = zod.object({
   "allowsHigh": zod.boolean(),
   "competesOnLeaderboard": zod.boolean().optional(),
   "showInEnrollment": zod.boolean().optional(),
+  "logoUrl": zod.string().nullish(),
   "requiresJoinCode": zod.boolean().optional(),
   "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
 })
@@ -1151,6 +1156,7 @@ export const CreateOrganizationBody = zod.object({
   "allowsHigh": zod.boolean().optional(),
   "competesOnLeaderboard": zod.boolean().optional(),
   "showInEnrollment": zod.boolean().optional(),
+  "logoUrl": zod.string().nullish(),
   "joinCode": zod.string().nullish()
 })
 
@@ -1175,6 +1181,7 @@ export const UpdateOrganizationBody = zod.object({
   "allowsHigh": zod.boolean().optional(),
   "competesOnLeaderboard": zod.boolean().optional(),
   "showInEnrollment": zod.boolean().optional(),
+  "logoUrl": zod.string().nullish(),
   "joinCode": zod.string().nullish()
 })
 
@@ -1187,6 +1194,7 @@ export const UpdateOrganizationResponse = zod.object({
   "allowsHigh": zod.boolean(),
   "competesOnLeaderboard": zod.boolean().optional(),
   "showInEnrollment": zod.boolean().optional(),
+  "logoUrl": zod.string().nullish(),
   "requiresJoinCode": zod.boolean().optional(),
   "joinCode": zod.string().nullish().describe('Only returned from the admin organizations endpoint.')
 })
@@ -1594,6 +1602,62 @@ export const GetPendingReviewsResponse = zod.object({
   "pendingCount": zod.number(),
   "overdueCount": zod.number(),
   "oldestEventDate": zod.string().nullish()
+}))
+})
+
+
+/**
+ * @summary Deep-dive event & hours analytics (Supervisor / Org Admin / Super Admin)
+ */
+export const GetSupervisorReportsResponse = zod.object({
+  "valuePerHour": zod.number(),
+  "totals": zod.object({
+  "events": zod.number(),
+  "capacity": zod.number(),
+  "signups": zod.number(),
+  "attended": zod.number(),
+  "noShow": zod.number(),
+  "approvedHours": zod.number(),
+  "pending": zod.number(),
+  "approved": zod.number(),
+  "rejected": zod.number(),
+  "onTime": zod.number(),
+  "tardy": zod.number(),
+  "overduePending": zod.number()
+}),
+  "events": zod.array(zod.object({
+  "eventId": zod.string(),
+  "title": zod.string(),
+  "eventDate": zod.string(),
+  "supervisorId": zod.string(),
+  "supervisorName": zod.string(),
+  "capacity": zod.number(),
+  "signups": zod.number(),
+  "attended": zod.number(),
+  "noShow": zod.number(),
+  "approvedHours": zod.number(),
+  "pending": zod.number(),
+  "approved": zod.number(),
+  "rejected": zod.number(),
+  "onTime": zod.number(),
+  "tardy": zod.number(),
+  "overduePending": zod.number()
+})),
+  "supervisors": zod.array(zod.object({
+  "supervisorId": zod.string(),
+  "supervisorName": zod.string(),
+  "events": zod.number(),
+  "capacity": zod.number(),
+  "signups": zod.number(),
+  "attended": zod.number(),
+  "noShow": zod.number(),
+  "approvedHours": zod.number(),
+  "pending": zod.number(),
+  "approved": zod.number(),
+  "rejected": zod.number(),
+  "onTime": zod.number(),
+  "tardy": zod.number(),
+  "overduePending": zod.number()
 }))
 })
 

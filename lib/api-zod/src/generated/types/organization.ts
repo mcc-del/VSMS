@@ -16,6 +16,8 @@ export interface Organization {
   allowsHigh: boolean;
   competesOnLeaderboard?: boolean;
   showInEnrollment?: boolean;
+  /** @nullable */
+  logoUrl?: string | null;
   requiresJoinCode?: boolean;
   /**
      * Only returned from the admin organizations endpoint.

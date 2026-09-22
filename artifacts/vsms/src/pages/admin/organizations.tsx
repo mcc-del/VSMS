@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Building2 } from "lucide-react";
+import { ImageUpload } from "@/components/image-upload";
 
 type Draft = {
   organizationId?: string;
@@ -31,6 +32,7 @@ type Draft = {
   competesOnLeaderboard: boolean;
   showInEnrollment: boolean;
   joinCode: string;
+  logoUrl: string | null;
 };
 
 const emptyDraft: Draft = {
@@ -42,6 +44,7 @@ const emptyDraft: Draft = {
   competesOnLeaderboard: true,
   showInEnrollment: true,
   joinCode: "",
+  logoUrl: null,
 };
 
 function randomCode() {
@@ -81,6 +84,7 @@ export default function AdminOrganizations() {
       competesOnLeaderboard: draft.competesOnLeaderboard,
       showInEnrollment: draft.showInEnrollment,
       joinCode: draft.joinCode.trim() || null,
+      logoUrl: draft.logoUrl || null,
     };
     const onDone = () => {
       queryClient.invalidateQueries({ queryKey: getListAdminOrganizationsQueryKey() });
@@ -173,6 +177,7 @@ export default function AdminOrganizations() {
                           competesOnLeaderboard: o.competesOnLeaderboard ?? true,
                           showInEnrollment: (o as any).showInEnrollment ?? true,
                           joinCode: o.joinCode ?? "",
+                          logoUrl: (o as any).logoUrl ?? null,
                         })
                       }
                     >
@@ -201,6 +206,15 @@ export default function AdminOrganizations() {
                 <label className="text-sm font-medium">Description</label>
                 <Textarea value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} rows={2} placeholder="What this org offers" />
               </div>
+              {isSuperAdmin && (
+                <div>
+                  <label className="text-sm font-medium">Organization logo <span className="text-muted-foreground font-normal">(optional)</span></label>
+                  <p className="text-xs text-muted-foreground mb-1.5">
+                    Shown in place of the MedinaCares logo for this org's admins and supervisors (a small “Powered by MedinaCares” credit remains). Square images work best.
+                  </p>
+                  <ImageUpload value={draft.logoUrl} onChange={(v) => setDraft({ ...draft, logoUrl: v })} />
+                </div>
+              )}
               <div>
                 <p className="text-sm font-medium mb-2">Serves grade levels</p>
                 <div className="space-y-2">

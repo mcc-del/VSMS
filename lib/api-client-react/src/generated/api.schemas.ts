@@ -21,6 +21,64 @@ export interface OrgInsights {
   pendingReviews: number;
 }
 
+export interface ReportEvent {
+  eventId: string;
+  title: string;
+  eventDate: string;
+  supervisorId: string;
+  supervisorName: string;
+  capacity: number;
+  signups: number;
+  attended: number;
+  noShow: number;
+  approvedHours: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  onTime: number;
+  tardy: number;
+  overduePending: number;
+}
+
+export interface ReportTotals {
+  events: number;
+  capacity: number;
+  signups: number;
+  attended: number;
+  noShow: number;
+  approvedHours: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  onTime: number;
+  tardy: number;
+  overduePending: number;
+}
+
+export interface ReportSupervisor {
+  supervisorId: string;
+  supervisorName: string;
+  events: number;
+  capacity: number;
+  signups: number;
+  attended: number;
+  noShow: number;
+  approvedHours: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  onTime: number;
+  tardy: number;
+  overduePending: number;
+}
+
+export interface SupervisorReports {
+  valuePerHour: number;
+  totals: ReportTotals;
+  events: ReportEvent[];
+  supervisors: ReportSupervisor[];
+}
+
 export interface PendingReviewSupervisor {
   supervisorId: string;
   supervisorName: string;
@@ -181,6 +239,8 @@ export interface Organization {
   allowsHigh: boolean;
   competesOnLeaderboard?: boolean;
   showInEnrollment?: boolean;
+  /** @nullable */
+  logoUrl?: string | null;
   requiresJoinCode?: boolean;
   /**
      * Only returned from the admin organizations endpoint.
@@ -201,6 +261,8 @@ export interface OrganizationInput {
   allowsHigh?: boolean;
   competesOnLeaderboard?: boolean;
   showInEnrollment?: boolean;
+  /** @nullable */
+  logoUrl?: string | null;
   /** @nullable */
   joinCode?: string | null;
 }
@@ -604,6 +666,8 @@ export interface UserProfile {
   organizationId?: string | null;
   /** @nullable */
   organizationName?: string | null;
+  /** @nullable */
+  organizationLogoUrl?: string | null;
   managedOrganizationIds?: string[];
 }
 

@@ -20,5 +20,7 @@ export interface UserProfile {
   organizationId?: string | null;
   /** @nullable */
   organizationName?: string | null;
+  /** @nullable */
+  organizationLogoUrl?: string | null;
   managedOrganizationIds?: string[];
 }

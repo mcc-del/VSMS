@@ -23,6 +23,9 @@ export const organizationsTable = pgTable("organizations", {
   // (students & parents won't see it as a choice at sign-up). It can still be
   // used for events and existing members. Default: shown.
   showInEnrollment: boolean("show_in_enrollment").notNull().default(true),
+  // Optional org logo (object-storage path). When set, this org's admins and
+  // supervisors see it in place of the MedinaCares mark in the app chrome.
+  logoUrl: varchar("logo_url", { length: 500 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

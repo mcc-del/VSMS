@@ -19,6 +19,7 @@ function format(o: typeof organizationsTable.$inferSelect) {
     allowsHigh: o.allowsHigh,
     competesOnLeaderboard: o.competesOnLeaderboard,
     showInEnrollment: o.showInEnrollment,
+    logoUrl: o.logoUrl ?? null,
     requiresJoinCode: Boolean(o.joinCode),
   };
 }
@@ -109,6 +110,8 @@ router.put(
     if (competesOnLeaderboard !== undefined) updates.competesOnLeaderboard = competesOnLeaderboard;
     if (showInEnrollment !== undefined) updates.showInEnrollment = showInEnrollment;
     if (joinCode !== undefined) updates.joinCode = joinCode?.trim() || null;
+    const logoUrl = (parsed.data as { logoUrl?: string | null }).logoUrl;
+    if (logoUrl !== undefined) updates.logoUrl = logoUrl || null;
 
     const [org] = await db
       .update(organizationsTable)

@@ -285,6 +285,20 @@ router.get("/v1/auth/me", authenticate, async (req, res) => {
     return;
   }
 
+  // Org branding: an org's admins & supervisors see their org's name/logo in
+  // the app chrome. Only surfaced for org-affiliated staff roles.
+  let organizationName: string | null = null;
+  let organizationLogoUrl: string | null = null;
+  if (user.organizationId && (user.role === "supervisor" || user.role === "org_admin")) {
+    const [org] = await db
+      .select({ name: organizationsTable.name, logoUrl: organizationsTable.logoUrl })
+      .from(organizationsTable)
+      .where(eq(organizationsTable.organizationId, user.organizationId))
+      .limit(1);
+    organizationName = org?.name ?? null;
+    organizationLogoUrl = org?.logoUrl ?? null;
+  }
+
   res.json({
     userId: user.userId,
     email: user.email,
@@ -292,6 +306,9 @@ router.get("/v1/auth/me", authenticate, async (req, res) => {
     lastName: user.lastName,
     role: user.role,
     createdAt: user.createdAt.toISOString(),
+    organizationId: user.organizationId ?? null,
+    organizationName,
+    organizationLogoUrl,
   });
 });
 

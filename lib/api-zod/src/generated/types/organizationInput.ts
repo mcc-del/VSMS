@@ -19,5 +19,7 @@ export interface OrganizationInput {
   competesOnLeaderboard?: boolean;
   showInEnrollment?: boolean;
   /** @nullable */
+  logoUrl?: string | null;
+  /** @nullable */
   joinCode?: string | null;
 }

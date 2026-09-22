@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
-import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable, eventsTable, volunteerSubmissionsTable } from "@workspace/db";
+import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable, eventsTable, volunteerSubmissionsTable, eventRegistrationsTable } from "@workspace/db";
 import { eq, desc, ilike, and, isNull, count, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
@@ -781,6 +781,177 @@ router.get("/v1/admin/pending-reviews", authenticate, requireRole("admin", "org_
 
   const supervisors = [...bySup.values()].sort((a, b) => b.overdueCount - a.overdueCount || b.pendingCount - a.pendingCount);
   res.json({ supervisors });
+});
+
+// GET /api/v1/supervisor/reports — deep-dive analytics for a supervisor (their
+// own events) or an Org Admin / Super Admin (all events in their org(s), broken
+// down per supervisor). Covers fill rate, attendance, hours + dollar value, and
+// review timeliness (the 7-day-post-event rule).
+//
+// Independent Sector's 2024 estimated value of a volunteer hour in the U.S.
+// (~$34.79). Used only to translate donated hours into an approximate dollar
+// value; adjust as the figure is updated.
+const VOLUNTEER_HOUR_VALUE = 34.79;
+
+router.get("/v1/supervisor/reports", authenticate, requireRole("supervisor", "org_admin", "admin"), async (req, res) => {
+  const role = req.auth!.role;
+  const userId = req.auth!.userId;
+
+  // Scope events to what this viewer owns/manages.
+  const supUsers = alias(usersTable, "rep_supervisor");
+  const allEvents = await db
+    .select({
+      eventId: eventsTable.eventId,
+      title: eventsTable.title,
+      eventDate: eventsTable.eventDate,
+      endTime: eventsTable.endTime,
+      maxCapacity: eventsTable.maxCapacity,
+      hoursValue: eventsTable.hoursValue,
+      supervisorId: eventsTable.supervisorId,
+      organizationId: eventsTable.organizationId,
+      supervisorFirstName: supUsers.firstName,
+      supervisorLastName: supUsers.lastName,
+    })
+    .from(eventsTable)
+    .leftJoin(supUsers, eq(eventsTable.supervisorId, supUsers.userId));
+
+  let scopedEvents = allEvents;
+  if (role === "supervisor") {
+    scopedEvents = allEvents.filter((e) => e.supervisorId === userId);
+  } else if (role === "org_admin") {
+    const managed = await managedOrgIds(userId, role);
+    scopedEvents = managed === null ? allEvents : allEvents.filter((e) => e.organizationId && managed.includes(e.organizationId));
+  }
+  const eventIds = scopedEvents.map((e) => e.eventId);
+  const eventById = new Map(scopedEvents.map((e) => [e.eventId, e]));
+
+  // Registrations (sign-ups + attendance) for scoped events.
+  const regs = eventIds.length
+    ? await db
+        .select({ eventId: eventRegistrationsTable.eventId, status: eventRegistrationsTable.status })
+        .from(eventRegistrationsTable)
+        .where(inArray(eventRegistrationsTable.eventId, eventIds))
+    : [];
+
+  // Internal submissions for scoped events (hours + review timeliness).
+  const subs = eventIds.length
+    ? await db
+        .select({
+          eventId: volunteerSubmissionsTable.eventId,
+          status: volunteerSubmissionsTable.status,
+          hoursWorked: volunteerSubmissionsTable.hoursWorked,
+          submittedAt: volunteerSubmissionsTable.submittedAt,
+          reviewedAt: volunteerSubmissionsTable.reviewedAt,
+        })
+        .from(volunteerSubmissionsTable)
+        .where(inArray(volunteerSubmissionsTable.eventId, eventIds))
+    : [];
+
+  const now = Date.now();
+  const DAY = 1000 * 60 * 60 * 24;
+  // On-time = reviewed within 7 days after the event date.
+  function deadlineFor(eventDate: string): number {
+    return new Date(eventDate + "T23:59:59").getTime() + 7 * DAY;
+  }
+
+  type EventAgg = {
+    eventId: string; title: string; eventDate: string; supervisorId: string; supervisorName: string;
+    capacity: number; signups: number; attended: number; noShow: number;
+    approvedHours: number; pending: number; approved: number; rejected: number;
+    onTime: number; tardy: number; overduePending: number;
+  };
+  const perEvent = new Map<string, EventAgg>();
+  for (const e of scopedEvents) {
+    perEvent.set(e.eventId, {
+      eventId: e.eventId,
+      title: e.title,
+      eventDate: e.eventDate,
+      supervisorId: e.supervisorId,
+      supervisorName: `${e.supervisorFirstName ?? ""} ${e.supervisorLastName ?? ""}`.trim() || "Unknown",
+      capacity: e.maxCapacity,
+      signups: 0, attended: 0, noShow: 0,
+      approvedHours: 0, pending: 0, approved: 0, rejected: 0,
+      onTime: 0, tardy: 0, overduePending: 0,
+    });
+  }
+  for (const r of regs) {
+    const a = perEvent.get(r.eventId);
+    if (!a) continue;
+    a.signups += 1;
+    if (r.status === "attended") a.attended += 1;
+    else if (r.status === "no_show") a.noShow += 1;
+  }
+  for (const s of subs) {
+    const a = perEvent.get(s.eventId);
+    if (!a) continue;
+    if (s.status === "approved") {
+      a.approved += 1;
+      a.approvedHours += Number(s.hoursWorked ?? 0);
+    } else if (s.status === "rejected") {
+      a.rejected += 1;
+    } else if (s.status === "pending") {
+      a.pending += 1;
+    }
+    const ev = eventById.get(s.eventId);
+    const deadline = ev ? deadlineFor(ev.eventDate) : now;
+    if (s.status === "pending") {
+      if (now > deadline) a.overduePending += 1;
+    } else if (s.reviewedAt) {
+      const reviewedMs = new Date(s.reviewedAt as unknown as string).getTime();
+      if (reviewedMs <= deadline) a.onTime += 1;
+      else a.tardy += 1;
+    }
+  }
+
+  const events = [...perEvent.values()].sort((x, y) => y.eventDate.localeCompare(x.eventDate));
+
+  // Aggregate across all scoped events.
+  const totals = events.reduce(
+    (t, e) => {
+      t.events += 1;
+      t.capacity += e.capacity;
+      t.signups += e.signups;
+      t.attended += e.attended;
+      t.noShow += e.noShow;
+      t.approvedHours += e.approvedHours;
+      t.pending += e.pending;
+      t.approved += e.approved;
+      t.rejected += e.rejected;
+      t.onTime += e.onTime;
+      t.tardy += e.tardy;
+      t.overduePending += e.overduePending;
+      return t;
+    },
+    { events: 0, capacity: 0, signups: 0, attended: 0, noShow: 0, approvedHours: 0, pending: 0, approved: 0, rejected: 0, onTime: 0, tardy: 0, overduePending: 0 },
+  );
+
+  // Per-supervisor breakdown (Org Admin / Super Admin only).
+  let supervisors: any[] = [];
+  if (role === "org_admin" || role === "admin") {
+    const bySup = new Map<string, any>();
+    for (const e of events) {
+      const g = bySup.get(e.supervisorId) ?? {
+        supervisorId: e.supervisorId,
+        supervisorName: e.supervisorName,
+        events: 0, capacity: 0, signups: 0, attended: 0, noShow: 0,
+        approvedHours: 0, pending: 0, approved: 0, rejected: 0, onTime: 0, tardy: 0, overduePending: 0,
+      };
+      g.events += 1; g.capacity += e.capacity; g.signups += e.signups; g.attended += e.attended; g.noShow += e.noShow;
+      g.approvedHours += e.approvedHours; g.pending += e.pending; g.approved += e.approved; g.rejected += e.rejected;
+      g.onTime += e.onTime; g.tardy += e.tardy; g.overduePending += e.overduePending;
+      bySup.set(e.supervisorId, g);
+    }
+    supervisors = [...bySup.values()]
+      .map((g) => ({ ...g, approvedHours: Math.round(g.approvedHours * 10) / 10 }))
+      .sort((a, b) => b.approvedHours - a.approvedHours);
+  }
+
+  res.json({
+    valuePerHour: VOLUNTEER_HOUR_VALUE,
+    totals: { ...totals, approvedHours: Math.round(totals.approvedHours * 10) / 10 },
+    events: events.map((e) => ({ ...e, approvedHours: Math.round(e.approvedHours * 10) / 10 })),
+    supervisors,
+  });
 });
 
 // GET /api/v1/admin/duplicates — accounts that share a phone number (a parent's

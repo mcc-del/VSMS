@@ -1812,6 +1812,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/PendingReviewsResponse"
 
+  /v1/supervisor/reports:
+    get:
+      operationId: getSupervisorReports
+      tags: [admin]
+      summary: Deep-dive event & hours analytics (Supervisor / Org Admin / Super Admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupervisorReports"
+
   /v1/admin/duplicates:
     get:
       operationId: getDuplicates
@@ -2204,6 +2217,75 @@ components:
           type: integer
         pendingReviews:
           type: integer
+    ReportEvent:
+      type: object
+      required: [eventId, title, eventDate, supervisorId, supervisorName, capacity, signups, attended, noShow, approvedHours, pending, approved, rejected, onTime, tardy, overduePending]
+      properties:
+        eventId: { type: string }
+        title: { type: string }
+        eventDate: { type: string }
+        supervisorId: { type: string }
+        supervisorName: { type: string }
+        capacity: { type: integer }
+        signups: { type: integer }
+        attended: { type: integer }
+        noShow: { type: integer }
+        approvedHours: { type: number }
+        pending: { type: integer }
+        approved: { type: integer }
+        rejected: { type: integer }
+        onTime: { type: integer }
+        tardy: { type: integer }
+        overduePending: { type: integer }
+    ReportTotals:
+      type: object
+      required: [events, capacity, signups, attended, noShow, approvedHours, pending, approved, rejected, onTime, tardy, overduePending]
+      properties:
+        events: { type: integer }
+        capacity: { type: integer }
+        signups: { type: integer }
+        attended: { type: integer }
+        noShow: { type: integer }
+        approvedHours: { type: number }
+        pending: { type: integer }
+        approved: { type: integer }
+        rejected: { type: integer }
+        onTime: { type: integer }
+        tardy: { type: integer }
+        overduePending: { type: integer }
+    ReportSupervisor:
+      type: object
+      required: [supervisorId, supervisorName, events, capacity, signups, attended, noShow, approvedHours, pending, approved, rejected, onTime, tardy, overduePending]
+      properties:
+        supervisorId: { type: string }
+        supervisorName: { type: string }
+        events: { type: integer }
+        capacity: { type: integer }
+        signups: { type: integer }
+        attended: { type: integer }
+        noShow: { type: integer }
+        approvedHours: { type: number }
+        pending: { type: integer }
+        approved: { type: integer }
+        rejected: { type: integer }
+        onTime: { type: integer }
+        tardy: { type: integer }
+        overduePending: { type: integer }
+    SupervisorReports:
+      type: object
+      required: [valuePerHour, totals, events, supervisors]
+      properties:
+        valuePerHour: { type: number }
+        totals:
+          $ref: "#/components/schemas/ReportTotals"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportEvent"
+        supervisors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportSupervisor"
     PendingReviewSupervisor:
       type: object
       required: [supervisorId, supervisorName, pendingCount, overdueCount]
@@ -2418,6 +2500,8 @@ components:
           type: boolean
         showInEnrollment:
           type: boolean
+        logoUrl:
+          type: ["string", "null"]
         requiresJoinCode:
           type: boolean
         joinCode:
@@ -2443,6 +2527,8 @@ components:
           type: boolean
         showInEnrollment:
           type: boolean
+        logoUrl:
+          type: ["string", "null"]
         joinCode:
           type: ["string", "null"]
 
@@ -2968,6 +3054,8 @@ components:
         organizationId:
           type: ["string", "null"]
         organizationName:
+          type: ["string", "null"]
+        organizationLogoUrl:
           type: ["string", "null"]
         managedOrganizationIds:
           type: array

@@ -100,6 +100,7 @@ import type {
   SuggestNonprofit201,
   SuggestNonprofitInput,
   SupervisorDashboard,
+  SupervisorReports,
   TestEmailBody,
   TestEmailResult,
   UpdateUserInput,
@@ -6093,6 +6094,83 @@ export function useGetPendingReviews<TData = Awaited<ReturnType<typeof getPendin
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetPendingReviewsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetSupervisorReportsUrl = () => {
+
+
+
+
+  return `/api/v1/supervisor/reports`
+}
+
+/**
+ * @summary Deep-dive event & hours analytics (Supervisor / Org Admin / Super Admin)
+ */
+export const getSupervisorReports = async ( options?: RequestInit): Promise<SupervisorReports> => {
+
+  return customFetch<SupervisorReports>(getGetSupervisorReportsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSupervisorReportsQueryKey = () => {
+    return [
+    `/api/v1/supervisor/reports`
+    ] as const;
+    }
+
+
+export const getGetSupervisorReportsQueryOptions = <TData = Awaited<ReturnType<typeof getSupervisorReports>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSupervisorReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupervisorReportsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupervisorReports>>> = ({ signal }) => getSupervisorReports({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupervisorReports>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSupervisorReportsQueryResult = NonNullable<Awaited<ReturnType<typeof getSupervisorReports>>>
+export type GetSupervisorReportsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Deep-dive event & hours analytics (Supervisor / Org Admin / Super Admin)
+ */
+
+export function useGetSupervisorReports<TData = Awaited<ReturnType<typeof getSupervisorReports>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSupervisorReports>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSupervisorReportsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
