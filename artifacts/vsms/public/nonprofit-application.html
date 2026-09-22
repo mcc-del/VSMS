@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MedinaCares — Nonprofit Pre-Approval Application</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Georgia, "Times New Roman", serif; color: #1a1a2e; max-width: 740px; margin: 32px auto; padding: 0 24px; line-height: 1.55; }
+  header { display: flex; align-items: center; gap: 14px; border-bottom: 3px solid #2b3a67; padding-bottom: 14px; margin-bottom: 18px; }
+  header img { width: 56px; height: 56px; object-fit: contain; }
+  h1 { font-size: 20px; margin: 0; }
+  .sub { color: #555; font-size: 13px; margin-top: 2px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #2b3a67; margin: 22px 0 8px; }
+  p.intro { font-size: 14px; }
+  .criteria { background: #f4f6fb; border: 1px solid #d5ddef; border-radius: 8px; padding: 12px 16px; font-size: 13px; }
+  .criteria li { margin: 6px 0; }
+  .row { display: flex; gap: 16px; margin: 12px 0; }
+  .field { flex: 1; }
+  .field label { display: block; font-size: 12px; color: #555; margin-bottom: 20px; }
+  .line { border-bottom: 1px solid #333; height: 0; }
+  .box { border: 1px solid #333; border-radius: 6px; padding: 12px; min-height: 64px; }
+  .check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 8px 0; }
+  .check .b { width: 14px; height: 14px; border: 1px solid #333; border-radius: 3px; margin-top: 2px; flex: none; }
+  .attest { font-size: 13px; border: 1px solid #333; border-radius: 8px; padding: 12px 14px; margin-top: 10px; }
+  .note { font-size: 12px; color: #666; margin-top: 10px; }
+  @media print { body { margin: 0; } .noprint { display: none; } }
+  .noprint { text-align: right; margin-bottom: 12px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #2b3a67; background: #2b3a67; color: #fff; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="noprint"><button onclick="window.print()">Print / Save as PDF</button></div>
+  <header>
+    <img src="/medinacares-logo.png" alt="MedinaCares" />
+    <div>
+      <h1>MedinaCares Volunteer Service Awards</h1>
+      <div class="sub">Nonprofit Partner Pre-Approval Application</div>
+    </div>
+  </header>
+
+  <p class="intro">Thank you for offering volunteer opportunities to MedinaCares students. Please complete
+  this application and email it to <strong>mcc@medinaacademy.org</strong>. Once approved, your organization
+  will appear in the app so students can log verified service hours with you.</p>
+
+  <h2>Approval criteria</h2>
+  <div class="criteria">
+    To be approved, an organization should:
+    <ul>
+      <li>Be a <strong>registered 501(c)(3) nonprofit</strong> with a valid EIN (tax ID).</li>
+      <li>Provide <strong>ample, ongoing volunteer opportunities</strong> appropriate for students (grades 2–12).</li>
+      <li>Offer <strong>ease of access to sign up</strong> — through your own website/portal, or by posting opportunities on the MedinaCares platform.</li>
+      <li>Provide <strong>adult supervision</strong> on site and be willing to <strong>verify and sign off</strong> on students' hours.</li>
+      <li>Maintain a <strong>safe environment for minors</strong> (e.g. supervision policy; no unsupervised one-on-one contact between a student and an unrelated adult).</li>
+      <li>Have a <strong>responsive contact</strong> who can confirm student participation when asked.</li>
+      <li>Serve the <strong>local community</strong> or be reasonably accessible to students.</li>
+    </ul>
+  </div>
+
+  <h2>Organization details</h2>
+  <div class="row">
+    <div class="field"><label>Organization legal name</label><div class="line"></div></div>
+    <div class="field"><label>EIN (9-digit tax ID)</label><div class="line"></div></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Website</label><div class="line"></div></div>
+    <div class="field"><label>Year founded</label><div class="line"></div></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Mission (one sentence)</label><div class="line"></div></div>
+  </div>
+
+  <h2>Primary contact</h2>
+  <div class="row">
+    <div class="field"><label>Name</label><div class="line"></div></div>
+    <div class="field"><label>Title / role</label><div class="line"></div></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Email</label><div class="line"></div></div>
+    <div class="field"><label>Phone</label><div class="line"></div></div>
+  </div>
+
+  <h2>Volunteer opportunities</h2>
+  <div class="field"><label>Describe the volunteer roles available to students, and typical time commitment</label><div class="box"></div></div>
+  <div class="row">
+    <div class="field"><label>Minimum age / grade you accept</label><div class="line"></div></div>
+    <div class="field"><label>Typical location(s)</label><div class="line"></div></div>
+  </div>
+
+  <h2>How students sign up (check all that apply)</h2>
+  <div class="check"><span class="b"></span><span>Through our own website / volunteer portal (link above)</span></div>
+  <div class="check"><span class="b"></span><span>By posting our opportunities on the MedinaCares platform</span></div>
+  <div class="check"><span class="b"></span><span>Other (describe): ____________________________________________</span></div>
+
+  <h2>Safeguarding</h2>
+  <div class="check"><span class="b"></span><span>We provide adult supervision for student volunteers on site.</span></div>
+  <div class="check"><span class="b"></span><span>We agree to verify / sign off on the hours students report.</span></div>
+  <div class="check"><span class="b"></span><span>We follow reasonable safety practices for working with minors.</span></div>
+
+  <div class="attest">
+    I confirm the information above is accurate and that our organization is a registered nonprofit able
+    to provide supervised volunteer opportunities to students.
+    <div class="row" style="margin-top:16px">
+      <div class="field"><label>Signature</label><div class="line"></div></div>
+      <div class="field"><label>Date</label><div class="line"></div></div>
+    </div>
+  </div>
+
+  <p class="note">Email completed applications to mcc@medinaacademy.org. Approval is at the discretion of MedinaCares.</p>
+</body>
+</html>

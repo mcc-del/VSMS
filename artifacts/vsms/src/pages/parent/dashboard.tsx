@@ -710,7 +710,11 @@ export default function ParentDashboard() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground mt-1">Not in this list? Email mcc@medinaacademy.org so we can add it.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Not in this list? They can be pre-approved — ask them to complete the{" "}
+                <a href="/nonprofit-application.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">pre-approval form</a>{" "}
+                and email it to mcc@medinaacademy.org.
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Date</Label><Input type="date" value={ext.volunteerDate} onChange={(e) => setExt({ ...ext, volunteerDate: e.target.value })} /></div>

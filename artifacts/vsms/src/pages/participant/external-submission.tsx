@@ -318,9 +318,11 @@ export default function ExternalSubmissionPage() {
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Is your preferred nonprofit not in this list? Please reach out to{" "}
-                        <a href="mailto:mcc@medinaacademy.org" className="text-primary hover:underline">mcc@medinaacademy.org</a>{" "}
-                        so we can add it.
+                        Is your preferred nonprofit not in this list? They can be pre-approved — ask them to
+                        complete the{" "}
+                        <a href="/nonprofit-application.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">nonprofit pre-approval form</a>{" "}
+                        and email it to{" "}
+                        <a href="mailto:mcc@medinaacademy.org" className="text-primary hover:underline">mcc@medinaacademy.org</a>.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
