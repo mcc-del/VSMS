@@ -1106,6 +1106,39 @@ paths:
                 items:
                   $ref: "#/components/schemas/Nonprofit"
 
+  /v1/nonprofits/suggest:
+    post:
+      operationId: suggestNonprofit
+      tags: [nonprofits]
+      summary: Suggest a nonprofit for approval (any signed-in user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuggestNonprofitInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nonprofitId:
+                    type: string
+                  name:
+                    type: string
+        "200":
+          description: Already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+
   /v1/admin/nonprofits:
     get:
       operationId: listAdminNonprofits
@@ -2302,6 +2335,16 @@ components:
           type: ["string", "null"]
         active:
           type: boolean
+    SuggestNonprofitInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        ein:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
     NonprofitInput:
       type: object
       required: [name]

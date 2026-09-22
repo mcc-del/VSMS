@@ -44,6 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SchoolSelect } from "@/components/school-select";
 import { GettingStarted } from "@/components/getting-started";
 import { NewEventsBanner } from "@/components/new-events-banner";
+import { SuggestNonprofit } from "@/components/suggest-nonprofit";
 import { ALL_GRADES } from "@/lib/schools";
 import { Clock, MapPin, CalendarDays, Trophy, Users, Plus, Pencil, UserPlus, Mail, CalendarPlus } from "lucide-react";
 import { downloadEventIcs } from "@/lib/calendar";
@@ -114,9 +115,6 @@ export default function ParentDashboard() {
     if (!Number.isFinite(hrs) || hrs < 0.5 || hrs > 24) { toast({ title: "Enter valid hours (0.5–24)", variant: "destructive" }); return; }
     if (!ext.extSupervisorName.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ext.extSupervisorEmail.trim())) {
       toast({ title: "Add a supervisor name and valid email", variant: "destructive" }); return;
-    }
-    if (hrs > 5 && !ext.proofUrl) {
-      toast({ title: "Proof required", description: "Attach a photo or letter for claims over 5 hours.", variant: "destructive" }); return;
     }
     submitChildExternal.mutate(
       { childId: extChild.userId, data: {
@@ -711,7 +709,7 @@ export default function ParentDashboard() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Not in this list? They can be pre-approved — ask them to complete the{" "}
+                Not in this list? <SuggestNonprofit /> — or have them complete the{" "}
                 <a href="/nonprofit-application.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">pre-approval form</a>{" "}
                 and email it to mcc@medinaacademy.org.
               </p>
@@ -725,7 +723,7 @@ export default function ParentDashboard() {
             <div><Label className="text-xs">Notes (optional)</Label><Textarea rows={2} value={ext.description} onChange={(e) => setExt({ ...ext, description: e.target.value })} /></div>
             <div>
               <a href="/service-hours-form.html" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Download / print the signed-hours form</a>
-              <Label className="text-xs mt-2 block">Signed form {Number(ext.hoursWorked) > 5 ? "(required over 5 hours)" : ""}</Label>
+              <Label className="text-xs mt-2 block">Signed form <span className="text-muted-foreground">(optional)</span></Label>
               <p className="text-xs text-muted-foreground mb-1">Do you have a signed form from the supervisor? If yes, upload it now. If not, we'll email the supervisor to review.</p>
               <ProofUpload value={ext.proofUrl} onChange={(p) => setExt({ ...ext, proofUrl: p })} />
             </div>

@@ -107,6 +107,23 @@ export default function AdminNonprofits() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      {!n.active && (
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await updateNp.mutateAsync({ nonprofitId: n.nonprofitId, data: { name: n.name, active: true } });
+                              toast({ title: "Approved", description: `${n.name} is now in the list.` });
+                              invalidate();
+                            } catch (err: any) {
+                              toast({ title: "Error", description: err?.data?.error ?? "Try again.", variant: "destructive" });
+                            }
+                          }}
+                          className="gap-1"
+                        >
+                          Approve
+                        </Button>
+                      )}
                       <Button variant="ghost" size="sm" onClick={() => setDraft({ nonprofitId: n.nonprofitId, name: n.name, ein: n.ein ?? "", website: n.website ?? "", active: n.active })} className="gap-1">
                         <Pencil className="w-4 h-4" /> Edit
                       </Button>

@@ -1009,6 +1009,20 @@ export const ListNonprofitsResponse = zod.array(ListNonprofitsResponseItem)
 
 
 /**
+ * @summary Suggest a nonprofit for approval (any signed-in user)
+ */
+export const SuggestNonprofitBody = zod.object({
+  "name": zod.string(),
+  "ein": zod.string().nullish(),
+  "website": zod.string().nullish()
+})
+
+export const SuggestNonprofitResponse = zod.object({
+  "status": zod.string().optional()
+})
+
+
+/**
  * @summary Full nonprofit list incl. inactive (Super Admin)
  */
 export const ListAdminNonprofitsResponseItem = zod.object({

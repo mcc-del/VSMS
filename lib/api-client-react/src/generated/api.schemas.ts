@@ -134,6 +134,14 @@ export interface Nonprofit {
   active: boolean;
 }
 
+export interface SuggestNonprofitInput {
+  name: string;
+  /** @nullable */
+  ein?: string | null;
+  /** @nullable */
+  website?: string | null;
+}
+
 export interface NonprofitInput {
   /**
      * @minLength 2
@@ -1063,6 +1071,15 @@ export const ListAllSchoolsStatus = {
   approved: 'approved',
   pending: 'pending',
 } as const;
+
+export type SuggestNonprofit200 = {
+  status?: string;
+};
+
+export type SuggestNonprofit201 = {
+  nonprofitId?: string;
+  name?: string;
+};
 
 export type DeleteNonprofit200 = {
   status?: string;

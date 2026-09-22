@@ -95,6 +95,9 @@ import type {
   SubmissionDetail,
   SubmissionInput,
   SuccessResponse,
+  SuggestNonprofit200,
+  SuggestNonprofit201,
+  SuggestNonprofitInput,
   SupervisorDashboard,
   TestEmailBody,
   TestEmailResult,
@@ -3581,6 +3584,77 @@ export function useListNonprofits<TData = Awaited<ReturnType<typeof listNonprofi
 
 
 
+
+export const getSuggestNonprofitUrl = () => {
+
+
+
+
+  return `/api/v1/nonprofits/suggest`
+}
+
+/**
+ * @summary Suggest a nonprofit for approval (any signed-in user)
+ */
+export const suggestNonprofit = async (suggestNonprofitInput: SuggestNonprofitInput, options?: RequestInit): Promise<SuggestNonprofit200 | SuggestNonprofit201> => {
+
+  return customFetch<SuggestNonprofit200 | SuggestNonprofit201>(getSuggestNonprofitUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      suggestNonprofitInput,)
+  }
+);}
+
+
+
+
+export const getSuggestNonprofitMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suggestNonprofit>>, TError,{data: BodyType<SuggestNonprofitInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof suggestNonprofit>>, TError,{data: BodyType<SuggestNonprofitInput>}, TContext> => {
+
+const mutationKey = ['suggestNonprofit'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof suggestNonprofit>>, {data: BodyType<SuggestNonprofitInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  suggestNonprofit(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SuggestNonprofitMutationResult = NonNullable<Awaited<ReturnType<typeof suggestNonprofit>>>
+    export type SuggestNonprofitMutationBody = BodyType<SuggestNonprofitInput>
+    export type SuggestNonprofitMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Suggest a nonprofit for approval (any signed-in user)
+ */
+export const useSuggestNonprofit = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suggestNonprofit>>, TError,{data: BodyType<SuggestNonprofitInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof suggestNonprofit>>,
+        TError,
+        {data: BodyType<SuggestNonprofitInput>},
+        TContext
+      > => {
+      return useMutation(getSuggestNonprofitMutationOptions(options));
+    }
 
 export const getListAdminNonprofitsUrl = () => {
 

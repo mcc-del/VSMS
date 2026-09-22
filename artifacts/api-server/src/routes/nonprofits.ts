@@ -27,6 +27,33 @@ router.get("/v1/nonprofits", authenticate, async (_req, res) => {
   res.json(rows.map(format));
 });
 
+// POST /api/v1/nonprofits/suggest — any signed-in user proposes a nonprofit.
+// It's created INACTIVE (hidden from the dropdown) and waits for a Super Admin
+// to approve it. Keeps the flow simple: no separate request table.
+router.post("/v1/nonprofits/suggest", authenticate, async (req, res) => {
+  const b = (req.body ?? {}) as { name?: unknown; ein?: unknown; website?: unknown };
+  const name = typeof b.name === "string" ? b.name.trim() : "";
+  if (name.length < 2) {
+    res.status(400).json({ error: "Enter the nonprofit's name." });
+    return;
+  }
+  try {
+    const [n] = await db
+      .insert(nonprofitsTable)
+      .values({
+        name,
+        ein: typeof b.ein === "string" && b.ein.trim() ? b.ein.trim() : null,
+        website: typeof b.website === "string" && b.website.trim() ? b.website.trim() : null,
+        active: false, // pending Super Admin approval
+      })
+      .returning();
+    res.status(201).json({ nonprofitId: n.nonprofitId, name: n.name });
+  } catch {
+    // Already exists (approved or pending) — treat as success so the user isn't confused.
+    res.status(200).json({ status: "exists" });
+  }
+});
+
 // GET /api/v1/admin/nonprofits — full list (incl. inactive) for Super Admins.
 router.get("/v1/admin/nonprofits", authenticate, requireRole("admin"), async (_req, res) => {
   const rows = await db.select().from(nonprofitsTable).orderBy(asc(nonprofitsTable.name));

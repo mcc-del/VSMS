@@ -28,6 +28,7 @@ import { ProofUpload } from "@/components/proof-upload";
 import { ProofLink } from "@/components/proof-link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SuggestNonprofit } from "@/components/suggest-nonprofit";
 import { PostEventHours } from "@/components/post-event-hours";
 import { useState } from "react";
 
@@ -52,9 +53,6 @@ const schema = z.object({
   proofUrl: z.string().nullable().optional(),
   guidelines: z.array(z.string()).min(1, "Please check at least one guideline"),
 }).refine(
-  (v) => v.hoursWorked <= 5 || !!(v.proofUrl && v.proofUrl.length > 0),
-  { message: "Proof (a photo or letter) is required for submissions over 5 hours.", path: ["proofUrl"] },
-).refine(
   (v) => !v.volunteerDate || v.volunteerDate <= new Date().toISOString().split("T")[0],
   { message: "The date can't be in the future — log hours after you've volunteered.", path: ["volunteerDate"] },
 ).refine(
@@ -318,11 +316,9 @@ export default function ExternalSubmissionPage() {
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Is your preferred nonprofit not in this list? They can be pre-approved — ask them to
-                        complete the{" "}
-                        <a href="/nonprofit-application.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">nonprofit pre-approval form</a>{" "}
-                        and email it to{" "}
-                        <a href="mailto:mcc@medinaacademy.org" className="text-primary hover:underline">mcc@medinaacademy.org</a>.
+                        Not in this list? <SuggestNonprofit /> — or have them complete the{" "}
+                        <a href="/nonprofit-application.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">pre-approval form</a>{" "}
+                        and email it to mcc@medinaacademy.org.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -436,7 +432,7 @@ export default function ExternalSubmissionPage() {
                   name="proofUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Signed form {form.watch("hoursWorked") > 5 && <span className="text-muted-foreground font-normal">(required over 5 hours)</span>}</FormLabel>
+                      <FormLabel>Signed form <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
                       <FormDescription className="mb-2">
                         Do you have a signed form from the supervisor? If yes, upload it now. If not,
                         we'll email the supervisor to review and confirm your hours.
