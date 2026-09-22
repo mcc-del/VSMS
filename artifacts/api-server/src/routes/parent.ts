@@ -13,6 +13,10 @@ import {
 } from "@workspace/db";
 import { thresholdsForGrade } from "../lib/thresholds";
 import { eq, and, inArray, gte, sum, sql, asc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
+
+// Alias for joining an event's supervisor when building a child's schedule.
+const parentSupervisorUsers = alias(usersTable, "parent_supervisor_users");
 import { authenticate, requireRole } from "../middlewares/auth";
 import { sendCoGuardianInvite } from "../lib/email";
 
@@ -193,9 +197,12 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
         endTime: eventsTable.endTime,
         location: eventsTable.location,
         hoursValue: eventsTable.hoursValue,
+        supervisorFirstName: parentSupervisorUsers.firstName,
+        supervisorLastName: parentSupervisorUsers.lastName,
       })
       .from(eventRegistrationsTable)
       .leftJoin(eventsTable, eq(eventRegistrationsTable.eventId, eventsTable.eventId))
+      .leftJoin(parentSupervisorUsers, eq(eventsTable.supervisorId, parentSupervisorUsers.userId))
       .where(
         and(
           eq(eventRegistrationsTable.userId, child.userId),
@@ -205,12 +212,18 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
       )
       .orderBy(sql`${eventsTable.eventDate} DESC`);
 
-    // The child's submission status per event (to show pending/approved).
+    // The child's submission status per event (to show pending/approved),
+    // plus when it was submitted (for the review-status line).
     const childSubs = await db
-      .select({ eventId: volunteerSubmissionsTable.eventId, status: volunteerSubmissionsTable.status })
+      .select({
+        eventId: volunteerSubmissionsTable.eventId,
+        status: volunteerSubmissionsTable.status,
+        submittedAt: volunteerSubmissionsTable.submittedAt,
+      })
       .from(volunteerSubmissionsTable)
       .where(eq(volunteerSubmissionsTable.userId, child.userId));
     const subStatus = new Map(childSubs.map((s) => [s.eventId, s.status]));
+    const subSubmittedAt = new Map(childSubs.map((s) => [s.eventId, s.submittedAt]));
 
     result.push({
       userId: child.userId,
@@ -246,6 +259,11 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
         isNew: false,
         hoursStatus: subStatus.get(r.eventId) ?? null,
         hoursValue: r.hoursValue != null ? Number(r.hoursValue) : null,
+        supervisorName:
+          r.supervisorFirstName || r.supervisorLastName
+            ? `${r.supervisorFirstName ?? ""} ${r.supervisorLastName ?? ""}`.trim()
+            : null,
+        submittedAt: subSubmittedAt.get(r.eventId)?.toISOString() ?? null,
       })),
     });
   }

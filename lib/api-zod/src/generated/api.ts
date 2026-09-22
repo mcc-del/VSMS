@@ -1515,7 +1515,9 @@ export const GetParentChildrenResponseItem = zod.object({
   "status": zod.string(),
   "isNew": zod.boolean(),
   "hoursStatus": zod.string().nullish().describe('The child\'s submission status for this event (pending\/approved\/rejected), or null if none yet.'),
-  "hoursValue": zod.number().nullish().describe('The opportunity\'s planned service-hour value.')
+  "hoursValue": zod.number().nullish().describe('The opportunity\'s planned service-hour value.'),
+  "supervisorName": zod.string().nullish(),
+  "submittedAt": zod.string().nullish()
 })),
   "pastRegistrations": zod.array(zod.object({
   "registrationId": zod.string(),
@@ -1528,7 +1530,9 @@ export const GetParentChildrenResponseItem = zod.object({
   "status": zod.string(),
   "isNew": zod.boolean(),
   "hoursStatus": zod.string().nullish().describe('The child\'s submission status for this event (pending\/approved\/rejected), or null if none yet.'),
-  "hoursValue": zod.number().nullish().describe('The opportunity\'s planned service-hour value.')
+  "hoursValue": zod.number().nullish().describe('The opportunity\'s planned service-hour value.'),
+  "supervisorName": zod.string().nullish(),
+  "submittedAt": zod.string().nullish()
 })).optional(),
   "thresholds": zod.object({
   "bronze": zod.number(),

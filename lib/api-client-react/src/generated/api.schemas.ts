@@ -353,6 +353,10 @@ export interface ParentChildRegistration {
      * @nullable
      */
   hoursValue?: number | null;
+  /** @nullable */
+  supervisorName?: string | null;
+  /** @nullable */
+  submittedAt?: string | null;
 }
 
 export interface AwardThresholds {

@@ -459,6 +459,13 @@ export default function ParentDashboard() {
                                 {pending && <Badge className="bg-yellow-100 text-yellow-700 border-0 shrink-0">Waiting for review</Badge>}
                                 {r.hoursStatus === "rejected" && <Badge className="bg-red-100 text-red-700 border-0 shrink-0">Rejected</Badge>}
                               </div>
+                              {(r.hoursStatus === "pending" || r.hoursStatus === "approved" || r.hoursStatus === "rejected") && ((r as any).supervisorName || (r as any).submittedAt) && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {(r as any).supervisorName ? `Reviewer: ${(r as any).supervisorName}` : ""}
+                                  {(r as any).supervisorName && (r as any).submittedAt ? " · " : ""}
+                                  {(r as any).submittedAt ? `Submitted ${new Date((r as any).submittedAt).toLocaleDateString()}` : ""}
+                                </p>
+                              )}
                               {!approved && (
                                 <div className="mt-2">
                                   {Number((r as any).hoursValue ?? 0) > 0 && (

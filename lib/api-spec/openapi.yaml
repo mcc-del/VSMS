@@ -2507,6 +2507,10 @@ components:
         hoursValue:
           type: ["number", "null"]
           description: The opportunity's planned service-hour value.
+        supervisorName:
+          type: ["string", "null"]
+        submittedAt:
+          type: ["string", "null"]
     ParentChild:
       type: object
       required: [userId, firstName, lastName, isManaged, totalApprovedHours, upcomingRegistrations]
