@@ -88,6 +88,11 @@ export default function HistoryPage() {
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {s.eventDate} &middot; {s.hoursWorked ?? "—"}h worked &middot; Submitted {new Date(s.submittedAt).toLocaleDateString()}
                         </p>
+                        {(s as any).supervisorName && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Reviewer: {(s as any).supervisorName}
+                          </p>
+                        )}
                         {s.supervisorComments && (
                           <p className="text-xs text-muted-foreground mt-1 italic">"{s.supervisorComments}"</p>
                         )}

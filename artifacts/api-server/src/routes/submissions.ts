@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { db, volunteerSubmissionsTable, eventsTable, usersTable, eventRegistrationsTable, guardianshipsTable } from "@workspace/db";
 import { eq, and, inArray, isNotNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitInternalHoursBody, ReviewSubmissionBody, OverrideSubmissionBody } from "@workspace/api-zod";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 import { sendHoursForReview, sendHoursReviewed } from "../lib/email";
 
 const router = Router();
+
+// Alias for joining the event's supervisor (distinct from the participant).
+const supervisorUsers = alias(usersTable, "supervisor_users");
 
 function calculateDurationHours(startTime: string, endTime: string): number | null {
   const [startHour, startMinute] = startTime.slice(0, 5).split(":").map(Number);
@@ -31,6 +35,8 @@ function formatSubmission(s: {
   plannedHours: string | null;
   eventStartTime: string | null;
   eventEndTime: string | null;
+  supervisorFirstName?: string | null;
+  supervisorLastName?: string | null;
 }) {
   const plannedHours =
     s.eventStartTime && s.eventEndTime
@@ -48,6 +54,10 @@ function formatSubmission(s: {
     reviewedAt: s.reviewedAt?.toISOString() ?? null,
     eventTitle: s.eventTitle,
     eventDate: s.eventDate,
+    supervisorName:
+      s.supervisorFirstName || s.supervisorLastName
+        ? `${s.supervisorFirstName ?? ""} ${s.supervisorLastName ?? ""}`.trim()
+        : null,
     hoursWorked: s.hoursWorked
       ? Number(s.hoursWorked)
       : s.status === "approved" && s.plannedHours
@@ -74,9 +84,12 @@ router.get("/v1/submissions", authenticate, requireRole("participant"), async (r
       plannedHours: eventsTable.hoursValue,
       eventStartTime: eventsTable.startTime,
       eventEndTime: eventsTable.endTime,
+      supervisorFirstName: supervisorUsers.firstName,
+      supervisorLastName: supervisorUsers.lastName,
     })
     .from(volunteerSubmissionsTable)
     .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
+    .leftJoin(supervisorUsers, eq(eventsTable.supervisorId, supervisorUsers.userId))
     .where(eq(volunteerSubmissionsTable.userId, req.auth!.userId))
     .orderBy(volunteerSubmissionsTable.submittedAt);
 

@@ -5,6 +5,19 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export interface PendingReviewSupervisor {
+  supervisorId: string;
+  supervisorName: string;
+  pendingCount: number;
+  overdueCount: number;
+  /** @nullable */
+  oldestEventDate?: string | null;
+}
+
+export interface PendingReviewsResponse {
+  supervisors: PendingReviewSupervisor[];
+}
+
 export interface DuplicateAccount {
   userId: string;
   name: string;
@@ -713,6 +726,8 @@ export interface Submission {
   eventTitle?: string | null;
   /** @nullable */
   eventDate?: string | null;
+  /** @nullable */
+  supervisorName?: string | null;
   /** @nullable */
   hoursWorked?: number | null;
   /** @nullable */

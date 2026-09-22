@@ -1,4 +1,4 @@
-import { useGetAdminDashboard } from "@workspace/api-client-react";
+import { useGetAdminDashboard, useGetPendingReviews } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { RecyclingLogCard } from "@/components/recycling-log-card";
 import { EmailTestCard } from "@/components/email-test-card";
@@ -32,11 +32,44 @@ function StatCard({ title, value, icon, testId }: StatCardProps) {
 
 export default function AdminDashboard() {
   const { data, isLoading } = useGetAdminDashboard();
+  const { data: pendingReviews } = useGetPendingReviews();
+  const supsWithPending = pendingReviews?.supervisors ?? [];
 
   return (
     <AppLayout>
       <div className="space-y-6">
         <GettingStarted role="admin" />
+
+        {supsWithPending.length > 0 && (
+          <Card className="border-amber-300 bg-amber-50/60">
+            <CardHeader>
+              <CardTitle className="text-base text-amber-900 flex items-center gap-2">
+                <Clock className="w-4 h-4" /> Supervisors with hours to review ({supsWithPending.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-amber-800">
+                Supervisors have 7 days after an event to review submitted hours. Overdue counts are flagged.
+              </p>
+              <div className="divide-y">
+                {supsWithPending.map((s) => (
+                  <div key={s.supervisorId} className="flex items-center justify-between gap-3 py-2 text-sm">
+                    <span className="font-medium">{s.supervisorName}</span>
+                    <span className="flex items-center gap-2 shrink-0">
+                      <span className="text-muted-foreground">{s.pendingCount} pending</span>
+                      {s.overdueCount > 0 && (
+                        <span className="rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium">
+                          {s.overdueCount} overdue
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div>
           <h1 className="text-2xl font-bold">System Overview</h1>
           <p className="text-muted-foreground text-sm mt-1">Platform-wide metrics and activity</p>

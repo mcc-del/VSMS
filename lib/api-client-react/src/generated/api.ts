@@ -73,6 +73,7 @@ import type {
   ParentChild,
   ParentChildRegistration,
   ParticipantDashboard,
+  PendingReviewsResponse,
   ReassignEvents200,
   ReassignEventsInput,
   RecyclingSummary,
@@ -5493,6 +5494,83 @@ export function useGetAuditLog<TData = Awaited<ReturnType<typeof getAuditLog>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAuditLogQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetPendingReviewsUrl = () => {
+
+
+
+
+  return `/api/v1/admin/pending-reviews`
+}
+
+/**
+ * @summary Supervisors with unreviewed hours (Admin / Super Admin)
+ */
+export const getPendingReviews = async ( options?: RequestInit): Promise<PendingReviewsResponse> => {
+
+  return customFetch<PendingReviewsResponse>(getGetPendingReviewsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPendingReviewsQueryKey = () => {
+    return [
+    `/api/v1/admin/pending-reviews`
+    ] as const;
+    }
+
+
+export const getGetPendingReviewsQueryOptions = <TData = Awaited<ReturnType<typeof getPendingReviews>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPendingReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPendingReviewsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPendingReviews>>> = ({ signal }) => getPendingReviews({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPendingReviews>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPendingReviewsQueryResult = NonNullable<Awaited<ReturnType<typeof getPendingReviews>>>
+export type GetPendingReviewsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Supervisors with unreviewed hours (Admin / Super Admin)
+ */
+
+export function useGetPendingReviews<TData = Awaited<ReturnType<typeof getPendingReviews>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPendingReviews>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPendingReviewsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -1661,6 +1661,19 @@ paths:
                 items:
                   $ref: "#/components/schemas/AuditLogEntry"
 
+  /v1/admin/pending-reviews:
+    get:
+      operationId: getPendingReviews
+      tags: [admin]
+      summary: Supervisors with unreviewed hours (Admin / Super Admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingReviewsResponse"
+
   /v1/admin/duplicates:
     get:
       operationId: getDuplicates
@@ -2027,6 +2040,28 @@ paths:
 
 components:
   schemas:
+    PendingReviewSupervisor:
+      type: object
+      required: [supervisorId, supervisorName, pendingCount, overdueCount]
+      properties:
+        supervisorId:
+          type: string
+        supervisorName:
+          type: string
+        pendingCount:
+          type: integer
+        overdueCount:
+          type: integer
+        oldestEventDate:
+          type: ["string", "null"]
+    PendingReviewsResponse:
+      type: object
+      required: [supervisors]
+      properties:
+        supervisors:
+          type: array
+          items:
+            $ref: "#/components/schemas/PendingReviewSupervisor"
     DuplicateAccount:
       type: object
       required: [userId, name, role]
@@ -2978,6 +3013,8 @@ components:
         eventTitle:
           type: ["string", "null"]
         eventDate:
+          type: ["string", "null"]
+        supervisorName:
           type: ["string", "null"]
         hoursWorked:
           type: ["number", "null"]

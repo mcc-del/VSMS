@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
-import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable, eventsTable } from "@workspace/db";
+import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable, eventsTable, volunteerSubmissionsTable } from "@workspace/db";
 import { eq, desc, ilike, and, isNull, count } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
@@ -647,6 +647,54 @@ router.delete(
     res.json({ status: "success", message: "User deleted" });
   },
 );
+
+// GET /api/v1/admin/pending-reviews — supervisors with unreviewed (pending)
+// hours, so an Admin can nudge them. Supervisors have 7 days after an event to
+// review; anything older is flagged overdue. Org-scoped for Org Admins.
+router.get("/v1/admin/pending-reviews", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+  const supervisorUsers = alias(usersTable, "pr_supervisor");
+  const rows = await db
+    .select({
+      supervisorId: eventsTable.supervisorId,
+      supervisorFirstName: supervisorUsers.firstName,
+      supervisorLastName: supervisorUsers.lastName,
+      eventDate: eventsTable.eventDate,
+      organizationId: eventsTable.organizationId,
+    })
+    .from(volunteerSubmissionsTable)
+    .innerJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
+    .leftJoin(supervisorUsers, eq(eventsTable.supervisorId, supervisorUsers.userId))
+    .where(eq(volunteerSubmissionsTable.status, "pending"));
+
+  const visible = managed === null ? rows : rows.filter((r) => canManageOrg(managed, r.organizationId));
+
+  const today = new Date();
+  const overdue = (d: string | null) => {
+    if (!d) return false;
+    const ended = new Date(d + "T23:59:59");
+    return (today.getTime() - ended.getTime()) / (1000 * 60 * 60 * 24) > 7;
+  };
+
+  const bySup = new Map<string, { supervisorId: string; supervisorName: string; pendingCount: number; overdueCount: number; oldestEventDate: string | null }>();
+  for (const r of visible) {
+    if (!r.supervisorId) continue;
+    const g = bySup.get(r.supervisorId) ?? {
+      supervisorId: r.supervisorId,
+      supervisorName: `${r.supervisorFirstName ?? ""} ${r.supervisorLastName ?? ""}`.trim() || "Unknown",
+      pendingCount: 0,
+      overdueCount: 0,
+      oldestEventDate: null as string | null,
+    };
+    g.pendingCount += 1;
+    if (overdue(r.eventDate)) g.overdueCount += 1;
+    if (r.eventDate && (!g.oldestEventDate || r.eventDate < g.oldestEventDate)) g.oldestEventDate = r.eventDate;
+    bySup.set(r.supervisorId, g);
+  }
+
+  const supervisors = [...bySup.values()].sort((a, b) => b.overdueCount - a.overdueCount || b.pendingCount - a.pendingCount);
+  res.json({ supervisors });
+});
 
 // GET /api/v1/admin/duplicates — accounts that share a phone number (a parent's
 // own phone or a student's parent phone). Helps a Super Admin spot and merge

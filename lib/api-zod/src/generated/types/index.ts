@@ -73,6 +73,8 @@ export * from './overrideInput';
 export * from './parentChild';
 export * from './parentChildRegistration';
 export * from './participantDashboard';
+export * from './pendingReviewsResponse';
+export * from './pendingReviewSupervisor';
 export * from './reassignEvents200';
 export * from './reassignEventsInput';
 export * from './recyclingSummary';

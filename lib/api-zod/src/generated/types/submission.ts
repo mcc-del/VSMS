@@ -21,6 +21,8 @@ export interface Submission {
   /** @nullable */
   eventDate?: string | null;
   /** @nullable */
+  supervisorName?: string | null;
+  /** @nullable */
   hoursWorked?: number | null;
   /** @nullable */
   plannedHours?: number | null;

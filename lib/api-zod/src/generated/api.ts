@@ -388,6 +388,7 @@ export const ListMySubmissionsResponseItem = zod.object({
   "reviewedAt": zod.string().nullish(),
   "eventTitle": zod.string().nullish(),
   "eventDate": zod.string().nullish(),
+  "supervisorName": zod.string().nullish(),
   "hoursWorked": zod.number().nullish(),
   "plannedHours": zod.number().nullish()
 })
@@ -1459,6 +1460,20 @@ export const GetAuditLogResponseItem = zod.object({
   "createdAt": zod.string()
 })
 export const GetAuditLogResponse = zod.array(GetAuditLogResponseItem)
+
+
+/**
+ * @summary Supervisors with unreviewed hours (Admin / Super Admin)
+ */
+export const GetPendingReviewsResponse = zod.object({
+  "supervisors": zod.array(zod.object({
+  "supervisorId": zod.string(),
+  "supervisorName": zod.string(),
+  "pendingCount": zod.number(),
+  "overdueCount": zod.number(),
+  "oldestEventDate": zod.string().nullish()
+}))
+})
 
 
 /**

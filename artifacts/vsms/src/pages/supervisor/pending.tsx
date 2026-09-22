@@ -24,6 +24,14 @@ import { Info } from "lucide-react";
 import { ProofLink } from "@/components/proof-link";
 import { GettingStarted } from "@/components/getting-started";
 
+// Supervisors have 7 days after an event to review hours; flag anything older.
+function isReviewOverdue(eventDate?: string | null): boolean {
+  if (!eventDate) return false;
+  const ended = new Date(eventDate + "T23:59:59");
+  const days = (Date.now() - ended.getTime()) / (1000 * 60 * 60 * 24);
+  return days > 7;
+}
+
 export default function SupervisorPending() {
   const { data: internalSubs, isLoading: internalLoading } = useListPendingSubmissions();
   const { data: externalSubs, isLoading: extLoading } = useListPendingExternalSubmissions();
@@ -138,7 +146,12 @@ export default function SupervisorPending() {
                         <tr key={s.submissionId} data-testid={`row-cal-${s.submissionId}`}>
                           <td className="py-3 font-medium">{s.participantFirstName} {s.participantLastName}</td>
                           <td className="py-3">{s.eventTitle}</td>
-                          <td className="py-3 text-muted-foreground">{s.eventDate}</td>
+                          <td className="py-3 text-muted-foreground">
+                            {s.eventDate}
+                            {isReviewOverdue(s.eventDate) && (
+                              <Badge className="bg-red-100 text-red-700 border-0 text-xs ml-2">Overdue</Badge>
+                            )}
+                          </td>
                           <td className="py-3">{s.hoursWorked ?? "—"}h</td>
                           <td className="py-3 text-muted-foreground">{new Date(s.submittedAt).toLocaleDateString()}</td>
                           <td className="py-3">
