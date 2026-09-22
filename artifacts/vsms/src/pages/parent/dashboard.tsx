@@ -5,6 +5,7 @@ import {
   useAddParentChild,
   useUpdateParentChild,
   useListOrganizations,
+  useListNonprofits,
   useListCoGuardians,
   useInviteCoGuardian,
   useSubmitChildHours,
@@ -92,20 +93,21 @@ const EMPTY_FORM: ChildForm = { firstName: "", lastName: "", grade: "", school: 
 export default function ParentDashboard() {
   const { data: children, isLoading } = useGetParentChildren();
   const { data: orgs } = useListOrganizations();
+  const { data: nonprofits } = useListNonprofits();
   const qc = useQueryClient();
   const { toast } = useToast();
   const submitChildHours = useSubmitChildHours();
   const submitChildExternal = useSubmitChildExternalHours();
   const [hoursDraft, setHoursDraft] = useState<Record<string, string>>({});
 
-  const emptyExt = { activityName: "", organizationName: "", isNonprofit: false, ein: "", volunteerDate: "", hoursWorked: "", extSupervisorName: "", extSupervisorEmail: "", description: "", proofUrl: null as string | null };
+  const emptyExt = { activityName: "", nonprofitId: "", organizationName: "", isNonprofit: false, ein: "", volunteerDate: "", hoursWorked: "", extSupervisorName: "", extSupervisorEmail: "", description: "", proofUrl: null as string | null };
   const [extChild, setExtChild] = useState<{ userId: string; name: string } | null>(null);
   const [ext, setExt] = useState({ ...emptyExt });
 
   function submitExternal() {
     if (!extChild) return;
     const hrs = Number(ext.hoursWorked);
-    if (ext.activityName.trim().length < 2 || ext.organizationName.trim().length < 2) {
+    if (ext.activityName.trim().length < 2 || !ext.nonprofitId) {
       toast({ title: "Add the activity and organization", variant: "destructive" }); return;
     }
     if (!ext.volunteerDate) { toast({ title: "Pick the date", variant: "destructive" }); return; }
@@ -118,8 +120,10 @@ export default function ParentDashboard() {
     }
     submitChildExternal.mutate(
       { childId: extChild.userId, data: {
-        activityName: ext.activityName.trim(), organizationName: ext.organizationName.trim(),
-        isNonprofit: ext.isNonprofit, ein: ext.isNonprofit ? ext.ein : undefined,
+        activityName: ext.activityName.trim(),
+        organizationName: (nonprofits ?? []).find((n) => n.nonprofitId === ext.nonprofitId)?.name ?? ext.organizationName.trim(),
+        isNonprofit: true,
+        ein: (nonprofits ?? []).find((n) => n.nonprofitId === ext.nonprofitId)?.ein ?? undefined,
         volunteerDate: ext.volunteerDate, hoursWorked: hrs,
         extSupervisorName: ext.extSupervisorName.trim(), extSupervisorEmail: ext.extSupervisorEmail.trim(),
         description: ext.description.trim() || undefined,
@@ -696,9 +700,18 @@ export default function ParentDashboard() {
           </DialogHeader>
           <div className="space-y-3">
             <div><Label className="text-xs">What did they do?</Label><Input value={ext.activityName} onChange={(e) => setExt({ ...ext, activityName: e.target.value })} placeholder="e.g. Food bank sorting" /></div>
-            <div><Label className="text-xs">Organization</Label><Input value={ext.organizationName} onChange={(e) => setExt({ ...ext, organizationName: e.target.value })} placeholder="e.g. Hopelink" /></div>
-            <label className="flex items-center gap-2 text-sm"><Checkbox checked={ext.isNonprofit} onCheckedChange={(v) => setExt({ ...ext, isNonprofit: v === true })} /> Registered non-profit (501c3)</label>
-            {ext.isNonprofit && <div><Label className="text-xs">EIN (9 digits)</Label><Input value={ext.ein} onChange={(e) => setExt({ ...ext, ein: e.target.value })} placeholder="12-3456789" /></div>}
+            <div>
+              <Label className="text-xs">Nonprofit</Label>
+              <Select value={ext.nonprofitId} onValueChange={(v) => setExt({ ...ext, nonprofitId: v })}>
+                <SelectTrigger><SelectValue placeholder="Choose an approved nonprofit" /></SelectTrigger>
+                <SelectContent>
+                  {(nonprofits ?? []).map((n) => (
+                    <SelectItem key={n.nonprofitId} value={n.nonprofitId}>{n.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Not in this list? Email mcc@medinaacademy.org so we can add it.</p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label className="text-xs">Date</Label><Input type="date" value={ext.volunteerDate} onChange={(e) => setExt({ ...ext, volunteerDate: e.target.value })} /></div>
               <div><Label className="text-xs">Hours</Label><Input type="number" min="0.5" max="24" step="0.5" value={ext.hoursWorked} onChange={(e) => setExt({ ...ext, hoursWorked: e.target.value })} placeholder="e.g. 3" /></div>
@@ -707,9 +720,10 @@ export default function ParentDashboard() {
             <div><Label className="text-xs">Supervisor email</Label><Input type="email" value={ext.extSupervisorEmail} onChange={(e) => setExt({ ...ext, extSupervisorEmail: e.target.value })} placeholder="supervisor@org.org" /></div>
             <div><Label className="text-xs">Notes (optional)</Label><Textarea rows={2} value={ext.description} onChange={(e) => setExt({ ...ext, description: e.target.value })} /></div>
             <div>
-              <Label className="text-xs">Proof {Number(ext.hoursWorked) > 5 ? "(required over 5 hours)" : "(optional)"}</Label>
+              <a href="/service-hours-form.html" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Download / print the signed-hours form</a>
+              <Label className="text-xs mt-2 block">Signed form {Number(ext.hoursWorked) > 5 ? "(required over 5 hours)" : ""}</Label>
+              <p className="text-xs text-muted-foreground mb-1">Do you have a signed form from the supervisor? If yes, upload it now. If not, we'll email the supervisor to review.</p>
               <ProofUpload value={ext.proofUrl} onChange={(p) => setExt({ ...ext, proofUrl: p })} />
-              <p className="text-xs text-muted-foreground mt-1">A photo or letter confirming the hours. Required for claims over 5 hours.</p>
             </div>
           </div>
           <DialogFooter>

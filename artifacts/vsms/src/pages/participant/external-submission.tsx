@@ -7,6 +7,7 @@ import {
   useWithdrawExternalSubmission,
   useListMyExternalSubmissions,
   useListMySubmissions,
+  useListNonprofits,
   getListMyExternalSubmissionsQueryKey,
   getGetParticipantDashboardQueryKey,
   type ExternalSubmission,
@@ -22,10 +23,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Info, Pencil, Trash2 } from "lucide-react";
+import { Info, Pencil, Trash2, FileDown } from "lucide-react";
 import { ProofUpload } from "@/components/proof-upload";
 import { ProofLink } from "@/components/proof-link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PostEventHours } from "@/components/post-event-hours";
 import { useState } from "react";
 
@@ -38,7 +40,8 @@ const GUIDELINES = [
 
 const schema = z.object({
   activityName: z.string().min(2, "Required").max(200),
-  organizationName: z.string().min(2, "Required").max(200),
+  nonprofitId: z.string().min(1, "Please choose an approved nonprofit"),
+  organizationName: z.string().optional(),
   isNonprofit: z.boolean(),
   ein: z.string().optional(),
   volunteerDate: z.string().min(1, "Required"),
@@ -49,9 +52,6 @@ const schema = z.object({
   proofUrl: z.string().nullable().optional(),
   guidelines: z.array(z.string()).min(1, "Please check at least one guideline"),
 }).refine(
-  (v) => !v.isNonprofit || ((v.ein ?? "").replace(/[^0-9]/g, "").length === 9),
-  { message: "Enter the 9-digit EIN (e.g. 12-3456789)", path: ["ein"] },
-).refine(
   (v) => v.hoursWorked <= 5 || !!(v.proofUrl && v.proofUrl.length > 0),
   { message: "Proof (a photo or letter) is required for submissions over 5 hours.", path: ["proofUrl"] },
 ).refine(
@@ -83,6 +83,7 @@ export default function ExternalSubmissionPage() {
   const withdrawMutation = useWithdrawExternalSubmission();
   const { data: externals, isLoading } = useListMyExternalSubmissions();
   const { data: internalSubs } = useListMySubmissions();
+  const { data: nonprofits } = useListNonprofits();
 
   // Snapshot across internal + external claims.
   const _all = [
@@ -102,6 +103,7 @@ export default function ExternalSubmissionPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       activityName: "",
+      nonprofitId: "",
       organizationName: "",
       isNonprofit: false,
       ein: "",
@@ -126,6 +128,7 @@ export default function ExternalSubmissionPage() {
     setEditingId(s.externalSubmissionId);
     form.reset({
       activityName: s.activityName,
+      nonprofitId: (nonprofits ?? []).find((n) => n.name === s.organizationName)?.nonprofitId ?? "",
       organizationName: s.organizationName,
       isNonprofit: s.isNonprofit ?? false,
       ein: s.ein ?? "",
@@ -166,7 +169,14 @@ export default function ExternalSubmissionPage() {
   }
 
   function onSubmit(values: z.infer<typeof schema>) {
-    const { guidelines: _g, ...rest } = values;
+    const np = (nonprofits ?? []).find((n) => n.nonprofitId === values.nonprofitId);
+    const { guidelines: _g, nonprofitId: _n, ...restRaw } = values;
+    const rest = {
+      ...restRaw,
+      organizationName: np?.name ?? values.organizationName ?? "",
+      ein: np?.ein ?? values.ein ?? "",
+      isNonprofit: true,
+    };
 
     if (editingId) {
       editMutation.mutate(
@@ -282,65 +292,40 @@ export default function ExternalSubmissionPage() {
 
                 <FormField
                   control={form.control}
-                  name="organizationName"
+                  name="nonprofitId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Organization name *</FormLabel>
-                      <FormControl>
-                        <Input data-testid="input-organization" placeholder="e.g. Local Food Bank" {...field} />
-                      </FormControl>
+                      <FormLabel>Nonprofit *</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={(v) => {
+                          field.onChange(v);
+                          const np = (nonprofits ?? []).find((n) => n.nonprofitId === v);
+                          form.setValue("organizationName", np?.name ?? "");
+                          form.setValue("ein", np?.ein ?? "");
+                          form.setValue("isNonprofit", true);
+                        }}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-nonprofit">
+                            <SelectValue placeholder="Choose an approved nonprofit" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(nonprofits ?? []).map((n) => (
+                            <SelectItem key={n.nonprofitId} value={n.nonprofitId}>{n.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Is your preferred nonprofit not in this list? Please reach out to{" "}
+                        <a href="mailto:mcc@medinaacademy.org" className="text-primary hover:underline">mcc@medinaacademy.org</a>{" "}
+                        so we can add it.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="isNonprofit"
-                  render={({ field }) => (
-                    <FormItem className="rounded-lg border p-3">
-                      <div className="flex items-start gap-2.5">
-                        <FormControl>
-                          <Checkbox
-                            data-testid="checkbox-nonprofit"
-                            checked={field.value}
-                            onCheckedChange={(c) => field.onChange(Boolean(c))}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-tight">
-                          <FormLabel className="font-medium cursor-pointer">
-                            This organization is a registered 501(c)(3) non-profit
-                          </FormLabel>
-                          <FormDescription>
-                            Hours must be for a registered non-profit. Casual gatherings (e.g. a family picnic) don't qualify.
-                          </FormDescription>
-                        </div>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {form.watch("isNonprofit") && (
-                  <FormField
-                    control={form.control}
-                    name="ein"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Non-profit EIN *</FormLabel>
-                        <FormControl>
-                          <Input data-testid="input-ein" placeholder="12-3456789" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          The non-profit's 9-digit IRS Employer Identification Number. You can
-                          usually find it on the organization's website (often in the footer or a
-                          "donate"/"about" page) — ask them if it's not listed.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <FormField
@@ -429,24 +414,34 @@ export default function ExternalSubmissionPage() {
                   )}
                 />
 
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+                  <p className="font-medium">Signed hours form</p>
+                  <p className="text-muted-foreground text-xs mt-0.5">
+                    Take this form to your activity and have the supervisor sign it, then upload it below as proof.
+                  </p>
+                  <a
+                    href="/service-hours-form.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-2 text-primary font-medium hover:underline"
+                  >
+                    <FileDown className="w-4 h-4" /> Download / print the form
+                  </a>
+                </div>
+
                 <FormField
                   control={form.control}
                   name="proofUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Proof{" "}
-                        <span className="text-muted-foreground font-normal">
-                          {form.watch("hoursWorked") > 5 ? "(required over 5 hours)" : "(optional)"}
-                        </span>
-                      </FormLabel>
+                      <FormLabel>Signed form {form.watch("hoursWorked") > 5 && <span className="text-muted-foreground font-normal">(required over 5 hours)</span>}</FormLabel>
+                      <FormDescription className="mb-2">
+                        Do you have a signed form from the supervisor? If yes, upload it now. If not,
+                        we'll email the supervisor to review and confirm your hours.
+                      </FormDescription>
                       <FormControl>
                         <ProofUpload value={field.value ?? null} onChange={field.onChange} />
                       </FormControl>
-                      <FormDescription>
-                        A photo or a letter (PDF) confirming your volunteering. Required for any
-                        submission over 5 hours; recommended otherwise.
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
