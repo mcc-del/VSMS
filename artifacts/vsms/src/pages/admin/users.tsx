@@ -184,9 +184,15 @@ export default function AdminUsers() {
   }
 
   function onSubmit(values: z.infer<typeof schema>) {
+    const orgId = values.organizationId && values.organizationId !== "none" ? values.organizationId : null;
+    // Supervisors and Admins must be assigned an organization.
+    if ((values.role === "supervisor" || values.role === "org_admin") && !orgId && isSuperAdmin) {
+      toast({ title: "Organization required", description: "Choose an organization for this supervisor/admin.", variant: "destructive" });
+      return;
+    }
     const data = {
       ...values,
-      organizationId: values.organizationId && values.organizationId !== "none" ? values.organizationId : null,
+      organizationId: orgId,
     };
     createUser.mutate(
       { data },

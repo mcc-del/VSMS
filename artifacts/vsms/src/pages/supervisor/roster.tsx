@@ -37,6 +37,7 @@ export default function RosterPage() {
   const broadcast = useBroadcastToEvent();
   const addAttendee = useAddEventAttendee();
   const [addEmail, setAddEmail] = useState("");
+  const canManage = (data as any)?.canManage ?? false;
 
   function addByEmail() {
     const email = addEmail.trim();
@@ -141,37 +142,46 @@ export default function RosterPage() {
           <div>
             <h1 className="text-2xl font-bold">{data?.eventTitle ?? "Roster"}</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {participants.length} signed up · {checkedIn} checked in. Tap ✓ to check a student in at the event.
+              {participants.length} signed up · {checkedIn} checked in.{canManage ? " Tap ✓ to check a student in at the event." : ""}
             </p>
+            {!canManage && (
+              <p className="text-xs text-muted-foreground mt-1">
+                You're viewing this roster from another supervisor in your organization. It's read-only — only the event's supervisor can check students in or message attendees.
+              </p>
+            )}
             <p className="text-xs text-amber-700 mt-1">
               Before sharing building access (e.g. a QR code), confirm each attendee is a verified member — "Community · unverified" means they joined without an organization join code.
             </p>
           </div>
-          <Button variant="outline" className="gap-1.5 shrink-0" disabled={participants.length === 0} onClick={() => setMsgOpen(true)}>
-            <Mail className="w-4 h-4" /> Message attendees
-          </Button>
+          {canManage && (
+            <Button variant="outline" className="gap-1.5 shrink-0" disabled={participants.length === 0} onClick={() => setMsgOpen(true)}>
+              <Mail className="w-4 h-4" /> Message attendees
+            </Button>
+          )}
         </div>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base">Add a participant</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-2">
-              Add someone to this event by their account email — useful for including a specific student from another organization without opening the event to everyone. They'll be emailed.
-            </p>
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="student@email.com"
-                value={addEmail}
-                onChange={(e) => setAddEmail(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") addByEmail(); }}
-              />
-              <Button onClick={addByEmail} disabled={addAttendee.isPending} className="shrink-0">
-                {addAttendee.isPending ? "Adding…" : "Add"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {canManage && (
+          <Card>
+            <CardHeader><CardTitle className="text-base">Add a participant</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-2">
+                Add someone to this event by their account email — useful for including a specific student from another organization without opening the event to everyone. They'll be emailed.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  type="email"
+                  placeholder="student@email.com"
+                  value={addEmail}
+                  onChange={(e) => setAddEmail(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") addByEmail(); }}
+                />
+                <Button onClick={addByEmail} disabled={addAttendee.isPending} className="shrink-0">
+                  {addAttendee.isPending ? "Adding…" : "Add"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader><CardTitle className="text-base">Participants</CardTitle></CardHeader>
@@ -198,27 +208,29 @@ export default function RosterPage() {
                         {p.hoursStatus && <span className="text-xs text-muted-foreground">· hours {p.hoursStatus}</span>}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <Button
-                        size="sm"
-                        variant={p.status === "attended" ? "default" : "outline"}
-                        className="gap-1"
-                        onClick={() => mark(p.userId, p.status === "attended" ? "registered" : "attended")}
-                        disabled={setAttendance.isPending}
-                      >
-                        <Check className="w-4 h-4" /> {p.status === "attended" ? "Checked in" : "Check in"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-muted-foreground hover:text-red-600"
-                        onClick={() => mark(p.userId, "no_show")}
-                        disabled={setAttendance.isPending}
-                        title="Mark no-show"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    {canManage && (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                          size="sm"
+                          variant={p.status === "attended" ? "default" : "outline"}
+                          className="gap-1"
+                          onClick={() => mark(p.userId, p.status === "attended" ? "registered" : "attended")}
+                          disabled={setAttendance.isPending}
+                        >
+                          <Check className="w-4 h-4" /> {p.status === "attended" ? "Checked in" : "Check in"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-muted-foreground hover:text-red-600"
+                          onClick={() => mark(p.userId, "no_show")}
+                          disabled={setAttendance.isPending}
+                          title="Mark no-show"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

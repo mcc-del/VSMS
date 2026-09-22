@@ -142,6 +142,9 @@ router.get("/v1/events", authenticate, async (req, res) => {
       viewerLevel = gradeToLevel(viewer?.grade);
       viewerOrgId = viewer?.organizationId ?? null;
       viewerGrade = viewer?.grade ? Number(viewer.grade) : null;
+    } else {
+      // A supervisor's own organization (for scoping their All Opportunities).
+      viewerOrgId = viewer?.organizationId ?? null;
     }
   }
 
@@ -217,6 +220,7 @@ router.get("/v1/events", authenticate, async (req, res) => {
       if (!e.organizationId) return true; // open-to-all
       if (managed !== null && managed.includes(e.organizationId)) return true; // Org Admin's org(s)
       if (e.supervisorId === userId) return true; // supervisor's own event
+      if (viewerRole === "supervisor" && viewerOrgId && e.organizationId === viewerOrgId) return true; // supervisor's org
       return false;
     }
     // Open-to-all opportunities (no org) are visible to every participant.
@@ -639,8 +643,16 @@ router.get(
     const { eventId } = req.params as { eventId: string };
     const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
     if (!event) { res.status(404).json({ error: "Event not found" }); return; }
-    if (!(await canManageEvent(req.auth!.role, req.auth!.userId, event))) {
-      res.status(403).json({ error: "You can only manage events you supervise." });
+    const canManage = await canManageEvent(req.auth!.role, req.auth!.userId, event);
+    // A supervisor may VIEW (read-only) another supervisor's roster within their
+    // own organization, but can't manage it (message, add, attendance).
+    let canView = canManage;
+    if (!canView && req.auth!.role === "supervisor") {
+      const [me] = await db.select({ organizationId: usersTable.organizationId }).from(usersTable).where(eq(usersTable.userId, req.auth!.userId)).limit(1);
+      if (me?.organizationId && event.organizationId === me.organizationId) canView = true;
+    }
+    if (!canView) {
+      res.status(403).json({ error: "You can only view events in your organization." });
       return;
     }
     const rows = await db
@@ -667,6 +679,7 @@ router.get(
     res.json({
       eventId,
       eventTitle: event.title,
+      canManage,
       participants: rows.map((r) => ({
         userId: r.userId,
         name: [r.firstName, r.lastName].filter(Boolean).join(" "),

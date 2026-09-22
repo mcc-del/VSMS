@@ -2547,6 +2547,8 @@ components:
           type: string
         eventTitle:
           type: string
+        canManage:
+          type: boolean
         participants:
           type: array
           items:

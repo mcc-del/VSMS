@@ -27,9 +27,10 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
   supervisor: {
     title: "Welcome, supervisor — start here",
     steps: [
-      { label: "Review pending hours", href: "/supervisor/pending", hint: "Approve or reject students' submitted hours." },
-      { label: "Post an event you need help with", href: "/admin/events/new", hint: "e.g. sorting books — you'll supervise and approve it." },
-      { label: "Manage your events", href: "/admin/events", hint: "Edit times or capacity, or cancel an event." },
+      { label: "Create & manage your events", href: "/admin/events/new", hint: "Post opportunities for your organization, then edit times, capacity, or cancel from Manage events." },
+      { label: "Check in students", href: "/supervisor/check-in", hint: "On event day, open Check-in from the left menu to mark who showed up." },
+      { label: "Review pending hours", href: "/supervisor/pending", hint: "Approve or reject students' submitted hours — within 7 days of the event." },
+      { label: "See your reports", href: "/supervisor/reports", hint: "Track hours logged, attendance, and top volunteers for your organization." },
     ],
   },
   org_admin: {

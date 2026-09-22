@@ -362,6 +362,12 @@ router.post(
       return;
     }
 
+    // Supervisors and Admins must belong to an organization.
+    if ((role === "supervisor" || role === "org_admin") && !newUserOrgId) {
+      res.status(400).json({ error: "Please choose an organization for this supervisor/admin." });
+      return;
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
     // Also issue a set-password invite token so the new person sets their own
     // password rather than relying on the admin-typed temporary one.
