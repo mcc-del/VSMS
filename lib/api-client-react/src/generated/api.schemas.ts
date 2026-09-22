@@ -124,6 +124,29 @@ export interface SchoolMergeInput {
   targetSchoolId: string;
 }
 
+export interface Nonprofit {
+  nonprofitId: string;
+  name: string;
+  /** @nullable */
+  ein?: string | null;
+  /** @nullable */
+  website?: string | null;
+  active: boolean;
+}
+
+export interface NonprofitInput {
+  /**
+     * @minLength 2
+     * @maxLength 150
+     */
+  name: string;
+  /** @nullable */
+  ein?: string | null;
+  /** @nullable */
+  website?: string | null;
+  active?: boolean;
+}
+
 export interface Organization {
   organizationId: string;
   name: string;
@@ -1040,6 +1063,10 @@ export const ListAllSchoolsStatus = {
   approved: 'approved',
   pending: 'pending',
 } as const;
+
+export type DeleteNonprofit200 = {
+  status?: string;
+};
 
 export type ReassignEvents200 = {
   reassigned: number;

@@ -55,6 +55,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Events", href: "/admin/events", icon: Calendar },
       { label: "Organizations", href: "/admin/organizations", icon: Building2 },
       { label: "Award Thresholds", href: "/admin/award-thresholds", icon: Award },
+      { label: "Nonprofits", href: "/admin/nonprofits", icon: Building2 },
       { label: "Audit Log", href: "/admin/audit-log", icon: ScrollText },
     ] : []),
   ];

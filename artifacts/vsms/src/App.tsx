@@ -27,6 +27,7 @@ import AdminOrganizations from "@/pages/admin/organizations";
 import AdminReports from "@/pages/admin/reports";
 import AuditLogPage from "@/pages/admin/audit-log";
 import AwardThresholdsPage from "@/pages/admin/award-thresholds";
+import AdminNonprofits from "@/pages/admin/nonprofits";
 import ExternalSubmissionPage from "@/pages/participant/external-submission";
 import ParentDashboard from "@/pages/parent/dashboard";
 import ParentOpportunities from "@/pages/parent/opportunities";
@@ -96,6 +97,7 @@ function Router() {
       <ProtectedRoute path="/admin/reports" component={AdminReports} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/audit-log" component={AuditLogPage} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/award-thresholds" component={AwardThresholdsPage} allowedRoles={["admin"]} />
+      <ProtectedRoute path="/admin/nonprofits" component={AdminNonprofits} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/organizations" component={AdminOrganizations} allowedRoles={["admin", "org_admin"]} />
       <ProtectedRoute path="/admin/users/:userId/service-record" component={ServiceRecordPage} allowedRoles={["admin", "org_admin"]} />
 

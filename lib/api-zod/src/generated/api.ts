@@ -996,6 +996,88 @@ export const DeleteSchoolResponse = zod.object({
 
 
 /**
+ * @summary Approved nonprofit allowlist for external hours
+ */
+export const ListNonprofitsResponseItem = zod.object({
+  "nonprofitId": zod.string(),
+  "name": zod.string(),
+  "ein": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "active": zod.boolean()
+})
+export const ListNonprofitsResponse = zod.array(ListNonprofitsResponseItem)
+
+
+/**
+ * @summary Full nonprofit list incl. inactive (Super Admin)
+ */
+export const ListAdminNonprofitsResponseItem = zod.object({
+  "nonprofitId": zod.string(),
+  "name": zod.string(),
+  "ein": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "active": zod.boolean()
+})
+export const ListAdminNonprofitsResponse = zod.array(ListAdminNonprofitsResponseItem)
+
+
+/**
+ * @summary Add a nonprofit to the allowlist (Super Admin)
+ */
+export const createNonprofitBodyNameMin = 2;
+export const createNonprofitBodyNameMax = 150;
+
+
+
+export const CreateNonprofitBody = zod.object({
+  "name": zod.string().min(createNonprofitBodyNameMin).max(createNonprofitBodyNameMax),
+  "ein": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "active": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Update a nonprofit (Super Admin)
+ */
+export const UpdateNonprofitParams = zod.object({
+  "nonprofitId": zod.coerce.string()
+})
+
+export const updateNonprofitBodyNameMin = 2;
+export const updateNonprofitBodyNameMax = 150;
+
+
+
+export const UpdateNonprofitBody = zod.object({
+  "name": zod.string().min(updateNonprofitBodyNameMin).max(updateNonprofitBodyNameMax),
+  "ein": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "active": zod.boolean().optional()
+})
+
+export const UpdateNonprofitResponse = zod.object({
+  "nonprofitId": zod.string(),
+  "name": zod.string(),
+  "ein": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "active": zod.boolean()
+})
+
+
+/**
+ * @summary Remove a nonprofit (Super Admin)
+ */
+export const DeleteNonprofitParams = zod.object({
+  "nonprofitId": zod.coerce.string()
+})
+
+export const DeleteNonprofitResponse = zod.object({
+  "status": zod.string().optional()
+})
+
+
+/**
  * @summary List organizations
  */
 export const ListOrganizationsResponseItem = zod.object({

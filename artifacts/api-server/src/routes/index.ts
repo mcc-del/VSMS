@@ -16,6 +16,7 @@ import metricsRouter from "./metrics";
 import storageRouter from "./storage";
 import serviceRecordRouter from "./service-record";
 import recyclingRouter from "./recycling";
+import nonprofitsRouter from "./nonprofits";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(metricsRouter);
 router.use(storageRouter);
 router.use(serviceRecordRouter);
 router.use(recyclingRouter);
+router.use(nonprofitsRouter);
 
 export default router;
