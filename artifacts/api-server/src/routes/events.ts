@@ -204,9 +204,21 @@ router.get("/v1/events", authenticate, async (req, res) => {
     });
   }
 
+  // For non-participant viewers, scope by role: a Super Admin sees all; an Org
+  // Admin sees their org(s) + open-to-all; a supervisor sees events they run +
+  // open-to-all. This keeps org-gated events (R2 safety boundary) from leaking
+  // across organizations.
+  const viewerRole = req.auth!.role;
+  const managed = viewerIsParticipant ? [] : await managedOrgIds(userId!, viewerRole);
+
   const visible = events.filter((e) => {
-    // Admins/supervisors (and any non-participant viewer) see everything.
-    if (!viewerIsParticipant) return true;
+    if (!viewerIsParticipant) {
+      if (viewerRole === "admin") return true; // Super Admin: everything
+      if (!e.organizationId) return true; // open-to-all
+      if (managed !== null && managed.includes(e.organizationId)) return true; // Org Admin's org(s)
+      if (e.supervisorId === userId) return true; // supervisor's own event
+      return false;
+    }
     // Open-to-all opportunities (no org) are visible to every participant.
     if (!e.organizationId) return true;
     // Org-gated opportunities are visible only to that org's students. This is

@@ -44,7 +44,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "My Events", href: "/admin/events", icon: Calendar },
       { label: "All Opportunities", href: "/supervisor/opportunities", icon: Calendar },
       { label: "Users", href: "/admin/users", icon: Users },
-      { label: "Organizations", href: "/admin/organizations", icon: Building2 },
       { label: "My Hours", href: "/supervisor/my-hours", icon: Clock },
       { label: "Help", href: "/help", icon: HelpCircle },
     ] : []),
