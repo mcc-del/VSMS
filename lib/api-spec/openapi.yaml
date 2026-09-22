@@ -1786,6 +1786,19 @@ paths:
                 items:
                   $ref: "#/components/schemas/AuditLogEntry"
 
+  /v1/admin/org-insights:
+    get:
+      operationId: getOrgInsights
+      tags: [admin]
+      summary: Org-scoped analytics (Org Admin) or program-wide (Super Admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrgInsights"
+
   /v1/admin/pending-reviews:
     get:
       operationId: getPendingReviews
@@ -2165,6 +2178,32 @@ paths:
 
 components:
   schemas:
+    OrgInsights:
+      type: object
+      required: [participants, totalApprovedHours, medals, events, upcomingEvents, pendingReviews]
+      properties:
+        participants:
+          type: integer
+        totalApprovedHours:
+          type: number
+        medals:
+          type: object
+          required: [gold, silver, bronze, none]
+          properties:
+            gold:
+              type: integer
+            silver:
+              type: integer
+            bronze:
+              type: integer
+            none:
+              type: integer
+        events:
+          type: integer
+        upcomingEvents:
+          type: integer
+        pendingReviews:
+          type: integer
     PendingReviewSupervisor:
       type: object
       required: [supervisorId, supervisorName, pendingCount, overdueCount]

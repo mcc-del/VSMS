@@ -5,8 +5,10 @@ import {
   useListAdminOrganizations,
   useUpdateOrganization,
   useGetPendingReviews,
+  useGetOrgInsights,
   getListAdminOrganizationsQueryKey,
   getGetPendingReviewsQueryKey,
+  getGetOrgInsightsQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { GettingStarted } from "@/components/getting-started";
@@ -44,6 +46,7 @@ export default function SupervisorDashboard() {
   const { data: reviewed } = useListReviewedSubmissions();
   const { data: myOrgs } = useListAdminOrganizations({ query: { enabled: isOrgAdmin, queryKey: getListAdminOrganizationsQueryKey() } });
   const { data: pendingReviews } = useGetPendingReviews({ query: { enabled: isOrgAdmin, queryKey: getGetPendingReviewsQueryKey() } });
+  const { data: insights } = useGetOrgInsights({ query: { enabled: isOrgAdmin, queryKey: getGetOrgInsightsQueryKey() } });
   const updateOrg = useUpdateOrganization();
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -134,6 +137,30 @@ export default function SupervisorDashboard() {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* Org Admin: insights for your org */}
+        {isOrgAdmin && insights && (
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">What's working for your org</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                {[
+                  { label: "Participants", value: insights.participants },
+                  { label: "Approved hrs", value: insights.totalApprovedHours },
+                  { label: "Gold", value: insights.medals.gold },
+                  { label: "Silver", value: insights.medals.silver },
+                  { label: "Bronze", value: insights.medals.bronze },
+                  { label: "Upcoming events", value: insights.upcomingEvents },
+                ].map((s) => (
+                  <div key={s.label} className="rounded-lg border px-3 py-2.5">
+                    <p className="text-xl font-bold tabular-nums">{s.value}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Org Admin: supervisors with hours to review */}

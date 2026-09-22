@@ -72,6 +72,8 @@ export * from './notificationPreferences';
 export * from './okResponse';
 export * from './organization';
 export * from './organizationInput';
+export * from './orgInsights';
+export * from './orgInsightsMedals';
 export * from './overrideInput';
 export * from './parentChild';
 export * from './parentChildRegistration';

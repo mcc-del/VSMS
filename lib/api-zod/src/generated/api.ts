@@ -1559,6 +1559,24 @@ export const GetAuditLogResponse = zod.array(GetAuditLogResponseItem)
 
 
 /**
+ * @summary Org-scoped analytics (Org Admin) or program-wide (Super Admin)
+ */
+export const GetOrgInsightsResponse = zod.object({
+  "participants": zod.number(),
+  "totalApprovedHours": zod.number(),
+  "medals": zod.object({
+  "gold": zod.number(),
+  "silver": zod.number(),
+  "bronze": zod.number(),
+  "none": zod.number()
+}),
+  "events": zod.number(),
+  "upcomingEvents": zod.number(),
+  "pendingReviews": zod.number()
+})
+
+
+/**
  * @summary Supervisors with unreviewed hours (Admin / Super Admin)
  */
 export const GetPendingReviewsResponse = zod.object({

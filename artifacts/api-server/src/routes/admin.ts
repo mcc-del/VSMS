@@ -2,12 +2,13 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable, eventsTable, volunteerSubmissionsTable } from "@workspace/db";
-import { eq, desc, ilike, and, isNull, count } from "drizzle-orm";
+import { eq, desc, ilike, and, isNull, count, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateUserBody, AddManualHoursBody } from "@workspace/api-zod";
 import { sendTestEmail, sendAccountInvite } from "../lib/email";
 import { recordAudit } from "../lib/audit";
+import { thresholdsForGrade, medalFor } from "../lib/thresholds";
 import { managedOrgIds, canActOnUser, canManageOrg } from "../lib/org-scope";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -647,6 +648,74 @@ router.delete(
     res.json({ status: "success", message: "User deleted" });
   },
 );
+
+// GET /api/v1/admin/org-insights — org-scoped analytics for an Org Admin
+// (or all orgs for a Super Admin): participants, hours, medal mix, events.
+router.get("/v1/admin/org-insights", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+
+  // Participants in scope.
+  const participants = await db
+    .select({ userId: usersTable.userId, grade: usersTable.grade, organizationId: usersTable.organizationId })
+    .from(usersTable)
+    .where(
+      managed === null
+        ? eq(usersTable.role, "participant")
+        : and(eq(usersTable.role, "participant"), managed.length ? inArray(usersTable.organizationId, managed) : isNull(usersTable.userId)),
+    );
+  const pIds = participants.map((p) => p.userId);
+
+  // Approved internal + manual hours per participant.
+  const hoursByUser = new Map<string, number>();
+  if (pIds.length) {
+    const subs = await db
+      .select({ userId: volunteerSubmissionsTable.userId, hours: volunteerSubmissionsTable.hoursWorked })
+      .from(volunteerSubmissionsTable)
+      .where(and(eq(volunteerSubmissionsTable.status, "approved"), inArray(volunteerSubmissionsTable.userId, pIds)));
+    for (const s of subs) hoursByUser.set(s.userId, (hoursByUser.get(s.userId) ?? 0) + Number(s.hours ?? 0));
+    const manual = await db
+      .select({ userId: manualHoursTable.userId, hours: manualHoursTable.hours })
+      .from(manualHoursTable)
+      .where(inArray(manualHoursTable.userId, pIds));
+    for (const m of manual) hoursByUser.set(m.userId, (hoursByUser.get(m.userId) ?? 0) + Number(m.hours ?? 0));
+  }
+
+  const thresholdRows = await db.select().from(awardThresholdsTable);
+  let totalHours = 0;
+  const medals = { gold: 0, silver: 0, bronze: 0, none: 0 };
+  for (const p of participants) {
+    const h = hoursByUser.get(p.userId) ?? 0;
+    totalHours += h;
+    const medal = medalFor(h, thresholdsForGrade(thresholdRows, p.grade, p.organizationId ?? null));
+    if (medal === "Gold") medals.gold++;
+    else if (medal === "Silver") medals.silver++;
+    else if (medal === "Bronze") medals.bronze++;
+    else medals.none++;
+  }
+
+  // Events + pending reviews in scope.
+  const allEvents = await db
+    .select({ eventId: eventsTable.eventId, organizationId: eventsTable.organizationId, eventDate: eventsTable.eventDate })
+    .from(eventsTable);
+  const scopedEvents = managed === null ? allEvents : allEvents.filter((e) => e.organizationId && managed.includes(e.organizationId));
+  const today = new Date().toISOString().split("T")[0];
+
+  const pendingRows = await db
+    .select({ eventId: volunteerSubmissionsTable.eventId, organizationId: eventsTable.organizationId })
+    .from(volunteerSubmissionsTable)
+    .innerJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
+    .where(eq(volunteerSubmissionsTable.status, "pending"));
+  const pendingCount = managed === null ? pendingRows.length : pendingRows.filter((r) => r.organizationId && managed.includes(r.organizationId)).length;
+
+  res.json({
+    participants: participants.length,
+    totalApprovedHours: Math.round(totalHours * 10) / 10,
+    medals,
+    events: scopedEvents.length,
+    upcomingEvents: scopedEvents.filter((e) => e.eventDate >= today).length,
+    pendingReviews: pendingCount,
+  });
+});
 
 // GET /api/v1/admin/pending-reviews — supervisors with unreviewed (pending)
 // hours, so an Admin can nudge them. Supervisors have 7 days after an event to

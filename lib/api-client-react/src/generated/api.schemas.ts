@@ -5,6 +5,22 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+export type OrgInsightsMedals = {
+  gold: number;
+  silver: number;
+  bronze: number;
+  none: number;
+};
+
+export interface OrgInsights {
+  participants: number;
+  totalApprovedHours: number;
+  medals: OrgInsightsMedals;
+  events: number;
+  upcomingEvents: number;
+  pendingReviews: number;
+}
+
 export interface PendingReviewSupervisor {
   supervisorId: string;
   supervisorName: string;

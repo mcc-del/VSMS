@@ -70,6 +70,7 @@ import type {
   NonprofitInput,
   NotificationPreferences,
   OkResponse,
+  OrgInsights,
   Organization,
   OrganizationInput,
   OverrideInput,
@@ -5938,6 +5939,83 @@ export function useGetAuditLog<TData = Awaited<ReturnType<typeof getAuditLog>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAuditLogQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetOrgInsightsUrl = () => {
+
+
+
+
+  return `/api/v1/admin/org-insights`
+}
+
+/**
+ * @summary Org-scoped analytics (Org Admin) or program-wide (Super Admin)
+ */
+export const getOrgInsights = async ( options?: RequestInit): Promise<OrgInsights> => {
+
+  return customFetch<OrgInsights>(getGetOrgInsightsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOrgInsightsQueryKey = () => {
+    return [
+    `/api/v1/admin/org-insights`
+    ] as const;
+    }
+
+
+export const getGetOrgInsightsQueryOptions = <TData = Awaited<ReturnType<typeof getOrgInsights>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOrgInsights>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOrgInsightsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrgInsights>>> = ({ signal }) => getOrgInsights({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOrgInsights>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOrgInsightsQueryResult = NonNullable<Awaited<ReturnType<typeof getOrgInsights>>>
+export type GetOrgInsightsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Org-scoped analytics (Org Admin) or program-wide (Super Admin)
+ */
+
+export function useGetOrgInsights<TData = Awaited<ReturnType<typeof getOrgInsights>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOrgInsights>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOrgInsightsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
