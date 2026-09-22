@@ -29,6 +29,7 @@ export interface EventUpdateInput {
   minGrade?: number | null;
   /** @nullable */
   maxGrade?: number | null;
+  openToAll?: boolean;
   supervisorId?: string;
   /** @nullable */
   imageUrl?: string | null;

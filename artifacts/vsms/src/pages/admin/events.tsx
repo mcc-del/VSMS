@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { ImageUpload } from "@/components/image-upload";
 import { useForm } from "react-hook-form";
@@ -50,6 +51,7 @@ const editSchema = z.object({
   maxCapacity: z.coerce.number().int().positive("Must be positive"),
   minGrade: z.string().optional(),
   maxGrade: z.string().optional(),
+  openToAll: z.boolean(),
   supervisorId: z.string().min(1, "Required"),
   imageUrl: z.string().nullable(),
 }).superRefine((values, ctx) => {
@@ -134,6 +136,7 @@ export default function AdminEventsPage() {
       maxCapacity: 50,
       minGrade: NONE,
       maxGrade: NONE,
+      openToAll: true,
       supervisorId: "",
       imageUrl: null,
     },
@@ -156,6 +159,7 @@ export default function AdminEventsPage() {
       maxCapacity: event.maxCapacity,
       minGrade: event.minGrade != null ? String(event.minGrade) : NONE,
       maxGrade: event.maxGrade != null ? String(event.maxGrade) : NONE,
+      openToAll: event.openToAll ?? true,
       supervisorId: event.supervisorId,
       imageUrl: event.imageUrl ?? null,
     });
@@ -461,6 +465,24 @@ export default function AdminEventsPage() {
                 <FormItem>
                   <FormLabel>Max capacity (volunteers)</FormLabel>
                   <FormControl><Input type="number" min="1" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="openToAll" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Who can join?</FormLabel>
+                  <FormControl>
+                    <label className="flex items-start gap-2.5 text-sm cursor-pointer rounded-lg border p-3">
+                      <Checkbox checked={field.value} onCheckedChange={(c) => field.onChange(c === true)} className="mt-0.5" />
+                      <span>
+                        Open to all organizations
+                        <span className="block text-xs text-muted-foreground">
+                          Students from any organization can see and sign up. Uncheck to keep this event private to your organization only.
+                        </span>
+                      </span>
+                    </label>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

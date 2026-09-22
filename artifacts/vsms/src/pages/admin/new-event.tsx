@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ImageUpload } from "@/components/image-upload";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,6 +40,7 @@ const schema = z
     zip: z.string().min(1, "ZIP is required"),
     minGrade: z.string().optional(),
     maxGrade: z.string().optional(),
+    openToAll: z.boolean(),
     supervisorId: z.string().min(1, "Select a supervisor"),
     organizationId: z.string().optional(),
     imageUrl: z.string().nullable(),
@@ -86,6 +88,7 @@ export default function AdminNewEvent() {
       zip: "",
       minGrade: NONE,
       maxGrade: NONE,
+      openToAll: true,
       supervisorId: "",
       organizationId: "",
       imageUrl: null,
@@ -119,6 +122,7 @@ export default function AdminNewEvent() {
       ...(values.zip ? { zip: values.zip } : {}),
       minGrade: values.minGrade && values.minGrade !== NONE ? Number(values.minGrade) : null,
       maxGrade: values.maxGrade && values.maxGrade !== NONE ? Number(values.maxGrade) : null,
+      openToAll: values.openToAll,
       supervisorId: values.supervisorId,
       ...(values.organizationId ? { organizationId: values.organizationId } : {}),
       ...(values.imageUrl ? { imageUrl: values.imageUrl } : {}),
@@ -380,30 +384,46 @@ export default function AdminNewEvent() {
 
                 <FormField control={form.control} name="organizationId" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Who can see this</FormLabel>
+                    <FormLabel>Host organization</FormLabel>
                     <Select
                       onValueChange={(v) => field.onChange(v === NONE ? "" : v)}
                       value={field.value || (isOrgAdmin ? "" : NONE)}
                     >
                       <FormControl>
                         <SelectTrigger data-testid="select-organization">
-                          <SelectValue placeholder={isOrgAdmin ? "Select your organization" : "Open to all (community)"} />
+                          <SelectValue placeholder={isOrgAdmin ? "Select your organization" : "No host org (community)"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {!isOrgAdmin && <SelectItem value={NONE}>Open to all (community)</SelectItem>}
+                        {!isOrgAdmin && <SelectItem value={NONE}>No host org (community)</SelectItem>}
                         {selectableOrgs.map((o) => (
                           <SelectItem key={o.organizationId} value={o.organizationId}>
-                            Only {o.name} students
+                            {o.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      {isOrgAdmin
-                        ? "Your event is private to your organization's students."
-                        : "Pick \"Open to all (community)\" for events anyone can join — including on-site events open to the whole community. Pick a specific organization ONLY when the event is private to that org's students (e.g. a Medina-only recycling or in-school shift). When unsure, choose \"Open to all.\""}
+                      The organization that runs this event — it gets the reporting credit and manages the roster. Use the checkbox below to control who can sign up.
                     </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="openToAll" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Who can join?</FormLabel>
+                    <FormControl>
+                      <label className="flex items-start gap-2.5 text-sm cursor-pointer rounded-lg border p-3">
+                        <Checkbox checked={field.value} onCheckedChange={(c) => field.onChange(c === true)} className="mt-0.5" data-testid="checkbox-open-to-all" />
+                        <span>
+                          Open to all organizations
+                          <span className="block text-xs text-muted-foreground">
+                            Students from any organization can see and sign up. Uncheck to keep it private to the host organization's students only. (Community events with no host org are always open.)
+                          </span>
+                        </span>
+                      </label>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

@@ -25,6 +25,7 @@ export interface EventInput {
   minGrade?: number | null;
   /** @nullable */
   maxGrade?: number | null;
+  openToAll?: boolean;
   supervisorId: string;
   imageUrl?: string;
   organizationId?: string;

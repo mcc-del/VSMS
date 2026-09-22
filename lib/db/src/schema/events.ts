@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, date, time, decimal, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, date, time, decimal, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -28,6 +28,10 @@ export const eventsTable = pgTable("events", {
   // Optional grade eligibility floor/ceiling (e.g. min 4 for a checkout shift).
   minGrade: integer("min_grade"),
   maxGrade: integer("max_grade"),
+  // When true, students from ANY organization can see and sign up for this
+  // event (the host org still owns/manages it and gets the reporting credit).
+  // When false, only the host org's students see it. Defaults to open.
+  openToAll: boolean("open_to_all").notNull().default(true),
   imageUrl: varchar("image_url", { length: 500 }),
   supervisorId: uuid("supervisor_id")
     .notNull()

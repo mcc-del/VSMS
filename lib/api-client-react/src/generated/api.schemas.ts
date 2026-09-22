@@ -739,6 +739,7 @@ export interface Event {
   minGrade?: number | null;
   /** @nullable */
   maxGrade?: number | null;
+  openToAll?: boolean;
   /** @nullable */
   imageUrl?: string | null;
   supervisorId: string;
@@ -777,6 +778,7 @@ export interface EventInput {
   minGrade?: number | null;
   /** @nullable */
   maxGrade?: number | null;
+  openToAll?: boolean;
   supervisorId: string;
   imageUrl?: string;
   organizationId?: string;
@@ -805,6 +807,7 @@ export interface EventUpdateInput {
   minGrade?: number | null;
   /** @nullable */
   maxGrade?: number | null;
+  openToAll?: boolean;
   supervisorId?: string;
   /** @nullable */
   imageUrl?: string | null;

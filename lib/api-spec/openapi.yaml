@@ -3179,6 +3179,8 @@ components:
           type: ["integer", "null"]
         maxGrade:
           type: ["integer", "null"]
+        openToAll:
+          type: boolean
         imageUrl:
           type: ["string", "null"]
         supervisorId:
@@ -3234,6 +3236,8 @@ components:
           type: ["integer", "null"]
         maxGrade:
           type: ["integer", "null"]
+        openToAll:
+          type: boolean
         supervisorId:
           type: string
         imageUrl:
@@ -3273,6 +3277,8 @@ components:
           type: ["integer", "null"]
         maxGrade:
           type: ["integer", "null"]
+        openToAll:
+          type: boolean
         supervisorId:
           type: string
         imageUrl:

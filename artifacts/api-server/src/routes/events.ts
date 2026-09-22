@@ -49,6 +49,7 @@ function formatEvent(
     maxCapacity: number;
     minGrade?: number | null;
     maxGrade?: number | null;
+    openToAll?: boolean;
     imageUrl: string | null;
     supervisorId: string;
     supervisorFirstName: string | null;
@@ -79,6 +80,7 @@ function formatEvent(
     maxCapacity: e.maxCapacity,
     minGrade: e.minGrade ?? null,
     maxGrade: e.maxGrade ?? null,
+    openToAll: e.openToAll ?? true,
     imageUrl: e.imageUrl ?? null,
     supervisorId: e.supervisorId,
     supervisorName: e.supervisorFirstName
@@ -166,6 +168,7 @@ router.get("/v1/events", authenticate, async (req, res) => {
       maxCapacity: eventsTable.maxCapacity,
       minGrade: eventsTable.minGrade,
       maxGrade: eventsTable.maxGrade,
+      openToAll: eventsTable.openToAll,
       imageUrl: eventsTable.imageUrl,
       supervisorId: eventsTable.supervisorId,
       supervisorFirstName: usersTable.firstName,
@@ -223,11 +226,13 @@ router.get("/v1/events", authenticate, async (req, res) => {
       if (viewerRole === "supervisor" && viewerOrgId && e.organizationId === viewerOrgId) return true; // supervisor's org
       return false;
     }
-    // Open-to-all opportunities (no org) are visible to every participant.
-    if (!e.organizationId) return true;
-    // Org-gated opportunities are visible only to that org's students. This is
-    // a safety boundary (R2): e.g. Medina on-site events, which may share
-    // building access or a QR code, must never appear to non-Medina students.
+    // Opportunities with no host org, or explicitly marked open to all, are
+    // visible to every participant.
+    if (!e.organizationId || e.openToAll) return true;
+    // Org-private opportunities are visible only to that org's students. This is
+    // a safety boundary (R2): e.g. a Medina-only on-site event, which may share
+    // building access or a QR code, must never appear to non-Medina students
+    // unless the host org chose to open it to everyone.
     return e.organizationId === viewerOrgId;
   });
 
@@ -235,8 +240,9 @@ router.get("/v1/events", authenticate, async (req, res) => {
     visible.map((e) => {
       let eligibleForMe = true;
       if (viewerIsParticipant) {
-        // Org grade-band eligibility (only when the event is org-tied).
-        if (e.organizationId) {
+        // Org grade-band eligibility (only for the host org's own students; a
+        // cross-org open event is judged solely on its per-event grade limits).
+        if (e.organizationId && e.organizationId === viewerOrgId) {
           eligibleForMe = orgAllowsLevel(
             { allowsElementary: e.allowsElementary ?? true, allowsMiddle: e.allowsMiddle ?? true, allowsHigh: e.allowsHigh ?? true },
             viewerLevel,
@@ -334,6 +340,7 @@ router.get("/v1/events/:eventId", authenticate, async (req, res) => {
       maxCapacity: eventsTable.maxCapacity,
       minGrade: eventsTable.minGrade,
       maxGrade: eventsTable.maxGrade,
+      openToAll: eventsTable.openToAll,
       imageUrl: eventsTable.imageUrl,
       supervisorId: eventsTable.supervisorId,
       supervisorFirstName: usersTable.firstName,
@@ -403,7 +410,7 @@ router.post(
       .from(usersTable)
       .where(eq(usersTable.userId, userId))
       .limit(1);
-    if (event.organizationId && (viewer?.organizationId ?? null) !== event.organizationId) {
+    if (event.organizationId && !event.openToAll && (viewer?.organizationId ?? null) !== event.organizationId) {
       res.status(403).json({ error: "This opportunity isn't open to your organization." });
       return;
     }
@@ -1011,6 +1018,7 @@ router.patch(
     if (d.maxCapacity !== undefined) updates.maxCapacity = d.maxCapacity;
     if ("minGrade" in d) updates.minGrade = d.minGrade ?? null;
     if ("maxGrade" in d) updates.maxGrade = d.maxGrade ?? null;
+    if ("openToAll" in d) updates.openToAll = (d as { openToAll?: boolean }).openToAll ?? true;
     if (d.supervisorId !== undefined) updates.supervisorId = d.supervisorId;
     if ("imageUrl" in d) updates.imageUrl = d.imageUrl ?? null;
     if ("organizationId" in d) updates.organizationId = d.organizationId ?? null;
@@ -1084,7 +1092,7 @@ router.post(
       return;
     }
 
-    const { title, description, slotLabel, location, street, city, state, zip, eventDate, startTime, endTime, maxCapacity, minGrade, maxGrade, imageUrl, organizationId } =
+    const { title, description, slotLabel, location, street, city, state, zip, eventDate, startTime, endTime, maxCapacity, minGrade, maxGrade, imageUrl, organizationId, openToAll } =
       parsed.data as any;
     let { supervisorId } = parsed.data as any;
 
@@ -1126,6 +1134,7 @@ router.post(
         maxCapacity: maxCapacity ?? 50,
         minGrade: minGrade ?? null,
         maxGrade: maxGrade ?? null,
+        openToAll: openToAll ?? true,
         supervisorId,
         imageUrl: imageUrl ?? null,
         organizationId: organizationId ?? null,
