@@ -296,9 +296,8 @@ export default function ParentDashboard() {
               <Users className="w-8 h-8 mx-auto mb-3 opacity-60" />
               <p className="font-medium text-foreground">No children yet</p>
               <p className="text-sm mt-1 max-w-sm mx-auto">
-                Use <strong>Add child</strong> to enroll a young child yourself, or — for a
-                middle/high schooler with their own login — have them enter{" "}
-                <strong>this account's email</strong> when they sign up, then refresh.
+                Tap <strong>Add child</strong> to enroll a grade 2–5 child. Older students sign up
+                themselves using this account's email.
               </p>
               <Button onClick={openAdd} className="mt-4">
                 <Plus className="w-4 h-4 mr-1" /> Add child
@@ -593,9 +592,7 @@ export default function ParentDashboard() {
           <DialogHeader>
             <DialogTitle>{editing ? "Edit child" : "Add a child"}</DialogTitle>
             <DialogDescription>
-              {editing
-                ? "Update your child's details."
-                : "Enroll a child on your account. Young children don't need their own login — you manage everything for them."}
+              {editing ? "Update your child's details." : "Grades 2–5. You manage everything for them — no separate login needed."}
             </DialogDescription>
           </DialogHeader>
 

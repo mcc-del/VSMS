@@ -22,19 +22,19 @@ const SIGNUP_OPTIONS: { value: SignupType; title: string; blurb: string; icon: t
   {
     value: "student",
     title: "I'm a student (grades 6–12)",
-    blurb: "Sign up yourself, log your hours, and invite a parent to follow along.",
+    blurb: "Sign up yourself and log your hours.",
     icon: GraduationCap,
   },
   {
     value: "parent_participant",
     title: "I'm a parent of a grade 2–5 child",
-    blurb: "You'll sign up and manage your child — young children don't get their own login.",
+    blurb: "You manage your child's sign-ups and hours.",
     icon: Users,
   },
   {
     value: "parent_viewer",
     title: "I'm a parent of a grade 6–12 student",
-    blurb: "Your student signs up themselves; you get view-only access to their schedule.",
+    blurb: "View-only access to your student's schedule.",
     icon: Eye,
   },
 ];
@@ -210,7 +210,7 @@ export default function RegisterPage() {
         <div className="mb-8 text-center">
           <img src="/medinacares-logo.png" alt="MedinaCares" className="w-20 h-20 object-contain mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Join the MedinaCares Volunteer Service Awards and start logging hours</p>
+          <p className="text-muted-foreground mt-1 text-sm">Start logging your service hours.</p>
         </div>
 
         <div className="bg-card border border-card-border/70 rounded-2xl p-6 shadow-soft">
@@ -281,7 +281,7 @@ export default function RegisterPage() {
                     <FormControl>
                       <Input data-testid="input-email" type="email" placeholder="you@example.com" {...field} />
                     </FormControl>
-                    <FormDescription>You'll use this to sign in. Use one you check often — reminders and confirmations go here.</FormDescription>
+                    <FormDescription>You'll sign in with this. Reminders go here too.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -290,14 +290,12 @@ export default function RegisterPage() {
               {/* Guidance for the two parent paths */}
               {signupType === "parent_participant" && (
                 <p className="text-xs text-muted-foreground rounded-md bg-muted p-3">
-                  After you create your account, you'll add your child (name, grade 2–5, school) and
-                  manage their sign-ups and hours from your parent dashboard.
+                  Next, you'll add your child (grades 2–5) and manage their sign-ups and hours.
                 </p>
               )}
               {signupType === "parent_viewer" && (
                 <p className="text-xs text-muted-foreground rounded-md bg-muted p-3">
-                  Your student signs up on their own and enters <strong>this email</strong> as their
-                  parent's email — their schedule then appears on your dashboard automatically.
+                  Your student signs up themselves and enters <strong>this email</strong> as their parent's — their schedule then appears here.
                 </p>
               )}
 
@@ -311,9 +309,7 @@ export default function RegisterPage() {
                       <FormControl>
                         <Input data-testid="input-parent-email" type="email" placeholder="parent@example.com" {...field} />
                       </FormControl>
-                      <FormDescription>
-                        Your parent can sign up with this email to see your schedule and drive you to events.
-                      </FormDescription>
+                      <FormDescription>They can sign up with this email to follow your schedule.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -347,7 +343,7 @@ export default function RegisterPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">Choose your school or program and enter its join code below.</p>
+                  <p className="text-xs text-muted-foreground">Pick your program, then enter its join code.</p>
                 </div>
               )}
 
@@ -363,9 +359,7 @@ export default function RegisterPage() {
                         <FormControl>
                           <Input data-testid="input-join-code" placeholder="Enter the code from your school or program" {...field} />
                         </FormControl>
-                        <FormDescription>
-                          Each program gives this code to its members — it confirms you're really enrolled. Don't have this code? Email mcc@medinaacademy.org.
-                        </FormDescription>
+                        <FormDescription>Your program gives you this code. No code? Email mcc@medinaacademy.org.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -447,7 +441,7 @@ export default function RegisterPage() {
                         </button>
                       </div>
                     </FormControl>
-                    <FormDescription>At least 8 characters. You'll use this with your email to sign in.</FormDescription>
+                    <FormDescription>At least 8 characters.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

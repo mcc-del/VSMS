@@ -187,7 +187,7 @@ export default function AdminNewEvent() {
                     <FormControl>
                       <Textarea data-testid="input-description" placeholder="Describe the volunteer activity..." rows={3} {...field} />
                     </FormControl>
-                    <FormDescription>What volunteers will do, what to bring/wear, and where to meet. This is shown to everyone signing up and in their confirmation email.</FormDescription>
+                    <FormDescription>What they'll do, what to bring, where to meet.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -374,9 +374,7 @@ export default function AdminNewEvent() {
                           )}
                         </SelectContent>
                       </Select>
-                      <FormDescription>
-                        Participants will see the supervisor's name, phone, and email. Set their phone on the Users page.
-                      </FormDescription>
+                      <FormDescription>Participants see their name, phone, and email.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )} />
