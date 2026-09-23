@@ -45,7 +45,9 @@ const SECTIONS: { title: string; items: QA[]; roles?: string[] }[] = [
       { q: "How do I submit hours after an event?", a: "Go to Submit My Hours → Post-event hours. Ended events appear there — enter the hours worked and submit. A supervisor reviews and approves them. (Parents: pick the child first.)" },
       { q: "I showed up but never signed up online", a: "That's okay. In Post-event hours, find the past event and use its \"Attended without signing up\" option to submit hours. The supervisor will verify them." },
       { q: "My hours were rejected — can I fix them?", a: "Yes. Return to Post-event hours and resubmit the corrected hours; they go back for review." },
-      { q: "I volunteered somewhere else (not a school event)", a: "Use Submit My Hours → External hours. Only pre-approved nonprofits appear in the list — pick one, add the date and hours, and attach the signed service form. If your nonprofit isn't listed, you can suggest it (or have them get pre-approved by emailing mcc@medinaacademy.org)." },
+      { q: "I volunteered somewhere else (not a school event)", a: "Use Submit My Hours → External. Only pre-approved nonprofits appear in the list — pick one, add the date and hours, and attach the signed service form (optional)." },
+      { q: "What counts as External volunteering?", a: "Service you did on your own with an outside nonprofit — not a MedinaCares event. It's logged under the External tab, reviewed by a supervisor, and counts toward your medals just like event hours. Only nonprofits on our approved list can be selected." },
+      { q: "The nonprofit I volunteer with isn't on the list — how do they partner with us?", a: "We only credit pre-approved nonprofits so hours stay verifiable. To get added, the nonprofit emails mcc@medinaacademy.org describing how they meet our requirements (they can provide meaningful opportunities and easy access — via their own site or by joining our platform). There's a printable invitation on the External tab you can hand them. Once approved, they appear in the dropdown for everyone." },
     ],
   },
   {

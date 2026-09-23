@@ -3,6 +3,14 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export type CalItem = { eventId: string; eventDate: string; title: string; startTime?: string | null };
 
+function fmtTime(t?: string | null) {
+  if (!t) return "";
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "p" : "a";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return m ? `${h12}:${String(m).padStart(2, "0")}${ampm}` : `${h12}${ampm}`;
+}
+
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -14,7 +22,7 @@ function ymd(y: number, m: number, d: number) {
 }
 
 /** A compact month grid highlighting the days that have events. */
-export function MonthCalendar({ items }: { items: CalItem[] }) {
+export function MonthCalendar({ items, onSelect }: { items: CalItem[]; onSelect?: (eventId: string) => void }) {
   // Group events by their date string.
   const byDate = useMemo(() => {
     const map = new Map<string, CalItem[]>();
@@ -68,23 +76,28 @@ export function MonthCalendar({ items }: { items: CalItem[] }) {
           return (
             <div
               key={key}
-              className={`min-h-[64px] rounded-lg border p-1 text-left ${day ? "bg-background" : "bg-transparent border-transparent"}`}
+              className={`min-h-[76px] rounded-lg border p-1 text-left ${day ? "bg-background" : "bg-transparent border-transparent"}`}
             >
               {day && (
                 <>
                   <div className={`text-[11px] font-medium ${dayItems.length ? "text-primary" : "text-muted-foreground"}`}>{day}</div>
                   <div className="mt-0.5 space-y-0.5">
-                    {dayItems.slice(0, 2).map((it) => (
-                      <div
-                        key={it.eventId}
-                        className="truncate rounded bg-primary/10 text-primary px-1 py-0.5 text-[10px] leading-tight"
-                        title={`${it.title}${it.startTime ? ` · ${it.startTime.slice(0, 5)}` : ""}`}
-                      >
-                        {it.startTime ? `${it.startTime.slice(0, 5)} ` : ""}{it.title}
-                      </div>
-                    ))}
-                    {dayItems.length > 2 && (
-                      <div className="text-[10px] text-muted-foreground px-1">+{dayItems.length - 2} more</div>
+                    {dayItems.slice(0, 3).map((it) => {
+                      const Tag = onSelect ? "button" : "div";
+                      return (
+                        <Tag
+                          key={it.eventId}
+                          {...(onSelect ? { type: "button" as const, onClick: () => onSelect(it.eventId) } : {})}
+                          className={`block w-full rounded bg-primary/10 text-primary px-1 py-0.5 text-left leading-tight ${onSelect ? "hover:bg-primary/20 cursor-pointer" : ""}`}
+                          title={`${it.title}${it.startTime ? ` · ${fmtTime(it.startTime)}` : ""}`}
+                        >
+                          <span className="block truncate text-[10px] font-medium">{it.title}</span>
+                          {it.startTime && <span className="block text-[9px] opacity-80">{fmtTime(it.startTime)}</span>}
+                        </Tag>
+                      );
+                    })}
+                    {dayItems.length > 3 && (
+                      <div className="text-[10px] text-muted-foreground px-1">+{dayItems.length - 3} more</div>
                     )}
                   </div>
                 </>

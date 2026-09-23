@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useListEvents,
   useListMyRegistrations,
@@ -73,6 +73,20 @@ export default function OpportunitiesPage() {
   const [confirmEvent, setConfirmEvent] = useState<Event | null>(null);
   const [mineView, setMineView] = useState<"list" | "calendar">("list");
   const [awsuHours, setAwsuHours] = useState<Record<string, string>>({});
+  // Deep-link to a specific event: /opportunities?event=<id> scrolls to and
+  // briefly highlights that event's card (e.g. from the "new events" banner).
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("event");
+    if (!id) return;
+    setHighlightId(id);
+    const t = window.setTimeout(() => {
+      const el = document.getElementById(`event-${id}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+    const clear = window.setTimeout(() => setHighlightId(null), 3500);
+    return () => { window.clearTimeout(t); window.clearTimeout(clear); };
+  }, []);
 
   const myRegMap: Record<string, string> = {};
   (myRegistrations ?? []).forEach((r) => {
@@ -228,7 +242,11 @@ export default function OpportunitiesPage() {
     const isFull = (event.registrationCount ?? 0) >= event.maxCapacity;
 
     return (
-      <Card key={event.eventId} className="overflow-hidden transition-all hover:shadow-lift hover:-translate-y-0.5">
+      <Card
+        key={event.eventId}
+        id={`event-${event.eventId}`}
+        className={`overflow-hidden transition-all hover:shadow-lift hover:-translate-y-0.5 ${highlightId === event.eventId ? "ring-2 ring-primary ring-offset-2" : ""}`}
+      >
         <div className="flex flex-col md:flex-row">
           {event.imageUrl && (
             <div className="md:w-48 md:shrink-0">
@@ -542,6 +560,14 @@ export default function OpportunitiesPage() {
                         title: e.title,
                         startTime: e.startTime,
                       }))}
+                      onSelect={(id) => {
+                        setMineView("list");
+                        setHighlightId(id);
+                        window.setTimeout(() => {
+                          document.getElementById(`event-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }, 60);
+                        window.setTimeout(() => setHighlightId(null), 3500);
+                      }}
                     />
                   ) : (
                     <div className="space-y-4">{mine.map((e) => renderEvent(e, !eventHasEnded(e.eventDate, (e as any).endTime)))}</div>

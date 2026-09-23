@@ -61,11 +61,11 @@ export function NewEventsBanner({ opportunitiesHref = "/opportunities" }: { oppo
           </p>
         </div>
         <Link
-          href={opportunitiesHref}
+          href={newIds.length === 1 ? `${opportunitiesHref}?event=${newIds[0]}` : opportunitiesHref}
           onClick={markAllSeen}
           className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-primary text-primary-foreground font-semibold px-4 py-2 text-sm shadow-soft hover:opacity-90 transition-opacity"
         >
-          Explore <ArrowRight className="w-4 h-4" />
+          {newIds.length === 1 ? "View" : "Explore"} <ArrowRight className="w-4 h-4" />
         </Link>
         <button
           onClick={markAllSeen}
