@@ -284,12 +284,28 @@ export default function AdminOrganizations() {
                       if (
                         draft.joinCode.trim() &&
                         !confirm(
-                          "Generate a new code?\n\nThe current code will stop working for anyone who hasn't joined yet — you'll need to re-share the new one. Members who already joined keep their access.\n\nYou still have to click Save to apply it.",
+                          "Generate a new code?\n\nThe current code will stop working for anyone who hasn't joined yet — you'll need to re-share the new one. Members who already joined keep their access.",
                         )
                       ) {
                         return;
                       }
-                      setDraft({ ...draft, joinCode: randomCode() });
+                      const code = randomCode();
+                      setDraft({ ...draft, joinCode: code });
+                      // For an existing org, save the new code immediately so it
+                      // can't be lost by forgetting to click Save.
+                      if (draft.organizationId) {
+                        updateOrg.mutate(
+                          { organizationId: draft.organizationId, data: { name: draft.name, joinCode: code } },
+                          {
+                            onSuccess: () => {
+                              queryClient.invalidateQueries({ queryKey: getListAdminOrganizationsQueryKey() });
+                              queryClient.invalidateQueries({ queryKey: getListOrganizationsQueryKey() });
+                              toast({ title: "New join code saved", description: `${draft.name}: ${code}` });
+                            },
+                            onError: (err: any) => toast({ title: "Couldn't save code", description: err?.data?.error ?? "Try again.", variant: "destructive" }),
+                          },
+                        );
+                      }
                     }}
                   >
                     Generate

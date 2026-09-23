@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Award, HandHeart, Users, Eye, EyeOff } from "lucide-react";
+import { Award, HandHeart, Users, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { RecyclingRibbon } from "@/components/recycling-ribbon";
 import { useState } from "react";
 
@@ -72,13 +72,13 @@ export default function LoginPage() {
               "radial-gradient(40rem 40rem at 90% -10%, rgba(255,255,255,0.18), transparent 60%), radial-gradient(30rem 30rem at -10% 110%, hsl(6 70% 59% / 0.35), transparent 60%)",
           }}
         />
-        <div className="relative flex items-center gap-3">
-          <img src="/medinacares-logo.png" alt="MedinaCares" className="w-11 h-11 object-contain rounded-xl bg-white/95 p-1.5" />
+        <Link href="/" className="relative flex items-center gap-3 hover:opacity-90">
+          <img src="/medinacares-logo.png" alt="MedinaCares — home" className="w-11 h-11 object-contain rounded-xl bg-white/95 p-1.5" />
           <div className="leading-tight">
             <p className="font-bold">MedinaCares</p>
             <p className="text-xs text-primary-foreground/70">Volunteer Service Awards</p>
           </div>
-        </div>
+        </Link>
 
         <div className="relative max-w-md">
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
@@ -125,8 +125,13 @@ export default function LoginPage() {
       {/* Form panel */}
       <div className="flex items-center justify-center px-4 py-10 app-surface min-h-screen lg:min-h-0">
         <div className="w-full max-w-sm">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
+            <ArrowLeft className="w-4 h-4" /> Back to home
+          </Link>
           <div className="mb-8 text-center lg:hidden">
-            <img src="/medinacares-logo.png" alt="MedinaCares" className="w-16 h-16 object-contain mx-auto mb-3" />
+            <Link href="/">
+              <img src="/medinacares-logo.png" alt="MedinaCares — home" className="w-16 h-16 object-contain mx-auto mb-3 cursor-pointer" />
+            </Link>
           </div>
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-foreground">Welcome back</h2>
