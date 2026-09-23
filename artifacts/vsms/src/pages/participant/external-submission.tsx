@@ -28,7 +28,6 @@ import { ProofUpload } from "@/components/proof-upload";
 import { ProofLink } from "@/components/proof-link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SuggestNonprofit } from "@/components/suggest-nonprofit";
 import { PostEventHours } from "@/components/post-event-hours";
 import { useState } from "react";
 
@@ -226,7 +225,7 @@ export default function ExternalSubmissionPage() {
           <h1 className="text-2xl font-bold">Submit My Hours</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Two ways to log hours — use the tabs below. <span className="font-medium text-foreground">Post-event hours</span> is for
-            MedinaCares events you signed up for or attended. <span className="font-medium text-foreground">Outside volunteering</span> is
+            MedinaCares events you signed up for or attended. <span className="font-medium text-foreground">External</span> is
             for service you did on your own with another nonprofit.
           </p>
         </div>
@@ -240,7 +239,7 @@ export default function ExternalSubmissionPage() {
         <Tabs defaultValue="postevent">
           <TabsList>
             <TabsTrigger value="postevent" data-testid="tab-postevent">Post-event hours</TabsTrigger>
-            <TabsTrigger value="external" data-testid="tab-external">Outside volunteering</TabsTrigger>
+            <TabsTrigger value="external" data-testid="tab-external">External</TabsTrigger>
           </TabsList>
 
           <TabsContent value="postevent" className="mt-4">
@@ -316,9 +315,9 @@ export default function ExternalSubmissionPage() {
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Not in this list? <SuggestNonprofit /> — or share this{" "}
+                        Not in this list? Share this{" "}
                         <a href="/nonprofit-invitation.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">invitation</a>{" "}
-                        with the nonprofit; they email mcc@medinaacademy.org describing how they meet our requirements.
+                        with the nonprofit — they email mcc@medinaacademy.org describing how they meet our requirements, and we'll add them.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

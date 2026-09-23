@@ -12,7 +12,7 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
     steps: [
       { label: "Find & sign up for an opportunity", href: "/opportunities", hint: "Browse events that fit, pick a time slot, and add it to your calendar." },
       { label: "Submit your hours after you volunteer", href: "/external", hint: "Go to Submit My Hours → Post-event hours and enter the time you worked for supervisor approval." },
-      { label: "Add outside volunteering", href: "/external", hint: "Volunteered with another nonprofit? In Submit My Hours, open the External hours tab and add the organization, date, and hours (proof needed over 5 hours)." },
+      { label: "Add external volunteering", href: "/external", hint: "Volunteered with another nonprofit? In Submit My Hours, open the External tab and add the approved nonprofit, date, and hours." },
       { label: "See the leaderboard", href: "/leaderboard", hint: "Track your progress toward Bronze, Silver, Gold." },
     ],
   },
@@ -20,8 +20,9 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
     title: "Welcome! Here's how to get started",
     steps: [
       { label: "Find & sign up for opportunities", href: "/parent/opportunities", hint: "Pick your child, then browse and sign them up for events." },
-      { label: "Submit hours & track progress", href: "/parent/hours", hint: "After an event, log your child's hours (event, walk-in, or outside volunteering) for approval." },
-      { label: "See the leaderboard", href: "/leaderboard", hint: "Track how your child is doing toward Bronze, Silver, Gold." },
+      { label: "Submit event & walk-in hours", href: "/parent/hours", hint: "After an event, log your child's hours for approval." },
+      { label: "Add external volunteering", href: "/parent/hours", hint: "Did your child volunteer with an approved nonprofit? Add it under the External tab." },
+      { label: "Track medal progress", href: "/parent", hint: "See each child's hours and how close they are to Bronze, Silver, Gold on your dashboard." },
     ],
   },
   supervisor: {

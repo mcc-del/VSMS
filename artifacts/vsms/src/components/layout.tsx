@@ -35,6 +35,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Find Opportunities", href: "/parent/opportunities", icon: Calendar },
       { label: "Submit Hours", href: "/parent/hours", icon: Clock },
       { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+      { label: "My Reports", href: "/parent/reports", icon: TrendingUp },
+      { label: "My Profile", href: "/parent/profile", icon: Settings },
       { label: "Help", href: "/help", icon: HelpCircle },
     ] : []),
     ...(role === "supervisor" ? [

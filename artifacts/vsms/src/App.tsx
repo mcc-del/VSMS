@@ -34,6 +34,8 @@ import ExternalSubmissionPage from "@/pages/participant/external-submission";
 import ParentDashboard from "@/pages/parent/dashboard";
 import ParentOpportunities from "@/pages/parent/opportunities";
 import ParentHours from "@/pages/parent/hours";
+import ParentReports from "@/pages/parent/reports";
+import ParentProfile from "@/pages/parent/profile";
 import LeaderboardPage from "@/pages/participant/leaderboard";
 import ServiceRecordPage from "@/pages/service-record";
 import ProfilePage from "@/pages/participant/profile";
@@ -85,6 +87,8 @@ function Router() {
       <ProtectedRoute path="/parent" component={ParentDashboard} allowedRoles={["parent"]} />
       <ProtectedRoute path="/parent/opportunities" component={ParentOpportunities} allowedRoles={["parent"]} />
       <ProtectedRoute path="/parent/hours" component={ParentHours} allowedRoles={["parent"]} />
+      <ProtectedRoute path="/parent/reports" component={ParentReports} allowedRoles={["parent"]} />
+      <ProtectedRoute path="/parent/profile" component={ParentProfile} allowedRoles={["parent"]} />
       <ProtectedRoute path="/parent/children/:childId/service-record" component={ServiceRecordPage} allowedRoles={["parent"]} />
 
       <ProtectedRoute path="/supervisor/dashboard" component={SupervisorDashboard} allowedRoles={["supervisor", "org_admin"]} />

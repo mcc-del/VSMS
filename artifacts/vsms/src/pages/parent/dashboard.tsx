@@ -43,7 +43,6 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { GettingStarted } from "@/components/getting-started";
 import { NewEventsBanner } from "@/components/new-events-banner";
-import { SuggestNonprofit } from "@/components/suggest-nonprofit";
 import { ELEM_GRADES } from "@/lib/schools";
 
 const MEDINA_SCHOOL = "Medina Academy Redmond";
@@ -130,7 +129,7 @@ export default function ParentDashboard() {
       } as any },
       {
         onSuccess: () => {
-          toast({ title: "Outside hours submitted", description: "Sent for supervisor review." });
+          toast({ title: "External hours submitted", description: "Sent for supervisor review." });
           qc.invalidateQueries({ queryKey: getGetParentChildrenQueryKey() });
           setExtChild(null); setExt({ ...emptyExt });
         },
@@ -342,7 +341,7 @@ export default function ParentDashboard() {
                           size="sm"
                           onClick={() => { setExtChild({ userId: child.userId, name: `${child.firstName} ${child.lastName}` }); setExt({ ...emptyExt }); }}
                         >
-                          <Clock className="w-4 h-4 mr-1" /> Outside hours
+                          <Clock className="w-4 h-4 mr-1" /> External hours
                         </Button>
                       )}
                       {child.isManaged && (
@@ -361,23 +360,28 @@ export default function ParentDashboard() {
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Trophy className="w-5 h-5 text-yellow-500 shrink-0" />
-                    <div className="flex-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">{child.totalApprovedHours.toFixed(1)}h approved</span>
-                        <span className="text-muted-foreground">
-                          {ms.label === "Gold achieved"
-                            ? "Gold achieved 🎉"
-                            : `${ms.pct}% to ${ms.label} (${ms.goal}h)`}
-                        </span>
+                  <div className="rounded-xl border bg-primary/5 p-4">
+                    <div className="flex items-end justify-between gap-3">
+                      <div>
+                        <p className="text-3xl font-bold tabular-nums leading-none">{child.totalApprovedHours.toFixed(1)}<span className="text-lg font-semibold text-muted-foreground">h</span></p>
+                        <p className="text-xs text-muted-foreground mt-1">approved so far</p>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-2 mt-1.5 overflow-hidden">
-                        <div
-                          className="bg-primary h-2 rounded-full transition-all"
-                          style={{ width: `${ms.pct}%` }}
-                        />
+                      <div className="text-right">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <Trophy className="w-4 h-4 text-yellow-500" />
+                          <span className="text-sm font-semibold">
+                            {ms.label === "Gold achieved" ? "Gold achieved 🎉" : `Next: ${ms.label}`}
+                          </span>
+                        </div>
+                        {ms.label !== "Gold achieved" && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            <span className="font-semibold text-foreground">{Math.max(0, ms.goal - child.totalApprovedHours).toFixed(1)}h</span> to go · goal {ms.goal}h
+                          </p>
+                        )}
                       </div>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2.5 mt-3 overflow-hidden">
+                      <div className="bg-primary h-2.5 rounded-full transition-all" style={{ width: `${ms.pct}%` }} />
                     </div>
                   </div>
 
@@ -712,7 +716,7 @@ export default function ParentDashboard() {
       <Dialog open={extChild !== null} onOpenChange={(o) => !o && setExtChild(null)}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Log outside volunteering{extChild ? ` — ${extChild.name}` : ""}</DialogTitle>
+            <DialogTitle>Log external volunteering{extChild ? ` — ${extChild.name}` : ""}</DialogTitle>
             <DialogDescription>Volunteering your child did on their own with another nonprofit. It goes to a supervisor for approval.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -728,9 +732,9 @@ export default function ParentDashboard() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                Not in this list? <SuggestNonprofit /> — or share this{" "}
+                Not in this list? Share this{" "}
                 <a href="/nonprofit-invitation.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">invitation</a>{" "}
-                with the nonprofit; they email mcc@medinaacademy.org describing how they meet our requirements.
+                with the nonprofit — they email mcc@medinaacademy.org to get approved.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">

@@ -23,12 +23,9 @@ interface ExternalFields {
 // Field-level validation shared by create and edit. Returns an error message,
 // or null when the fields are valid. `selfEmail` is the submitter's own email.
 function validateExternalFields(data: ExternalFields, selfEmail: string | null): string | null {
-  if (data.isNonprofit) {
-    const cleaned = (data.ein ?? "").replace(/[^0-9]/g, "");
-    if (cleaned.length !== 9) {
-      return "A valid 9-digit EIN is required for a registered non-profit.";
-    }
-  }
+  // Note: no EIN is required from the submitter — external hours are logged only
+  // against pre-approved nonprofits from the allowlist, which is the vetting
+  // step. Any EIN stored comes from the nonprofit record, not the submitter.
 
   const todayStr = new Date().toISOString().split("T")[0];
   const oneYearAgo = new Date();

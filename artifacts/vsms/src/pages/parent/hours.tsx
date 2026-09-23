@@ -20,7 +20,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProofUpload } from "@/components/proof-upload";
-import { SuggestNonprofit } from "@/components/suggest-nonprofit";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -127,7 +126,7 @@ export default function ParentHours() {
         proofUrl: ext.proofUrl || undefined,
       } as any },
       {
-        onSuccess: () => { toast({ title: "Outside hours submitted", description: "Sent for supervisor review." }); invalidate(); setExt({ ...emptyExt }); },
+        onSuccess: () => { toast({ title: "External hours submitted", description: "Sent for supervisor review." }); invalidate(); setExt({ ...emptyExt }); },
         onError: (err: any) => toast({ title: "Couldn't submit", description: err?.data?.error ?? "Try again.", variant: "destructive" }),
       },
     );
@@ -180,7 +179,7 @@ export default function ParentHours() {
           <TabsList>
             <TabsTrigger value="postevent">Post-event hours</TabsTrigger>
             <TabsTrigger value="walkin">Attended without signing up</TabsTrigger>
-            <TabsTrigger value="external">Outside volunteering</TabsTrigger>
+            <TabsTrigger value="external">External</TabsTrigger>
           </TabsList>
 
           {/* Post-event hours for registered past events */}
@@ -277,9 +276,9 @@ export default function ParentHours() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Not in this list? <SuggestNonprofit /> — or share this{" "}
+                    Not in this list? Share this{" "}
                     <a href="/nonprofit-invitation.html" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">invitation</a>{" "}
-                    with the nonprofit.
+                    with the nonprofit — they email us to get approved.
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -296,7 +295,7 @@ export default function ParentHours() {
                   <ProofUpload value={ext.proofUrl} onChange={(p) => setExt({ ...ext, proofUrl: p })} />
                 </div>
                 <div className="flex justify-end">
-                  <Button onClick={submitExt} disabled={submitExternal.isPending}>{submitExternal.isPending ? "Submitting…" : "Submit outside hours"}</Button>
+                  <Button onClick={submitExt} disabled={submitExternal.isPending}>{submitExternal.isPending ? "Submitting…" : "Submit external hours"}</Button>
                 </div>
               </CardContent>
             </Card>

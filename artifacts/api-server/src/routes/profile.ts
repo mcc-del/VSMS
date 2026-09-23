@@ -7,7 +7,7 @@ import { managedOrgIds } from "../lib/org-scope";
 const router = Router();
 
 // GET /api/v1/me/profile — the current participant's own editable details.
-router.get("/v1/me/profile", authenticate, requireRole("participant"), async (req, res) => {
+router.get("/v1/me/profile", authenticate, requireRole("participant", "parent"), async (req, res) => {
   const [u] = await db
     .select({
       firstName: usersTable.firstName,
@@ -36,7 +36,7 @@ router.get("/v1/me/profile", authenticate, requireRole("participant"), async (re
 
 // PATCH /api/v1/me/profile — participant fixes their own details, incl. a change
 // of affiliation. Switching to a code-protected org requires the join code.
-router.patch("/v1/me/profile", authenticate, requireRole("participant"), async (req, res) => {
+router.patch("/v1/me/profile", authenticate, requireRole("participant", "parent"), async (req, res) => {
   const body = (req.body ?? {}) as {
     firstName?: unknown; lastName?: unknown; phone?: unknown;
     grade?: unknown; school?: unknown; organizationId?: unknown; joinCode?: unknown;

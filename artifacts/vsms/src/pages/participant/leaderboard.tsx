@@ -68,7 +68,9 @@ export default function LeaderboardPage() {
           <div>
             <h1 className="text-2xl font-bold">Leaderboard</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              One board, everyone together — mostly, race yourself to the next medal.
+              {isParticipant
+                ? "One board, everyone together — race yourself to the next medal."
+                : "Top volunteers across the program. To see your child's own medal progress, check your dashboard."}
             </p>
           </div>
           {isParticipant && (
