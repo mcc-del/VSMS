@@ -39,16 +39,19 @@ function statusBadge(s?: string | null) {
 }
 
 export default function ParentHours() {
-  const { data: children, isLoading } = useGetParentChildren();
+  const { data: allChildren, isLoading } = useGetParentChildren();
   const { data: nonprofits } = useListNonprofits();
   const qc = useQueryClient();
   const { toast } = useToast();
 
+  // Only managed (grade 2–5) children — parents log hours for them. Older
+  // students with their own login submit their own hours (parent is view-only).
+  const children = (allChildren ?? []).filter((c) => c.isManaged);
   const [childId, setChildId] = useState("");
   useEffect(() => {
-    if (!childId && children && children.length > 0) setChildId(children[0].userId);
+    if (!childId && children.length > 0) setChildId(children[0].userId);
   }, [children, childId]);
-  const child = (children ?? []).find((c) => c.userId === childId) as ParentChild | undefined;
+  const child = children.find((c) => c.userId === childId) as ParentChild | undefined;
 
   const { data: events } = useListEvents(
     { childId },
@@ -134,13 +137,18 @@ export default function ParentHours() {
     return <AppLayout><div className="max-w-3xl space-y-4"><Skeleton className="h-10 w-64" /><Skeleton className="h-40 rounded-xl" /></div></AppLayout>;
   }
 
-  if (!children || children.length === 0) {
+  if (children.length === 0) {
+    const hasOwnLoginKids = (allChildren ?? []).some((c) => !c.isManaged);
     return (
       <AppLayout>
         <div className="max-w-3xl">
           <Card><CardContent className="p-6 text-center">
-            <p className="font-medium">Add a child first</p>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">Add a child on your dashboard, then log their hours here.</p>
+            <p className="font-medium">{hasOwnLoginKids ? "Nothing to submit here" : "Add a child first"}</p>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">
+              {hasOwnLoginKids
+                ? "Your older student (grade 6+) submits their own hours — you have view-only access on your dashboard."
+                : "Add a grade 2–5 child on your dashboard, then log their hours here."}
+            </p>
             <Link href="/parent"><Button>Go to my dashboard</Button></Link>
           </CardContent></Card>
         </div>

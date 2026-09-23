@@ -21,7 +21,8 @@ const SECTIONS: { title: string; items: QA[]; roles?: string[] }[] = [
     roles: ["parent"],
     items: [
       { q: "How do I get started?", a: "You create one parent account and add each child (grades 2–5) under it — young children don't need their own login. Everything you do for them (signing up, submitting hours, tracking progress) happens from your parent dashboard." },
-      { q: "How do I add my child?", a: "On your dashboard, use \"Add child\", enter their details, and pick your program/affiliation (a join code may be required). You can add more than one child and switch between them at the top of the page." },
+      { q: "How do I add my child?", a: "On your dashboard, use \"Add child\", enter their details, and pick your program/affiliation (a join code may be required). Managed children are grades 2–5. You can add more than one and switch between them." },
+      { q: "What about my older child (grade 6+)?", a: "Students in grades 6–12 create their own account and enter your email as their parent's. They then appear on your dashboard, but as VIEW-ONLY — you can see their schedule, hours, and progress, but they sign up for events and submit their own hours. You can't sign up or submit on their behalf." },
       { q: "How do I sign my child up for an opportunity?", a: "Go to Find Opportunities, pick your child at the top, choose an event, and sign them up. Their events (with add-to-calendar) then show on your dashboard." },
       { q: "Can another parent help?", a: "Yes — invite a co-guardian from your dashboard; they get the same access to your children." },
       { q: "What is a join code and do I need one?", a: "A join code links your child to a specific organization so they can see its private events. Enter it when you add the child, or later from your dashboard. Email mcc@medinaacademy.org if you're not sure of your code." },

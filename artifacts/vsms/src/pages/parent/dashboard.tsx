@@ -445,7 +445,7 @@ export default function ParentDashboard() {
                   {(child.pastRegistrations?.length ?? 0) > 0 && (
                     <div>
                       <p className="text-sm font-medium flex items-center gap-2 mb-2">
-                        <Clock className="w-4 h-4 text-primary" /> Submit hours (past events)
+                        <Clock className="w-4 h-4 text-primary" /> {child.isManaged ? "Submit hours (past events)" : "Past events"}
                       </p>
                       <div className="space-y-2">
                         {child.pastRegistrations!.map((r) => {
@@ -471,7 +471,7 @@ export default function ParentDashboard() {
                                   {(r as any).submittedAt ? `Submitted ${new Date((r as any).submittedAt).toLocaleDateString()}` : ""}
                                 </p>
                               )}
-              {(!r.hoursStatus || r.hoursStatus === "rejected") && (
+              {child.isManaged && (!r.hoursStatus || r.hoursStatus === "rejected") && (
                                 <div className="mt-2">
                                   {Number((r as any).hoursValue ?? 0) > 0 && (
                                     <p className="text-sm mb-1.5">

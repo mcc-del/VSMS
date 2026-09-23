@@ -517,6 +517,15 @@ router.post(
       res.status(404).json({ error: "Child not found." });
       return;
     }
+    const [managedRow] = await db
+      .select({ isManaged: usersTable.isManaged })
+      .from(usersTable)
+      .where(eq(usersTable.userId, childId))
+      .limit(1);
+    if (!managedRow?.isManaged) {
+      res.status(403).json({ error: "This student submits hours on their own account — you have view-only access." });
+      return;
+    }
 
     const parsed = SubmitExternalActivityBody.safeParse(req.body);
     if (!parsed.success) {

@@ -434,6 +434,19 @@ router.post(
       return;
     }
 
+    // Only managed (grade 2–5, no login) children can be signed up by a parent.
+    // Older students with their own login manage their own sign-ups; the parent
+    // is view-only.
+    const [childRow] = await db
+      .select({ isManaged: usersTable.isManaged })
+      .from(usersTable)
+      .where(eq(usersTable.userId, childId))
+      .limit(1);
+    if (!childRow?.isManaged) {
+      res.status(403).json({ error: "This student signs up on their own account — you have view-only access." });
+      return;
+    }
+
     const [event] = await db
       .select()
       .from(eventsTable)
@@ -537,6 +550,15 @@ router.post(
     const childIds = await resolveChildIds(req.auth!.userId, parentEmail);
     if (!childIds.includes(childId)) {
       res.status(404).json({ error: "Child not found." });
+      return;
+    }
+    const [managedRow] = await db
+      .select({ isManaged: usersTable.isManaged })
+      .from(usersTable)
+      .where(eq(usersTable.userId, childId))
+      .limit(1);
+    if (!managedRow?.isManaged) {
+      res.status(403).json({ error: "This student submits hours on their own account — you have view-only access." });
       return;
     }
 

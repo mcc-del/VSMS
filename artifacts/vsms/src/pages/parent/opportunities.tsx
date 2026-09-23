@@ -31,17 +31,21 @@ function fmtTime(t?: string | null) {
 }
 
 export default function ParentOpportunities() {
-  const { data: children, isLoading: childrenLoading } = useGetParentChildren();
+  const { data: allChildren, isLoading: childrenLoading } = useGetParentChildren();
+  // Only managed (grade 2–5, no login) children can be signed up here. Older
+  // students with their own login sign up themselves — the parent is view-only.
+  const children = (allChildren ?? []).filter((c) => c.isManaged);
   const [childId, setChildId] = useState<string>("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const registerChild = useRegisterChildForEvent();
 
   useEffect(() => {
-    if (!childId && children && children.length > 0) setChildId(children[0].userId);
+    if (!childId && children.length > 0) setChildId(children[0].userId);
   }, [children, childId]);
 
-  const child = (children ?? []).find((c) => c.userId === childId);
+  const child = children.find((c) => c.userId === childId);
+  const hasOwnLoginKids = (allChildren ?? []).some((c) => !c.isManaged);
 
   const { data: events, isLoading: eventsLoading } = useListEvents(
     { childId },
@@ -95,15 +99,17 @@ export default function ParentOpportunities() {
 
         {childrenLoading ? (
           <Skeleton className="h-10 w-64" />
-        ) : (children ?? []).length === 0 ? (
+        ) : children.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="font-medium">Add a child first</p>
+              <p className="font-medium">{hasOwnLoginKids ? "Nothing to sign up here" : "Add a child first"}</p>
               <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-sm mx-auto">
-                You sign your child up for opportunities, so add them to your account first — it only takes a minute.
+                {hasOwnLoginKids
+                  ? "Your older student (grade 6+) signs up on their own account — you have view-only access to their schedule on your dashboard."
+                  : "You sign your grade 2–5 child up for opportunities, so add them to your account first — it only takes a minute."}
               </p>
               <Link href="/parent">
-                <Button>Go to my dashboard to add a child</Button>
+                <Button>{hasOwnLoginKids ? "Back to dashboard" : "Go to my dashboard to add a child"}</Button>
               </Link>
             </CardContent>
           </Card>
