@@ -233,7 +233,7 @@ export default function LandingPage() {
           <h2>Three steps, zero paperwork.</h2>
         </div>
         <div className="steps">
-          <div className="step"><div className="step-n">1</div><h3>Log your hours</h3><p>Sign up for events, or add outside volunteering.</p></div>
+          <div className="step"><div className="step-n">1</div><h3>Log your hours</h3><p>Sign up for events, or add external volunteering.</p></div>
           <div className="step"><div className="step-n">2</div><h3>Get them verified</h3><p>A supervisor reviews and approves — no paper forms.</p></div>
           <div className="step"><div className="step-n">3</div><h3>Earn your medal</h3><p>Climb to Bronze, Silver &amp; Gold, honored at the ceremony.</p></div>
         </div>
@@ -258,7 +258,7 @@ export default function LandingPage() {
         </div>
         <div className="trust">
           <div className="trust-item"><div className="check">✓</div><h3>Supervisor-verified</h3><p>Every hour is reviewed and approved.</p></div>
-          <div className="trust-item"><div className="check">✓</div><h3>Outside hours count</h3><p>Volunteering with approved non-profits counts too.</p></div>
+          <div className="trust-item"><div className="check">✓</div><h3>External hours count</h3><p>Volunteering with approved non-profits counts too.</p></div>
           <div className="trust-item"><div className="check">✓</div><h3>All in one place</h3><p>Events, hours, and progress on any device.</p></div>
         </div>
       </section>

@@ -80,7 +80,7 @@ export default function AdminNonprofits() {
           <div>
             <h1 className="text-2xl font-bold">Approved Nonprofits</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              The allowlist participants choose from when logging outside volunteer hours.
+              The allowlist participants choose from when logging external volunteer hours.
             </p>
           </div>
           <Button onClick={() => setDraft({ ...empty })}>
@@ -164,7 +164,7 @@ export default function AdminNonprofits() {
               </div>
               <label className="flex items-center gap-2.5 text-sm cursor-pointer">
                 <Checkbox checked={draft.active} onCheckedChange={(c) => setDraft({ ...draft, active: Boolean(c) })} />
-                <span>Show in the outside-hours list (uncheck to hide without deleting)</span>
+                <span>Show in the external-hours list (uncheck to hide without deleting)</span>
               </label>
               <Button className="w-full" onClick={save} disabled={createNp.isPending || updateNp.isPending}>
                 {createNp.isPending || updateNp.isPending ? "Saving..." : "Save"}
