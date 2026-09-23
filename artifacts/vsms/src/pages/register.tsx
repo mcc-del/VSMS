@@ -13,10 +13,11 @@ import { useToast } from "@/hooks/use-toast";
 import { GRADES } from "@/lib/schools";
 import { GraduationCap, Users, Eye, EyeOff } from "lucide-react";
 
-// Three guided sign-up paths. "student" and the two parent kinds all map to the
-// backend's accountType (student | parent); the parent kinds differ only in
-// guidance and where they go next.
-type SignupType = "student" | "parent_participant" | "parent_viewer";
+// Two guided sign-up paths. Both map to the backend's accountType
+// (student | parent). One parent account covers everything: you manage younger
+// children (grades 2–5) directly and follow older students (grades 6–12) who
+// have their own login — no separate parent types needed.
+type SignupType = "student" | "parent";
 
 const SIGNUP_OPTIONS: { value: SignupType; title: string; blurb: string; icon: typeof Users }[] = [
   {
@@ -26,16 +27,10 @@ const SIGNUP_OPTIONS: { value: SignupType; title: string; blurb: string; icon: t
     icon: GraduationCap,
   },
   {
-    value: "parent_participant",
-    title: "I'm a parent of a grade 2–5 child",
-    blurb: "You manage your child's sign-ups and hours.",
+    value: "parent",
+    title: "I'm a parent",
+    blurb: "Manage a younger child (grades 2–5), and follow older students who sign up themselves.",
     icon: Users,
-  },
-  {
-    value: "parent_viewer",
-    title: "I'm a parent of a grade 6–12 student",
-    blurb: "View-only access to your student's schedule.",
-    icon: Eye,
   },
 ];
 
@@ -43,7 +38,7 @@ const MEDINA_SCHOOL = "Medina Academy Redmond";
 
 const schema = z
   .object({
-    signupType: z.enum(["student", "parent_participant", "parent_viewer"]),
+    signupType: z.enum(["student", "parent"]),
     firstName: z.string().min(2).max(50),
     lastName: z.string().min(2).max(50),
     email: z.string().email("Enter a valid email"),
@@ -287,15 +282,12 @@ export default function RegisterPage() {
                 )}
               />
 
-              {/* Guidance for the two parent paths */}
-              {signupType === "parent_participant" && (
+              {/* Guidance for the parent path */}
+              {signupType === "parent" && (
                 <p className="text-xs text-muted-foreground rounded-md bg-muted p-3">
-                  Next, you'll add your child (grades 2–5) and manage their sign-ups and hours.
-                </p>
-              )}
-              {signupType === "parent_viewer" && (
-                <p className="text-xs text-muted-foreground rounded-md bg-muted p-3">
-                  Your student signs up themselves and enters <strong>this email</strong> as their parent's — their schedule then appears here.
+                  Next, add a younger child (grades 2–5) to manage them directly. For an older
+                  student (grades 6–12), have them sign up themselves and enter <strong>this email</strong>{" "}
+                  as their parent's — they'll then appear on your dashboard (view-only).
                 </p>
               )}
 
