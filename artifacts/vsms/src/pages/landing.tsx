@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { RecyclingRibbon } from "@/components/recycling-ribbon";
+import { ComingSoonBanner } from "@/components/coming-soon-banner";
 import { useGetPublicThresholds } from "@workspace/api-client-react";
 
 type Band = "elementary" | "middle" | "high";
@@ -182,6 +183,7 @@ export default function LandingPage() {
       <style dangerouslySetInnerHTML={{ __html: css }} />
 
       <RecyclingRibbon />
+      <ComingSoonBanner />
 
       <nav>
         <img className="logo-img" src="/medinacares-logo.png" alt="MedinaCares" />
