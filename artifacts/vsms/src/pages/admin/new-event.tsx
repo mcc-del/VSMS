@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useCreateEvent, useListUsers, useListOrganizations, useGetManagedOrganizations, getListEventsQueryKey, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useCreateEvent, useListUsers, useListOrganizations, useGetManagedOrganizations, useGetMe, getListEventsQueryKey, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,6 +71,8 @@ export default function AdminNewEvent() {
     query: { enabled: !isSelfSupervised, queryKey: getListUsersQueryKey() },
   });
   const { data: managed } = useGetManagedOrganizations();
+  const { data: me } = useGetMe();
+  const myOrgName = (me as any)?.organizationName as string | null | undefined;
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -380,33 +382,42 @@ export default function AdminNewEvent() {
                   )} />
                 )}
 
-                <FormField control={form.control} name="organizationId" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Host organization</FormLabel>
-                    <Select
-                      onValueChange={(v) => field.onChange(v === NONE ? "" : v)}
-                      value={field.value || (isOrgAdmin ? "" : NONE)}
-                    >
-                      <FormControl>
-                        <SelectTrigger data-testid="select-organization">
-                          <SelectValue placeholder={isOrgAdmin ? "Select your organization" : "No host org (community)"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {!isOrgAdmin && <SelectItem value={NONE}>No host org (community)</SelectItem>}
-                        {selectableOrgs.map((o) => (
-                          <SelectItem key={o.organizationId} value={o.organizationId}>
-                            {o.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      The organization that runs this event — it gets the reporting credit and manages the roster. Use the checkbox below to control who can sign up.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                {isSupervisor ? (
+                  <div className="rounded-lg border bg-muted/40 px-4 py-3">
+                    <p className="text-sm font-medium">Host organization</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {myOrgName ? <>This event is hosted by <span className="font-medium text-foreground">{myOrgName}</span>.</> : "This event is hosted by your organization."} Use the checkbox below to control who can join.
+                    </p>
+                  </div>
+                ) : (
+                  <FormField control={form.control} name="organizationId" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Host organization</FormLabel>
+                      <Select
+                        onValueChange={(v) => field.onChange(v === NONE ? "" : v)}
+                        value={field.value || (isOrgAdmin ? "" : NONE)}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-organization">
+                            <SelectValue placeholder={isOrgAdmin ? "Select your organization" : "No host org (community)"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {!isOrgAdmin && <SelectItem value={NONE}>No host org (community)</SelectItem>}
+                          {selectableOrgs.map((o) => (
+                            <SelectItem key={o.organizationId} value={o.organizationId}>
+                              {o.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        The organization that runs this event — it gets the reporting credit and manages the roster. Use the checkbox below to control who can sign up.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                )}
 
                 <FormField control={form.control} name="openToAll" render={({ field }) => (
                   <FormItem>

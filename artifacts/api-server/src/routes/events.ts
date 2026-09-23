@@ -1111,14 +1111,24 @@ router.post(
       return;
     }
 
-    const { title, description, slotLabel, location, street, city, state, zip, eventDate, startTime, endTime, maxCapacity, minGrade, maxGrade, imageUrl, organizationId, openToAll } =
+    const { title, description, slotLabel, location, street, city, state, zip, eventDate, startTime, endTime, maxCapacity, minGrade, maxGrade, imageUrl, openToAll } =
       parsed.data as any;
-    let { supervisorId } = parsed.data as any;
+    let { supervisorId, organizationId } = parsed.data as any;
 
     const role = req.auth!.role;
     // Supervisors and Org Admins supervise their own events.
     if (role === "supervisor" || role === "org_admin") {
       supervisorId = req.auth!.userId;
+    }
+    // A supervisor always hosts under their OWN organization — never a chosen
+    // one. Ignore any org sent by the client and use their account's org.
+    if (role === "supervisor") {
+      const [me] = await db
+        .select({ organizationId: usersTable.organizationId })
+        .from(usersTable)
+        .where(eq(usersTable.userId, req.auth!.userId))
+        .limit(1);
+      organizationId = me?.organizationId ?? null;
     }
     // Organization Admins may only create events for the org(s) they manage.
     if (role === "org_admin") {
