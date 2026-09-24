@@ -198,7 +198,7 @@ export default function ParentHours() {
             <Card className="border-dashed">
               <CardContent className="p-4 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">Attended an event they didn't sign up for?</span>{" "}
-                Go to <Link href="/parent/opportunities" className="text-primary font-medium hover:underline">Sign Up → Past</Link>, find the event, and log the hours there.
+                Go to <Link href="/parent/opportunities?tab=past" className="text-primary font-medium hover:underline">Sign Up → Past</Link>, find the event, and log the hours there.
               </CardContent>
             </Card>
           </TabsContent>

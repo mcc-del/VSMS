@@ -73,6 +73,10 @@ export default function OpportunitiesPage() {
   const [confirmEvent, setConfirmEvent] = useState<Event | null>(null);
   const [mineView, setMineView] = useState<"list" | "calendar">("list");
   const [awsuHours, setAwsuHours] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState<string>(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    return t === "past" || t === "mine" ? t : "upcoming";
+  });
   // Deep-link to a specific event: /opportunities?event=<id> scrolls to and
   // briefly highlights that event's card (e.g. from the "new events" banner).
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -405,11 +409,12 @@ export default function OpportunitiesPage() {
                   return (
                     <div className="w-full">
                       <Badge className="bg-amber-100 text-amber-800 border-0 mb-2">Attended without signing up?</Badge>
+                      {Number(event.hoursValue ?? 0) > 0 && (
+                        <p className="text-sm mb-1.5">This event was for <span className="font-semibold">{event.hoursValue}h</span>. How many hours did you do?</p>
+                      )}
                       <div className="flex items-end gap-2">
                         <div>
-                          <label className="text-xs text-muted-foreground">
-                            {Number(event.hoursValue ?? 0) > 0 ? `This was for ${event.hoursValue}h — hours you did` : "Hours you did"}
-                          </label>
+                          <label className="text-xs text-muted-foreground">Hours you did</label>
                           <Input
                             type="number" min="0.25" max="24" step="0.25"
                             className="w-28 h-9"
@@ -502,7 +507,7 @@ export default function OpportunitiesPage() {
             ))}
           </div>
         ) : (
-          <Tabs defaultValue="upcoming">
+          <Tabs value={tab} onValueChange={setTab}>
             <TabsList>
               <TabsTrigger value="upcoming" data-testid="tab-upcoming">
                 Upcoming events ({upcoming.length})

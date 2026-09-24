@@ -142,7 +142,7 @@ export function PostEventHours() {
         <Card className="border-dashed">
           <CardContent className="p-4 text-sm text-muted-foreground">
             <span className="font-medium text-foreground">Attended an event you didn't sign up for?</span>{" "}
-            Go to <Link href="/opportunities" className="text-primary font-medium hover:underline">Sign Up → Past</Link>,
+            Go to <Link href="/opportunities?tab=past" className="text-primary font-medium hover:underline">Sign Up → Past</Link>,
             find the event (it'll show an <span className="font-medium">"Attended without signing up?"</span> tag), and log your hours there.
           </CardContent>
         </Card>

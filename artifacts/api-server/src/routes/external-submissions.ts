@@ -5,6 +5,7 @@ import { authenticate, requireRole } from "../middlewares/auth";
 import { SubmitExternalActivityBody } from "@workspace/api-zod";
 import { isWithinAwardWindow, AWARD_WINDOW_MESSAGE } from "../lib/season";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
+import { sendExternalReviewRequest } from "../lib/email";
 
 const router = Router();
 
@@ -163,6 +164,20 @@ router.post(
       .returning();
 
     res.status(201).json(formatExternal(submission));
+
+    // If no signed proof was attached, email the listed supervisor to verify.
+    if (!(proofUrl && proofUrl.trim())) {
+      const [me] = await db
+        .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
+        .from(usersTable)
+        .where(eq(usersTable.userId, userId))
+        .limit(1);
+      const volunteerName = `${me?.firstName ?? ""} ${me?.lastName ?? ""}`.trim() || "A student";
+      sendExternalReviewRequest(
+        extSupervisorEmail.trim().toLowerCase(), extSupervisorName.trim(), volunteerName,
+        activityName.trim(), organizationName.trim(), Number(hoursWorked), volunteerDate,
+      ).catch((err) => req.log.error({ err }, "external review email failed"));
+    }
   },
 );
 
@@ -577,6 +592,19 @@ router.post(
       })
       .returning();
     res.status(201).json(formatExternal(submission));
+
+    if (!(proofUrl && proofUrl.trim())) {
+      const [c] = await db
+        .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
+        .from(usersTable)
+        .where(eq(usersTable.userId, childId))
+        .limit(1);
+      const volunteerName = `${c?.firstName ?? ""} ${c?.lastName ?? ""}`.trim() || "A student";
+      sendExternalReviewRequest(
+        extSupervisorEmail.trim().toLowerCase(), extSupervisorName.trim(), volunteerName,
+        activityName.trim(), organizationName.trim(), Number(hoursWorked), volunteerDate,
+      ).catch((err) => req.log.error({ err }, "external review email failed"));
+    }
   },
 );
 

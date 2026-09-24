@@ -58,6 +58,10 @@ export default function ParentOpportunities() {
 
   const [search, setSearch] = useState("");
   const [awsuHours, setAwsuHours] = useState<Record<string, string>>({});
+  const [tab, setTab] = useState<string>(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    return t === "past" || t === "mine" ? t : "upcoming";
+  });
 
   const q = search.trim().toLowerCase();
   const matches = (e: Event) => !q || [e.title, (e as any).location, (e as any).supervisorName].filter(Boolean).join(" ").toLowerCase().includes(q);
@@ -215,7 +219,7 @@ export default function ParentOpportunities() {
               </div>
             </div>
 
-            <Tabs defaultValue="upcoming">
+            <Tabs value={tab} onValueChange={setTab}>
               <TabsList>
                 <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
                 <TabsTrigger value="mine">My sign-ups</TabsTrigger>

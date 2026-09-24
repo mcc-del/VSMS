@@ -19,7 +19,7 @@ import { alias } from "drizzle-orm/pg-core";
 // Alias for joining an event's supervisor when building a child's schedule.
 const parentSupervisorUsers = alias(usersTable, "parent_supervisor_users");
 import { authenticate, requireRole } from "../middlewares/auth";
-import { sendCoGuardianInvite } from "../lib/email";
+import { sendCoGuardianInvite, sendSignupNotification } from "../lib/email";
 
 interface ChildFields {
   firstName: string;
@@ -559,7 +559,7 @@ router.post(
       .from(usersTable)
       .where(eq(usersTable.userId, childId))
       .limit(1);
-    if (event.organizationId && (child?.organizationId ?? null) !== event.organizationId) {
+    if (event.organizationId && !event.openToAll && (child?.organizationId ?? null) !== event.organizationId) {
       res.status(403).json({ error: "This opportunity isn't open to your child's organization." });
       return;
     }
@@ -615,6 +615,21 @@ router.post(
       endTime: event.endTime,
       location: event.location,
     });
+
+    // Notify the event's supervisor that a volunteer signed up.
+    const [childRow2] = await db
+      .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
+      .from(usersTable).where(eq(usersTable.userId, childId)).limit(1);
+    const [sup] = await db
+      .select({ email: usersTable.email, firstName: usersTable.firstName, lastName: usersTable.lastName, emailNotifications: usersTable.emailNotifications })
+      .from(usersTable).where(eq(usersTable.userId, event.supervisorId)).limit(1);
+    if (sup?.email && sup.emailNotifications) {
+      sendSignupNotification(
+        sup.email, `${sup.firstName} ${sup.lastName}`.trim(),
+        `${childRow2?.firstName ?? ""} ${childRow2?.lastName ?? ""}`.trim() || "A volunteer",
+        event.title, event.eventDate,
+      ).catch((err) => req.log.error({ err }, "supervisor signup notification failed"));
+    }
   },
 );
 

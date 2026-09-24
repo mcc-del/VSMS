@@ -23,7 +23,7 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
       { label: "Find & sign up for opportunities", href: "/parent/opportunities", hint: "Pick your child, then browse and sign them up for events." },
       { label: "Submit event & walk-in hours", href: "/parent/hours", hint: "After an event, log your child's hours for approval." },
       { label: "Add external volunteering", href: "/parent/hours", hint: "Did your child volunteer with an approved nonprofit? Add it under the External tab." },
-      { label: "Track medal progress", href: "/parent", hint: "See each child's hours and how close they are to Bronze, Silver, Gold on your dashboard." },
+      { label: "Track medal progress", href: "/parent/reports", hint: "See each child's hours and how close they are to Bronze, Silver, Gold in My Reports." },
     ],
   },
   supervisor: {

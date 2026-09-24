@@ -239,6 +239,41 @@ export async function sendGuardianSignupNotification(
   }
 }
 
+// Ask an external (outside-nonprofit) supervisor to verify a volunteer's hours.
+export async function sendExternalReviewRequest(
+  toEmail: string,
+  supervisorName: string,
+  volunteerName: string,
+  activity: string,
+  organization: string,
+  hours: number,
+  date: string,
+): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+  const text = [
+    `Hi ${supervisorName || "there"},`,
+    "",
+    `${volunteerName} listed you as the supervisor for volunteer hours they're submitting to the MedinaCares Volunteer Service Awards:`,
+    "",
+    `  • Activity: ${activity}`,
+    `  • Organization: ${organization}`,
+    `  • Date: ${date}`,
+    `  • Hours: ${hours}`,
+    "",
+    "If this is accurate, no action is needed — a MedinaCares reviewer will confirm it. If anything looks wrong, please reply to this email so we can follow up.",
+    "",
+    "Thank you for supporting youth volunteering!",
+    "",
+    "— MedinaCares Council",
+  ].join("\n");
+  try {
+    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: `Please verify volunteer hours for ${volunteerName}`, text });
+  } catch (err) {
+    logger.error({ err, toEmail }, "Failed to send external review request");
+  }
+}
+
 export async function sendWithdrawalNotification(
   toEmail: string,
   supervisorName: string,
