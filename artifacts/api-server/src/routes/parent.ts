@@ -193,7 +193,12 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
       .from(manualHoursTable)
       .where(eq(manualHoursTable.userId, child.userId));
 
-    const totalApprovedHours = Number(internal?.total ?? 0) + Number(manual?.total ?? 0);
+    const approvedExternal = (externalByChild.get(child.userId) ?? [])
+      .filter((e) => e.status === "approved")
+      .reduce((sum, e) => sum + Number(e.hoursWorked ?? 0), 0);
+
+    const totalApprovedHours =
+      Number(internal?.total ?? 0) + Number(manual?.total ?? 0) + approvedExternal;
 
     const regs = await db
       .select({

@@ -5,6 +5,7 @@ import {
   eventsTable,
   volunteerSubmissionsTable,
   manualHoursTable,
+  externalSubmissionsTable,
   organizationsTable,
 } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
@@ -34,9 +35,19 @@ async function approvedHoursByUser(): Promise<Map<string, number>> {
     .from(manualHoursTable)
     .groupBy(manualHoursTable.userId);
 
+  const external = await db
+    .select({
+      userId: externalSubmissionsTable.userId,
+      total: sql<string>`sum(${externalSubmissionsTable.hoursWorked})`,
+    })
+    .from(externalSubmissionsTable)
+    .where(eq(externalSubmissionsTable.status, "approved"))
+    .groupBy(externalSubmissionsTable.userId);
+
   const map = new Map<string, number>();
   for (const r of internal) map.set(r.userId, Number(r.total ?? 0));
   for (const r of manual) map.set(r.userId, (map.get(r.userId) ?? 0) + Number(r.total ?? 0));
+  for (const r of external) map.set(r.userId, (map.get(r.userId) ?? 0) + Number(r.total ?? 0));
   return map;
 }
 

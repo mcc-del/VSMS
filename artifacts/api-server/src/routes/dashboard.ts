@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, eventsTable, volunteerSubmissionsTable, manualHoursTable, awardThresholdsTable } from "@workspace/db";
+import { db, usersTable, eventsTable, volunteerSubmissionsTable, externalSubmissionsTable, manualHoursTable, awardThresholdsTable } from "@workspace/db";
 import { thresholdsForGrade } from "../lib/thresholds";
 import { eq, sum, count, and, inArray, isNotNull } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
@@ -35,6 +35,25 @@ router.get(
         totalApprovedHours += Number(sub.hoursWorked ?? sub.plannedHours ?? 0);
         approvedCount++;
       } else if (sub.status === "pending" && sub.hoursWorked !== null) {
+        pendingCount++;
+      } else if (sub.status === "rejected") {
+        rejectedCount++;
+      }
+    }
+
+    // Include approved external volunteering hours.
+    const extSubs = await db
+      .select({
+        status: externalSubmissionsTable.status,
+        hoursWorked: externalSubmissionsTable.hoursWorked,
+      })
+      .from(externalSubmissionsTable)
+      .where(eq(externalSubmissionsTable.userId, userId));
+    for (const sub of extSubs) {
+      if (sub.status === "approved") {
+        totalApprovedHours += Number(sub.hoursWorked ?? 0);
+        approvedCount++;
+      } else if (sub.status === "pending" || sub.status === "deferred_overflow") {
         pendingCount++;
       } else if (sub.status === "rejected") {
         rejectedCount++;
