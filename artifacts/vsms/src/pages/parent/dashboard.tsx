@@ -360,28 +360,26 @@ export default function ParentDashboard() {
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="rounded-xl border bg-primary/5 p-4">
-                    <div className="flex items-end justify-between gap-3">
-                      <div>
-                        <p className="text-3xl font-bold tabular-nums leading-none">{child.totalApprovedHours.toFixed(1)}<span className="text-lg font-semibold text-muted-foreground">h</span></p>
-                        <p className="text-xs text-muted-foreground mt-1">approved so far</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1.5 justify-end">
-                          <Trophy className="w-4 h-4 text-yellow-500" />
-                          <span className="text-sm font-semibold">
-                            {ms.label === "Gold achieved" ? "Gold achieved 🎉" : `Next: ${ms.label}`}
-                          </span>
+                  <div className="relative rounded-2xl bg-gradient-to-br from-primary via-primary to-[hsl(207_60%_36%)] text-primary-foreground shadow-soft overflow-hidden">
+                    <div className="pointer-events-none absolute inset-0 opacity-70" style={{ backgroundImage: "radial-gradient(24rem 24rem at 95% -30%, rgba(255,255,255,0.16), transparent 60%)" }} />
+                    <div className="relative p-5">
+                      <div className="flex items-end justify-between gap-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-primary-foreground/70 font-medium">Approved service hours</p>
+                          <p className="text-4xl font-bold tabular-nums leading-none mt-1">{child.totalApprovedHours.toFixed(1)}<span className="text-xl font-semibold text-primary-foreground/70">h</span></p>
                         </div>
-                        {ms.label !== "Gold achieved" && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            <span className="font-semibold text-foreground">{Math.max(0, ms.goal - child.totalApprovedHours).toFixed(1)}h</span> to go · goal {ms.goal}h
-                          </p>
-                        )}
+                        <div className="text-right">
+                          <div className="flex items-center gap-1.5 justify-end"><Trophy className="w-4 h-4" />
+                            <span className="text-sm font-semibold">{ms.label === "Gold achieved" ? "Gold achieved 🎉" : `Next: ${ms.label}`}</span>
+                          </div>
+                          {ms.label !== "Gold achieved" && (
+                            <p className="text-xs text-primary-foreground/85 mt-1"><span className="font-semibold">{Math.max(0, ms.goal - child.totalApprovedHours).toFixed(1)}h</span> to go · goal {ms.goal}h</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2.5 mt-3 overflow-hidden">
-                      <div className="bg-primary h-2.5 rounded-full transition-all" style={{ width: `${ms.pct}%` }} />
+                      <div className="w-full bg-white/25 rounded-full h-2.5 mt-3 overflow-hidden">
+                        <div className="bg-white h-2.5 rounded-full transition-all" style={{ width: `${ms.pct}%` }} />
+                      </div>
                     </div>
                   </div>
 
