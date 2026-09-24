@@ -167,34 +167,47 @@ router.patch(
 );
 
 // ----- Email notification preference (any signed-in user) -----
+// Reads the digest flag, tolerating the column not existing yet (pre-migration).
+async function readDigest(userId: string): Promise<boolean> {
+  try {
+    const [d] = await db.select({ emailDigestDaily: usersTable.emailDigestDaily }).from(usersTable).where(eq(usersTable.userId, userId)).limit(1);
+    return d?.emailDigestDaily ?? false;
+  } catch {
+    return false;
+  }
+}
+
 router.get("/v1/me/notification-preferences", authenticate, async (req, res) => {
   const [u] = await db
-    .select({ emailNotifications: usersTable.emailNotifications, emailDigestDaily: usersTable.emailDigestDaily })
+    .select({ emailNotifications: usersTable.emailNotifications })
     .from(usersTable)
     .where(eq(usersTable.userId, req.auth!.userId))
     .limit(1);
-  res.json({ emailNotifications: u?.emailNotifications ?? true, emailDigestDaily: u?.emailDigestDaily ?? false });
+  res.json({ emailNotifications: u?.emailNotifications ?? true, emailDigestDaily: await readDigest(req.auth!.userId) });
 });
 
 router.patch("/v1/me/notification-preferences", authenticate, async (req, res) => {
   const body = (req.body ?? {}) as { emailNotifications?: unknown; emailDigestDaily?: unknown };
-  const updates: Record<string, unknown> = {};
   if ("emailNotifications" in body) {
     if (typeof body.emailNotifications !== "boolean") { res.status(400).json({ error: "emailNotifications must be a boolean." }); return; }
-    updates.emailNotifications = body.emailNotifications;
+    await db.update(usersTable).set({ emailNotifications: body.emailNotifications }).where(eq(usersTable.userId, req.auth!.userId));
   }
   if ("emailDigestDaily" in body) {
     if (typeof body.emailDigestDaily !== "boolean") { res.status(400).json({ error: "emailDigestDaily must be a boolean." }); return; }
-    updates.emailDigestDaily = body.emailDigestDaily;
+    // Tolerate the column not being migrated yet — the toggle just won't stick.
+    try {
+      await db.update(usersTable).set({ emailDigestDaily: body.emailDigestDaily }).where(eq(usersTable.userId, req.auth!.userId));
+    } catch {
+      res.status(503).json({ error: "The daily digest isn't available yet — the database update hasn't been applied." });
+      return;
+    }
   }
-  if (Object.keys(updates).length === 0) { res.status(400).json({ error: "Nothing to update." }); return; }
-  await db.update(usersTable).set(updates).where(eq(usersTable.userId, req.auth!.userId));
   const [u] = await db
-    .select({ emailNotifications: usersTable.emailNotifications, emailDigestDaily: usersTable.emailDigestDaily })
+    .select({ emailNotifications: usersTable.emailNotifications })
     .from(usersTable)
     .where(eq(usersTable.userId, req.auth!.userId))
     .limit(1);
-  res.json({ emailNotifications: u?.emailNotifications ?? true, emailDigestDaily: u?.emailDigestDaily ?? false });
+  res.json({ emailNotifications: u?.emailNotifications ?? true, emailDigestDaily: await readDigest(req.auth!.userId) });
 });
 
 // ----- Adult self-logged volunteer hours (supervisors / org admins / admins) -----

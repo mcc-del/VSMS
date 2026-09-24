@@ -22,10 +22,16 @@ router.post("/v1/digests/flush", async (req, res) => {
     return;
   }
 
-  const items = await db
-    .select({ id: emailDigestQueueTable.id, userId: emailDigestQueueTable.userId, line: emailDigestQueueTable.line })
-    .from(emailDigestQueueTable)
-    .orderBy(asc(emailDigestQueueTable.createdAt));
+  let items: { id: string; userId: string; line: string }[];
+  try {
+    items = await db
+      .select({ id: emailDigestQueueTable.id, userId: emailDigestQueueTable.userId, line: emailDigestQueueTable.line })
+      .from(emailDigestQueueTable)
+      .orderBy(asc(emailDigestQueueTable.createdAt));
+  } catch {
+    res.status(503).json({ error: "Digest table not found — apply the database update (pnpm --filter db push) first." });
+    return;
+  }
 
   if (items.length === 0) {
     res.json({ recipients: 0, items: 0 });
