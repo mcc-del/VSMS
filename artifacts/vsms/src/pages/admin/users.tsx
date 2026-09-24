@@ -121,18 +121,25 @@ export default function AdminUsers() {
   const [hoursUser, setHoursUser] = useState<{ userId: string; name: string } | null>(null);
   const [manageHoursUser, setManageHoursUser] = useState<{ userId: string; name: string } | null>(null);
   const [hourEntries, setHourEntries] = useState<any[] | null>(null);
+  const [hoursError, setHoursError] = useState<string | null>(null);
   const [deletingHourId, setDeletingHourId] = useState<string | null>(null);
   const [orgAdminUser, setOrgAdminUser] = useState<{ userId: string; name: string } | null>(null);
   const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]);
 
   async function loadHours(userId: string) {
     setHourEntries(null);
+    setHoursError(null);
     try {
       const data = await customFetch<{ entries: any[] }>(`/api/v1/admin/users/${userId}/hours`);
-      setHourEntries(data.entries ?? []);
-    } catch {
+      setHourEntries(Array.isArray(data?.entries) ? data.entries : []);
+    } catch (err: any) {
       setHourEntries([]);
-      toast({ title: "Couldn't load hours", variant: "destructive" });
+      const status = err?.status;
+      setHoursError(
+        status === 404
+          ? "This tool isn't available on the server yet — republish the app, then try again."
+          : (err?.data?.error ?? "Couldn't load hours. Please try again."),
+      );
     }
   }
 
@@ -598,6 +605,8 @@ export default function AdminUsers() {
           <div className="space-y-2 max-h-[60vh] overflow-y-auto">
             {hourEntries === null ? (
               <p className="text-sm text-muted-foreground py-6 text-center">Loading…</p>
+            ) : hoursError ? (
+              <p className="text-sm text-destructive py-6 text-center">{hoursError}</p>
             ) : hourEntries.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">No hour entries logged for this participant.</p>
             ) : (
