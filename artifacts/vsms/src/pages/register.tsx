@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { GRADES } from "@/lib/schools";
-import { GraduationCap, Users, Eye, EyeOff } from "lucide-react";
+import { GraduationCap, Users, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 // Two guided sign-up paths. Both map to the backend's accountType
 // (student | parent). One parent account covers everything: you manage younger
@@ -202,8 +202,13 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background app-surface px-4 py-8">
       <div className="w-full max-w-sm">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
+          <ArrowLeft className="w-4 h-4" /> Back to home
+        </Link>
         <div className="mb-8 text-center">
-          <img src="/medinacares-logo.png" alt="MedinaCares" className="w-20 h-20 object-contain mx-auto mb-4" />
+          <Link href="/">
+            <img src="/medinacares-logo.png" alt="MedinaCares — home" className="w-20 h-20 object-contain mx-auto mb-4 cursor-pointer" />
+          </Link>
           <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
           <p className="text-muted-foreground mt-1 text-sm">Start logging your service hours.</p>
         </div>

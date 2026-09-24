@@ -5,7 +5,7 @@ import { ComingSoonBanner } from "@/components/coming-soon-banner";
 import { useGetPublicThresholds } from "@workspace/api-client-react";
 
 type Band = "elementary" | "middle" | "high";
-const BAND_LABELS: Record<Band, string> = { elementary: "Kids (2–5)", middle: "Teens (6–10)", high: "Young Adults (11–12)" };
+const BAND_LABELS: Record<Band, string> = { elementary: "Kids (Grade 2–5)", middle: "Teens (Grade 6–10)", high: "Young Adults (Grade 11–12)" };
 const FALLBACK: Record<Band, { bronze: number; silver: number; gold: number }> = {
   elementary: { bronze: 26, silver: 50, gold: 75 },
   middle: { bronze: 50, silver: 75, gold: 100 },
@@ -96,6 +96,7 @@ const css = `
 .mc-landing .hero-cta { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
 .mc-landing .btn-primary { box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--blue-deep) 80%, transparent); }
 .mc-landing .hero-elig { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; padding-top: 26px; border-top: 2px solid var(--line); }
+.mc-landing .elig-head { flex-basis: 100%; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.12em; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
 .mc-landing .eb { background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 10px 16px; font-size: 15px; font-weight: 700; color: var(--ink); box-shadow: var(--shadow); }
 .mc-landing .eb b { display: block; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--blue-deep); margin-bottom: 2px; }
 
@@ -119,7 +120,7 @@ const css = `
 .mc-landing .bandsel button[aria-pressed="true"] { background: var(--blue-deep); color: #fff; box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--blue) 80%, transparent); }
 
 .mc-landing section { padding: 56px 0; }
-.mc-landing .section-band { margin-top: 48px; }
+.mc-landing .section-band { margin-top: 48px; margin-bottom: 40px; }
 .mc-landing .sec-head { max-width: 34em; margin-bottom: 36px; }
 .mc-landing .sec-head h2 { font-size: clamp(28px, 4vw, 38px); font-weight: 800; margin-top: 10px; }
 .mc-landing .sec-head p { color: var(--ink-soft); margin-top: 12px; font-size: 17px; }
@@ -204,6 +205,7 @@ export default function LandingPage() {
               <Link href="/login" className="btn btn-ghost btn-lg">I already have one</Link>
             </div>
             <div className="hero-elig">
+              <span className="elig-head">Eligibility</span>
               <span className="eb"><b>Medina students</b>Grades 2&ndash;9</span>
               <span className="eb"><b>Alumni &amp; community</b>Grades 2&ndash;12</span>
             </div>
@@ -273,7 +275,7 @@ export default function LandingPage() {
       </section>
 
       <footer>
-        <div className="wrap">MedinaCares · Medina Academy Volunteer Service Awards</div>
+        <div className="wrap">MedinaCares · Volunteer Service Awards — Medina Academy Redmond</div>
       </footer>
     </div>
   );
