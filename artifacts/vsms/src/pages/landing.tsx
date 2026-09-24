@@ -243,18 +243,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="wrap section-band">
-        <div className="band">
-          <span className="eyebrow">The milestones · {BAND_LABELS[band]}</span>
-          <h2>Something to aim for.</h2>
-          <div className="tiers">
-            <div className="tier"><h3>Bronze</h3><div className="hrs">{th.bronze}h+</div><p>Your first big milestone — the habit is real.</p></div>
-            <div className="tier"><h3>Silver</h3><div className="hrs">{th.silver}h+</div><p>Serious commitment to service.</p></div>
-            <div className="tier"><h3>Gold</h3><div className="hrs">{th.gold}h+</div><p>The highest honor — recognized leadership.</p></div>
-          </div>
-        </div>
-      </section>
-
       <section className="wrap">
         <div className="sec-head">
           <span className="eyebrow">Why it counts</span>
