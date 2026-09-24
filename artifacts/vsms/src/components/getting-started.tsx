@@ -19,7 +19,7 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
   parent: {
     title: "Welcome! Here's how to get started",
     steps: [
-      { label: "Add a child", href: "/parent", hint: "Add a grade 2–5 child to manage them. Older students (6–12) sign up themselves with your email." },
+      { label: "Add a child", href: "/parent?add=child", hint: "Add a grade 2–5 child to manage them. Older students (6–12) sign up themselves with your email." },
       { label: "Find & sign up for opportunities", href: "/parent/opportunities", hint: "Pick your child, then browse and sign them up for events." },
       { label: "Submit event & walk-in hours", href: "/parent/hours", hint: "After an event, log your child's hours for approval." },
       { label: "Add external volunteering", href: "/parent/hours", hint: "Did your child volunteer with an approved nonprofit? Add it under the External tab." },

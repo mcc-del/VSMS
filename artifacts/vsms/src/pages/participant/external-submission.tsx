@@ -324,7 +324,7 @@ export default function ExternalSubmissionPage() {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
                     name="volunteerDate"
@@ -360,7 +360,7 @@ export default function ExternalSubmissionPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
                     name="extSupervisorName"

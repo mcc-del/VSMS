@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AddAttendeeInput {
-  email?: string;
-  userId?: string;
-}
+export type SearchParticipantsParams = {
+q?: string;
+};

@@ -5,7 +5,9 @@ import {
   useSetAttendance,
   useBroadcastToEvent,
   useAddEventAttendee,
+  useSearchParticipants,
   getGetEventRosterQueryKey,
+  getSearchParticipantsQueryKey,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,21 +38,23 @@ export default function RosterPage() {
   const setAttendance = useSetAttendance();
   const broadcast = useBroadcastToEvent();
   const addAttendee = useAddEventAttendee();
-  const [addEmail, setAddEmail] = useState("");
+  const [search, setSearch] = useState("");
   const canManage = (data as any)?.canManage ?? false;
+  const searchQ = search.trim();
+  const { data: searchData, isFetching: searching } = useSearchParticipants(
+    { q: searchQ },
+    { query: { enabled: searchQ.length >= 2, queryKey: getSearchParticipantsQueryKey({ q: searchQ }) } },
+  );
+  const results = (searchData as any)?.participants ?? [];
 
-  function addByEmail() {
-    const email = addEmail.trim();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      toast({ title: "Enter a valid email", variant: "destructive" }); return;
-    }
+  function addParticipant(userId: string, name: string) {
     addAttendee.mutate(
-      { eventId, data: { email } },
+      { eventId, data: { userId } as any },
       {
         onSuccess: () => {
-          toast({ title: "Participant added", description: "They've been added and emailed." });
+          toast({ title: "Participant added", description: `${name} was added to this event.` });
           queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
-          setAddEmail("");
+          setSearch("");
         },
         onError: (e: any) => toast({ title: "Couldn't add", description: e?.data?.error ?? "Try again.", variant: "destructive" }),
       },
@@ -165,20 +169,36 @@ export default function RosterPage() {
             <CardHeader><CardTitle className="text-base">Add a participant</CardTitle></CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-2">
-                Add someone to this event by their account email — useful for including a specific student from another organization without opening the event to everyone. They'll be emailed.
+                Search by name and pick the student to add — including younger children managed by a parent. They must already have an account; new people register first. Adding vouches for a specific student without opening the event to everyone.
               </p>
-              <div className="flex gap-2">
-                <Input
-                  type="email"
-                  placeholder="student@email.com"
-                  value={addEmail}
-                  onChange={(e) => setAddEmail(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") addByEmail(); }}
-                />
-                <Button onClick={addByEmail} disabled={addAttendee.isPending} className="shrink-0">
-                  {addAttendee.isPending ? "Adding…" : "Add"}
-                </Button>
-              </div>
+              <Input
+                placeholder="Type a student's name…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {searchQ.length >= 2 && (
+                <div className="mt-2 rounded-lg border divide-y max-h-64 overflow-y-auto">
+                  {searching && results.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-3">Searching…</p>
+                  ) : results.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-3">No matching participant. They may need to register first.</p>
+                  ) : (
+                    results.map((p: any) => (
+                      <div key={p.userId} className="flex items-center justify-between gap-3 p-2.5">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{p.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {[p.grade ? `Gr ${p.grade}` : null, p.school, p.organizationName, p.isManaged ? "managed" : p.email].filter(Boolean).join(" · ")}
+                          </p>
+                        </div>
+                        <Button size="sm" className="shrink-0" disabled={addAttendee.isPending} onClick={() => addParticipant(p.userId, p.name)}>
+                          Add
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

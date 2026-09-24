@@ -8,7 +8,7 @@ import {
   guardianshipsTable,
   volunteerSubmissionsTable,
 } from "@workspace/db";
-import { eq, count, sql, and, inArray } from "drizzle-orm";
+import { eq, count, sql, and, inArray, ilike, or } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification, sendAddedToEvent, sendWithdrawalNotification, sendGuardianSignupNotification } from "../lib/email";
@@ -756,19 +756,69 @@ router.post(
   },
 );
 
+// GET /api/v1/participants/search?q= — name search for the roster "Add
+// participant" picker. Returns existing participant accounts (including managed
+// children, who have no email) matching the query. Managers can vouch for a
+// student from any org, so this isn't org-scoped.
+router.get(
+  "/v1/participants/search",
+  authenticate,
+  requireRole("supervisor", "admin", "org_admin"),
+  async (req, res) => {
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    if (q.length < 2) { res.json({ participants: [] }); return; }
+    const like = `%${q}%`;
+    const rows = await db
+      .select({
+        userId: usersTable.userId,
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+        grade: usersTable.grade,
+        school: usersTable.school,
+        email: usersTable.email,
+        isManaged: usersTable.isManaged,
+        organizationName: organizationsTable.name,
+      })
+      .from(usersTable)
+      .leftJoin(organizationsTable, eq(usersTable.organizationId, organizationsTable.organizationId))
+      .where(and(
+        eq(usersTable.role, "participant"),
+        or(
+          ilike(usersTable.firstName, like),
+          ilike(usersTable.lastName, like),
+          ilike(sql`${usersTable.firstName} || ' ' || ${usersTable.lastName}`, like),
+        ),
+      ))
+      .orderBy(usersTable.firstName)
+      .limit(20);
+    res.json({
+      participants: rows.map((r) => ({
+        userId: r.userId,
+        name: `${r.firstName} ${r.lastName}`.trim(),
+        grade: r.grade ?? null,
+        school: r.school ?? null,
+        email: r.email ?? null,
+        isManaged: r.isManaged,
+        organizationName: r.organizationName ?? null,
+      })),
+    });
+  },
+);
+
 // POST /api/v1/events/:eventId/attendees — a supervisor/org-admin adds a
-// participant to their event by email. This intentionally bypasses org-gating:
-// the supervisor is vouching for a specific student (e.g. a cohort program
-// including a guest from another org), without opening the event to everyone.
+// participant to their event by userId (from the search picker) or email. This
+// intentionally bypasses org-gating: the supervisor is vouching for a specific
+// student, without opening the event to everyone.
 router.post(
   "/v1/events/:eventId/attendees",
   authenticate,
   requireRole("supervisor", "admin", "org_admin"),
   async (req, res) => {
     const { eventId } = req.params as { eventId: string };
-    const email = typeof (req.body as { email?: unknown })?.email === "string"
-      ? (req.body as { email: string }).email.trim().toLowerCase() : "";
-    if (!email) { res.status(400).json({ error: "Enter the participant's email." }); return; }
+    const body = (req.body ?? {}) as { email?: unknown; userId?: unknown };
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const pickedUserId = typeof body.userId === "string" ? body.userId.trim() : "";
+    if (!email && !pickedUserId) { res.status(400).json({ error: "Pick a participant to add." }); return; }
 
     const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
     if (!event) { res.status(404).json({ error: "Event not found" }); return; }
@@ -778,12 +828,12 @@ router.post(
     }
 
     const [participant] = await db
-      .select({ userId: usersTable.userId, firstName: usersTable.firstName, lastName: usersTable.lastName, role: usersTable.role, grade: usersTable.grade, parentEmail: usersTable.parentEmail })
+      .select({ userId: usersTable.userId, firstName: usersTable.firstName, lastName: usersTable.lastName, role: usersTable.role, grade: usersTable.grade, email: usersTable.email, parentEmail: usersTable.parentEmail })
       .from(usersTable)
-      .where(eq(usersTable.email, email))
+      .where(pickedUserId ? eq(usersTable.userId, pickedUserId) : eq(usersTable.email, email))
       .limit(1);
     if (!participant || participant.role !== "participant") {
-      res.status(404).json({ error: "No participant found with that email." });
+      res.status(404).json({ error: pickedUserId ? "That participant no longer exists." : "No participant found with that email." });
       return;
     }
 
@@ -801,7 +851,7 @@ router.post(
       .from(usersTable).where(eq(usersTable.userId, req.auth!.userId)).limit(1);
     const byName = adder ? `${adder.firstName} ${adder.lastName}`.trim() : "A supervisor";
     sendAddedToEvent(
-      [email, participant.parentEmail].filter((e): e is string => !!e),
+      [participant.email, participant.parentEmail].filter((e): e is string => !!e),
       participant.firstName, event.title, event.eventDate, byName,
     ).catch((err) => req.log.error({ err }, "added-to-event email failed"));
 

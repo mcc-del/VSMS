@@ -25,7 +25,7 @@ const schema = z.object({
   lastName: z.string().min(2).max(50),
   email: z.string().email(),
   password: z.string().min(8, "Min 8 characters"),
-  role: z.enum(["participant", "supervisor", "org_admin", "admin"]),
+  role: z.enum(["participant", "parent", "supervisor", "org_admin", "admin"]),
   phone: z.string().optional(),
   organizationId: z.string().optional(),
 });
@@ -507,6 +507,7 @@ export default function AdminUsers() {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="participant">Participant</SelectItem>
+                      {isSuperAdmin && <SelectItem value="parent">Parent</SelectItem>}
                       <SelectItem value="supervisor">Supervisor</SelectItem>
                       {isSuperAdmin && <SelectItem value="org_admin">Admin</SelectItem>}
                       {isSuperAdmin && <SelectItem value="admin">Super Admin</SelectItem>}

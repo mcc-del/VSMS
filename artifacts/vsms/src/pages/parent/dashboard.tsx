@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetParentChildren,
@@ -205,6 +205,12 @@ export default function ParentDashboard() {
     setOtherSchool(false);
     setDialogOpen(true);
   };
+
+  // Open the "Add child" dialog automatically when arrived via ?add=child.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("add") === "child") openAdd();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openEdit = (child: ParentChild) => {
     setEditing(child);
@@ -735,7 +741,7 @@ export default function ParentDashboard() {
                 with the nonprofit — they email mcc@medinaacademy.org to get approved.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label className="text-xs">Date</Label><Input type="date" value={ext.volunteerDate} onChange={(e) => setExt({ ...ext, volunteerDate: e.target.value })} /></div>
               <div><Label className="text-xs">Hours</Label><Input type="number" min="0.5" max="24" step="0.5" value={ext.hoursWorked} onChange={(e) => setExt({ ...ext, hoursWorked: e.target.value })} placeholder="e.g. 3" /></div>
             </div>

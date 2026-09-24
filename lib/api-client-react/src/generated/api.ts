@@ -77,6 +77,7 @@ import type {
   ParentChild,
   ParentChildRegistration,
   ParticipantDashboard,
+  ParticipantSearchResponse,
   PendingReviewsResponse,
   PublicThresholds,
   ReassignEvents200,
@@ -90,6 +91,7 @@ import type {
   School,
   SchoolMergeInput,
   SchoolRequestInput,
+  SearchParticipantsParams,
   ServiceRecord,
   SetOrgAdminInput,
   SetOrgAdminResult,
@@ -5434,6 +5436,90 @@ export const useDeleteMyAdultHours = <TError = ErrorType<ErrorResponse>,
       > => {
       return useMutation(getDeleteMyAdultHoursMutationOptions(options));
     }
+
+export const getSearchParticipantsUrl = (params?: SearchParticipantsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/participants/search?${stringifiedParams}` : `/api/v1/participants/search`
+}
+
+/**
+ * @summary Name search for participants (roster add-participant picker)
+ */
+export const searchParticipants = async (params?: SearchParticipantsParams, options?: RequestInit): Promise<ParticipantSearchResponse> => {
+
+  return customFetch<ParticipantSearchResponse>(getSearchParticipantsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchParticipantsQueryKey = (params?: SearchParticipantsParams,) => {
+    return [
+    `/api/v1/participants/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchParticipantsQueryOptions = <TData = Awaited<ReturnType<typeof searchParticipants>>, TError = ErrorType<unknown>>(params?: SearchParticipantsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchParticipants>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchParticipantsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchParticipants>>> = ({ signal }) => searchParticipants(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchParticipants>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchParticipantsQueryResult = NonNullable<Awaited<ReturnType<typeof searchParticipants>>>
+export type SearchParticipantsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Name search for participants (roster add-participant picker)
+ */
+
+export function useSearchParticipants<TData = Awaited<ReturnType<typeof searchParticipants>>, TError = ErrorType<unknown>>(
+ params?: SearchParticipantsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchParticipants>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchParticipantsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getAddEventAttendeeUrl = (eventId: string,) => {
 

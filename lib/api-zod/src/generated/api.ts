@@ -1450,6 +1450,26 @@ export const DeleteMyAdultHoursResponse = zod.object({
 
 
 /**
+ * @summary Name search for participants (roster add-participant picker)
+ */
+export const SearchParticipantsQueryParams = zod.object({
+  "q": zod.coerce.string().optional()
+})
+
+export const SearchParticipantsResponse = zod.object({
+  "participants": zod.array(zod.object({
+  "userId": zod.string(),
+  "name": zod.string(),
+  "grade": zod.string().nullish(),
+  "school": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "isManaged": zod.boolean(),
+  "organizationName": zod.string().nullish()
+}))
+})
+
+
+/**
  * @summary Add a participant to an event by email (supervisor/org-admin/admin)
  */
 export const AddEventAttendeeParams = zod.object({
@@ -1457,7 +1477,8 @@ export const AddEventAttendeeParams = zod.object({
 })
 
 export const AddEventAttendeeBody = zod.object({
-  "email": zod.string()
+  "email": zod.string().optional(),
+  "userId": zod.string().optional()
 })
 
 

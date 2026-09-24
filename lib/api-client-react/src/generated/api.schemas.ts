@@ -1018,7 +1018,26 @@ export interface ParticipantDashboard {
 }
 
 export interface AddAttendeeInput {
-  email: string;
+  email?: string;
+  userId?: string;
+}
+
+export interface ParticipantSearchResult {
+  userId: string;
+  name: string;
+  /** @nullable */
+  grade?: string | null;
+  /** @nullable */
+  school?: string | null;
+  /** @nullable */
+  email?: string | null;
+  isManaged: boolean;
+  /** @nullable */
+  organizationName?: string | null;
+}
+
+export interface ParticipantSearchResponse {
+  participants: ParticipantSearchResult[];
 }
 
 export interface ReassignEventsInput {
@@ -1189,6 +1208,10 @@ export type SuggestNonprofit201 = {
 
 export type DeleteNonprofit200 = {
   status?: string;
+};
+
+export type SearchParticipantsParams = {
+q?: string;
 };
 
 export type ReassignEvents200 = {
