@@ -72,6 +72,12 @@ export default function SupervisorPending() {
         setReviewing(null);
       },
       onError: (err: any) => {
+        if (err?.data?.code === "already_reviewed") {
+          toast({ title: "Already reviewed", description: err.data.error, variant: "destructive" });
+          invalidateAll();
+          setReviewing(null);
+          return;
+        }
         toast({ title: "Error", description: err?.data?.error ?? "Something went wrong", variant: "destructive" });
       },
     };

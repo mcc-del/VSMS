@@ -428,14 +428,37 @@ router.put(
       return;
     }
 
-    await db
+    // Atomic decision: only apply while still awaiting review, so a supervisor
+    // and admin acting at the same time don't override each other.
+    const updated = await db
       .update(externalSubmissionsTable)
       .set({
         status: status as "approved" | "rejected",
         supervisorComments: comments ?? null,
         reviewedAt: new Date(),
+        reviewToken: null,
       })
-      .where(eq(externalSubmissionsTable.externalSubmissionId, externalSubmissionId));
+      .where(
+        and(
+          eq(externalSubmissionsTable.externalSubmissionId, externalSubmissionId),
+          inArray(externalSubmissionsTable.status, ["pending", "deferred_overflow"]),
+        ),
+      )
+      .returning({ externalSubmissionId: externalSubmissionsTable.externalSubmissionId });
+
+    if (updated.length === 0) {
+      const [current] = await db
+        .select({ status: externalSubmissionsTable.status })
+        .from(externalSubmissionsTable)
+        .where(eq(externalSubmissionsTable.externalSubmissionId, externalSubmissionId))
+        .limit(1);
+      res.status(409).json({
+        error: `These hours were already ${current?.status ?? "reviewed"} by another reviewer. Refresh to see the current status.`,
+        code: "already_reviewed",
+        status: current?.status ?? null,
+      });
+      return;
+    }
 
     res.json({ status: "success", message: "External submission reviewed." });
   },
@@ -655,14 +678,11 @@ router.post("/v1/external-review/:token", async (req, res) => {
   const token = String(req.params.token || "");
   const action = (req.body as { action?: unknown })?.action;
   if (action !== "approve" && action !== "reject") { res.status(400).json({ error: "Choose approve or reject." }); return; }
-  const [row] = await db
-    .select({ id: externalSubmissionsTable.externalSubmissionId })
-    .from(externalSubmissionsTable)
-    .where(eq(externalSubmissionsTable.reviewToken, token))
-    .limit(1);
-  if (!row) { res.status(404).json({ error: "This review link is no longer valid — it may have already been used." }); return; }
   const status = action === "approve" ? "approved" : "rejected";
-  await db
+  // Atomic: apply only while still awaiting review and the token is valid. This
+  // covers both a double-click on the link and the case where an in-app
+  // supervisor/admin already reviewed these hours before the link was used.
+  const updated = await db
     .update(externalSubmissionsTable)
     .set({
       status,
@@ -670,7 +690,17 @@ router.post("/v1/external-review/:token", async (req, res) => {
       reviewToken: null,
       supervisorComments: action === "approve" ? "Confirmed by the external supervisor." : "Declined by the external supervisor.",
     })
-    .where(eq(externalSubmissionsTable.externalSubmissionId, row.id));
+    .where(
+      and(
+        eq(externalSubmissionsTable.reviewToken, token),
+        inArray(externalSubmissionsTable.status, ["pending", "deferred_overflow"]),
+      ),
+    )
+    .returning({ id: externalSubmissionsTable.externalSubmissionId });
+  if (updated.length === 0) {
+    res.status(409).json({ error: "These hours have already been reviewed — no further action is needed." });
+    return;
+  }
   res.json({ status });
 });
 

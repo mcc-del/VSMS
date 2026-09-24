@@ -88,7 +88,7 @@ const SECTIONS: { title: string; items: QA[]; roles?: string[] }[] = [
     title: "Admins",
     roles: ["org_admin"],
     items: [
-      { q: "What can I do as an Admin?", a: "You manage a single organization — your own. You can do everything a supervisor can, plus add supervisors and participants for your org, generate your org's join code, grant participant hours, and see your org's users, events, and reports. You won't see other organizations' users or events." },
+      { q: "What can I do as an Admin?", a: "You manage a single organization — your own. You can do everything a supervisor can, plus add supervisors and participants for your org, generate your org's join code, grant participant hours, and see your org's users, events, and reports. You won't see other organizations' users, or their events unless those events are marked \"open to all.\"" },
       { q: "How do I add a supervisor?", a: "Open Users → Add user, choose the Supervisor role, and save. New supervisors are assigned to your organization automatically. They're emailed an invite to set their own password (the temporary password you enter is just a fallback)." },
       { q: "How do I add a participant?", a: "Open Users → Add user and choose the Participant role — they'll be added to your organization and emailed a set-password invite. Self-registration with your join code is preferred so accounts aren't duplicated." },
       { q: "How do I hand out a join code?", a: "Your organization has a join code (shown on your dashboard / Organizations screen). Share it with your members so they can enter it at sign-up and see your org's private events." },

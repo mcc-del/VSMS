@@ -365,14 +365,38 @@ router.put(
       }
     }
 
-    await db
+    // Apply the decision atomically: only update while the submission is still
+    // awaiting review. If a supervisor and an admin act at the same time, the
+    // first one wins and the second gets a clear "already reviewed" conflict
+    // instead of silently overriding the decision (or sending a second email).
+    const updated = await db
       .update(volunteerSubmissionsTable)
       .set({
         status: status as "approved" | "rejected",
         supervisorComments: comments ?? null,
         reviewedAt: new Date(),
       })
-      .where(eq(volunteerSubmissionsTable.submissionId, submissionId));
+      .where(
+        and(
+          eq(volunteerSubmissionsTable.submissionId, submissionId),
+          inArray(volunteerSubmissionsTable.status, ["pending", "deferred_overflow"]),
+        ),
+      )
+      .returning({ submissionId: volunteerSubmissionsTable.submissionId });
+
+    if (updated.length === 0) {
+      const [current] = await db
+        .select({ status: volunteerSubmissionsTable.status })
+        .from(volunteerSubmissionsTable)
+        .where(eq(volunteerSubmissionsTable.submissionId, submissionId))
+        .limit(1);
+      res.status(409).json({
+        error: `These hours were already ${current?.status ?? "reviewed"} by another reviewer. Refresh to see the current status.`,
+        code: "already_reviewed",
+        status: current?.status ?? null,
+      });
+      return;
+    }
 
     // Notify the participant (and their parent/guardians) of the outcome.
     const [participant] = await db

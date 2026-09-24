@@ -6,7 +6,7 @@ import { Sparkles, ArrowRight, X } from "lucide-react";
 type Step = { label: string; href: string; hint?: string };
 
 // Role-specific "what to do next" steps shown on each dashboard.
-const STEPS: Record<string, { title: string; steps: Step[] }> = {
+const STEPS: Record<string, { title: string; intro?: string; steps: Step[] }> = {
   participant: {
     title: "Welcome! Here's how to get started",
     steps: [
@@ -37,6 +37,7 @@ const STEPS: Record<string, { title: string; steps: Step[] }> = {
   },
   org_admin: {
     title: "Welcome — start here",
+    intro: "You're the Admin for your organization. You manage everything for your own org — post events, add supervisors and participants, hand out your join code, review and grant hours, and see your org's reports. You won't see other organizations' users, or their events unless they're marked \"open to all.\" Here are the first things to do:",
     steps: [
       { label: "Post an event for your organization", href: "/admin/events/new", hint: "Create shifts; add multiple time slots at once." },
       { label: "Review your students' hours", href: "/supervisor/pending", hint: "Approve or reject hours for your org only." },
@@ -117,6 +118,9 @@ export function GettingStarted({ role }: { role: string | null | undefined }) {
             <X className="w-4 h-4" />
           </button>
         </div>
+        {config.intro && (
+          <p className="text-sm text-muted-foreground mt-2">{config.intro}</p>
+        )}
         <ol className="mt-3 space-y-2">
           {config.steps.map((s, i) => (
             <li key={s.label}>

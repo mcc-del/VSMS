@@ -66,9 +66,14 @@ export default function SupervisorDashboard() {
   const supsWithPending = (pendingReviews?.supervisors ?? []).filter((s) => s.supervisorId !== userId);
 
   const today = new Date().toISOString().split("T")[0];
-  // Supervisors see events they run; org admins see all events they can manage
-  // (the events list is already scoped by the API for their role).
-  const myEvents = (events ?? []).filter((e) => (isOrgAdmin ? true : e.supervisorId === userId));
+  // "Your upcoming events" should show only events this person actually runs or
+  // hosts — not other orgs' events that happen to be visible because they're
+  // open to all. Supervisors: events they supervise. Org admins: events hosted
+  // by one of their organizations.
+  const myOrgIds = new Set((myOrgs ?? []).map((o) => o.organizationId));
+  const myEvents = (events ?? []).filter((e) =>
+    isOrgAdmin ? !!e.organizationId && myOrgIds.has(e.organizationId) : e.supervisorId === userId,
+  );
   const upcoming = myEvents
     .filter((e) => e.eventDate >= today)
     .sort((a, b) => a.eventDate.localeCompare(b.eventDate));
