@@ -11,7 +11,7 @@ import {
 import { eq, count, sql, and, inArray, ilike, or } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
-import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification, sendAddedToEvent, sendWithdrawalNotification, sendGuardianSignupNotification } from "../lib/email";
+import { sendRegistrationConfirmation, sendEventBroadcast, sendAddedToEvent, sendGuardianSignupNotification } from "../lib/email";
 import { eventHasEnded, todayPT, nowTimePT } from "../lib/event-time";
 import { notifyUser } from "../lib/digest";
 import { recordAudit } from "../lib/audit";
@@ -544,16 +544,8 @@ router.post(
         req.log.error({ err }, "Unhandled error sending registration confirmation");
       });
 
-      // Notify the event's supervisor that someone signed up (honors their
-      // digest / opt-out preference).
-      if (supervisor?.email) {
-        void notifyUser({
-          userId: event.supervisorId,
-          category: "signup",
-          line: `${toName} signed up for "${event.title}" (${event.eventDate}).`,
-          sendNow: () => sendSignupNotification(supervisor.email!, `${supervisor.firstName} ${supervisor.lastName}`.trim(), toName, event.title, event.eventDate),
-        }).catch((err) => req.log.error({ err }, "supervisor signup notification failed"));
-      }
+      // (No supervisor signup email — supervisors see sign-ups live on the
+      // event roster; this avoids one email per sign-up.)
 
       // Notify every parent/guardian — linked parent accounts (digest-aware) and
       // the raw parent email on the student's account (always immediate).
@@ -614,51 +606,8 @@ router.delete(
 
     res.json({ ok: true });
 
-    // Notify the event's supervisor that a participant withdrew (unless they've
-    // turned activity emails off). Fire-and-forget after responding.
-    try {
-      const [event] = await db
-        .select({
-          title: eventsTable.title,
-          eventDate: eventsTable.eventDate,
-          supervisorId: eventsTable.supervisorId,
-        })
-        .from(eventsTable)
-        .where(eq(eventsTable.eventId, eventId))
-        .limit(1);
-      if (event) {
-        const [supervisor] = await db
-          .select({
-            email: usersTable.email,
-            firstName: usersTable.firstName,
-            lastName: usersTable.lastName,
-            emailNotifications: usersTable.emailNotifications,
-          })
-          .from(usersTable)
-          .where(eq(usersTable.userId, event.supervisorId))
-          .limit(1);
-        const [participant] = await db
-          .select({ firstName: usersTable.firstName, lastName: usersTable.lastName, email: usersTable.email })
-          .from(usersTable)
-          .where(eq(usersTable.userId, userId))
-          .limit(1);
-        if (supervisor?.email && supervisor.emailNotifications) {
-          const participantName =
-            [participant?.firstName, participant?.lastName].filter(Boolean).join(" ") ||
-            participant?.email ||
-            "A participant";
-          sendWithdrawalNotification(
-            supervisor.email,
-            `${supervisor.firstName} ${supervisor.lastName}`.trim(),
-            participantName,
-            event.title,
-            event.eventDate,
-          ).catch((err) => req.log.error({ err }, "Unhandled error sending withdrawal notification"));
-        }
-      }
-    } catch (err) {
-      req.log.error({ err }, "Failed to build withdrawal notification");
-    }
+    // (No supervisor withdrawal email — supervisors see the current roster live;
+    // this avoids one email per withdrawal.)
   },
 );
 

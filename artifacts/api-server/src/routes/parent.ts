@@ -19,7 +19,7 @@ import { alias } from "drizzle-orm/pg-core";
 // Alias for joining an event's supervisor when building a child's schedule.
 const parentSupervisorUsers = alias(usersTable, "parent_supervisor_users");
 import { authenticate, requireRole } from "../middlewares/auth";
-import { sendCoGuardianInvite, sendSignupNotification } from "../lib/email";
+import { sendCoGuardianInvite } from "../lib/email";
 import { notifyUser } from "../lib/digest";
 import { recordAudit } from "../lib/audit";
 
@@ -671,22 +671,7 @@ router.post(
       location: event.location,
     });
 
-    // Notify the event's supervisor that a volunteer signed up.
-    const [childRow2] = await db
-      .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
-      .from(usersTable).where(eq(usersTable.userId, childId)).limit(1);
-    const [sup] = await db
-      .select({ email: usersTable.email, firstName: usersTable.firstName, lastName: usersTable.lastName, emailNotifications: usersTable.emailNotifications })
-      .from(usersTable).where(eq(usersTable.userId, event.supervisorId)).limit(1);
-    if (sup?.email) {
-      const volName = `${childRow2?.firstName ?? ""} ${childRow2?.lastName ?? ""}`.trim() || "A volunteer";
-      void notifyUser({
-        userId: event.supervisorId,
-        category: "signup",
-        line: `${volName} signed up for "${event.title}" (${event.eventDate}).`,
-        sendNow: () => sendSignupNotification(sup.email!, `${sup.firstName} ${sup.lastName}`.trim(), volName, event.title, event.eventDate),
-      }).catch((err) => req.log.error({ err }, "supervisor signup notification failed"));
-    }
+    // (No supervisor signup email — supervisors see sign-ups live on the roster.)
   },
 );
 
