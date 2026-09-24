@@ -23,6 +23,9 @@ export const externalSubmissionsTable = pgTable("external_submissions", {
   proofUrl: text("proof_url"),
   status: submissionStatusEnum("status").notNull().default("pending"),
   supervisorComments: text("supervisor_comments"),
+  // One-time token that lets the listed external supervisor approve/reject these
+  // hours from an email link without an account. Cleared once used.
+  reviewToken: text("review_token"),
   submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
 });

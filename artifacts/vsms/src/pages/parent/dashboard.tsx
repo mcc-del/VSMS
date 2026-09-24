@@ -39,7 +39,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ProofUpload } from "@/components/proof-upload";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { GettingStarted } from "@/components/getting-started";
 import { NewEventsBanner } from "@/components/new-events-banner";
@@ -92,6 +92,7 @@ interface ChildForm {
 const EMPTY_FORM: ChildForm = { firstName: "", lastName: "", grade: "", school: "", organizationId: "", joinCode: "" };
 
 export default function ParentDashboard() {
+  const searchStr = useSearch();
   const { data: children, isLoading } = useGetParentChildren();
   const { data: orgs } = useListOrganizations();
   const { data: nonprofits } = useListNonprofits();
@@ -206,11 +207,12 @@ export default function ParentDashboard() {
     setDialogOpen(true);
   };
 
-  // Open the "Add child" dialog automatically when arrived via ?add=child.
+  // Open the "Add child" dialog whenever ?add=child appears — reactively, so it
+  // works even when we're already on the dashboard (the getting-started link).
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("add") === "child") openAdd();
+    if (new URLSearchParams(searchStr).get("add") === "child") openAdd();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchStr]);
 
   const openEdit = (child: ParentChild) => {
     setEditing(child);

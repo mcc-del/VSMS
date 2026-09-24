@@ -272,27 +272,33 @@ export async function sendExternalReviewRequest(
   organization: string,
   hours: number,
   date: string,
+  reviewToken: string,
 ): Promise<void> {
   const client = getClient();
   if (!client) return;
+  const reviewUrl = `${APP_URL}/external-review?token=${encodeURIComponent(reviewToken)}`;
   const text = [
     `Hi ${supervisorName || "there"},`,
     "",
-    `${volunteerName} listed you as the supervisor for volunteer hours they're submitting to the MedinaCares Volunteer Service Awards:`,
+    `${volunteerName} listed you as the supervisor for these volunteer hours submitted to the MedinaCares Volunteer Service Awards:`,
     "",
     `  • Activity: ${activity}`,
     `  • Organization: ${organization}`,
     `  • Date: ${date}`,
     `  • Hours: ${hours}`,
     "",
-    "If this is accurate, no action is needed — a MedinaCares reviewer will confirm it. If anything looks wrong, please reply to this email so we can follow up.",
+    "Please confirm whether this is accurate — one click, no account needed:",
+    "",
+    `  ${reviewUrl}`,
+    "",
+    "On that page you can Approve (the hours count toward their award) or Decline.",
     "",
     "Thank you for supporting youth volunteering!",
     "",
     "— MedinaCares Council",
   ].join("\n");
   try {
-    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: `Please verify volunteer hours for ${volunteerName}`, text });
+    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: `Approve volunteer hours for ${volunteerName}?`, text });
   } catch (err) {
     logger.error({ err, toEmail }, "Failed to send external review request");
   }

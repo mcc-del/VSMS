@@ -6,6 +6,7 @@ import { SubmitExternalActivityBody } from "@workspace/api-zod";
 import { isWithinAwardWindow, AWARD_WINDOW_MESSAGE } from "../lib/season";
 import { managedOrgIds, canManageOrg } from "../lib/org-scope";
 import { sendExternalReviewRequest } from "../lib/email";
+import { randomBytes } from "node:crypto";
 
 const router = Router();
 
@@ -145,6 +146,8 @@ router.post(
       return;
     }
 
+    const noProof = !(proofUrl && proofUrl.trim());
+    const reviewToken = noProof ? randomBytes(24).toString("hex") : null;
     const [submission] = await db
       .insert(externalSubmissionsTable)
       .values({
@@ -160,13 +163,15 @@ router.post(
         ein: isNonprofit ? (ein ?? "").replace(/[^0-9]/g, "") : null,
         proofUrl: proofUrl?.trim() || null,
         status: "pending",
+        reviewToken,
       })
       .returning();
 
     res.status(201).json(formatExternal(submission));
 
-    // If no signed proof was attached, email the listed supervisor to verify.
-    if (!(proofUrl && proofUrl.trim())) {
+    // If no signed proof was attached, email the listed supervisor a one-click
+    // approve/decline link (no account needed).
+    if (reviewToken) {
       const [me] = await db
         .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
         .from(usersTable)
@@ -175,7 +180,7 @@ router.post(
       const volunteerName = `${me?.firstName ?? ""} ${me?.lastName ?? ""}`.trim() || "A student";
       sendExternalReviewRequest(
         extSupervisorEmail.trim().toLowerCase(), extSupervisorName.trim(), volunteerName,
-        activityName.trim(), organizationName.trim(), Number(hoursWorked), volunteerDate,
+        activityName.trim(), organizationName.trim(), Number(hoursWorked), volunteerDate, reviewToken,
       ).catch((err) => req.log.error({ err }, "external review email failed"));
     }
   },
@@ -589,11 +594,12 @@ router.post(
         ein: isNonprofit ? (ein ?? "").replace(/[^0-9]/g, "") : null,
         proofUrl: proofUrl?.trim() || null,
         status: "pending",
+        reviewToken: !(proofUrl && proofUrl.trim()) ? randomBytes(24).toString("hex") : null,
       })
       .returning();
     res.status(201).json(formatExternal(submission));
 
-    if (!(proofUrl && proofUrl.trim())) {
+    if (submission.reviewToken) {
       const [c] = await db
         .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
         .from(usersTable)
@@ -602,10 +608,70 @@ router.post(
       const volunteerName = `${c?.firstName ?? ""} ${c?.lastName ?? ""}`.trim() || "A student";
       sendExternalReviewRequest(
         extSupervisorEmail.trim().toLowerCase(), extSupervisorName.trim(), volunteerName,
-        activityName.trim(), organizationName.trim(), Number(hoursWorked), volunteerDate,
+        activityName.trim(), organizationName.trim(), Number(hoursWorked), volunteerDate, submission.reviewToken,
       ).catch((err) => req.log.error({ err }, "external review email failed"));
     }
   },
 );
+
+// ----- Public, tokenized review by the external (outside) supervisor -----
+// No account needed; the one-time token from the email identifies the record.
+
+// GET /api/v1/external-review/:token — summary of the hours to review.
+router.get("/v1/external-review/:token", async (req, res) => {
+  const token = String(req.params.token || "");
+  if (!token) { res.status(404).json({ error: "Not found." }); return; }
+  const [row] = await db
+    .select({
+      status: externalSubmissionsTable.status,
+      activityName: externalSubmissionsTable.activityName,
+      organizationName: externalSubmissionsTable.organizationName,
+      volunteerDate: externalSubmissionsTable.volunteerDate,
+      hoursWorked: externalSubmissionsTable.hoursWorked,
+      firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
+    })
+    .from(externalSubmissionsTable)
+    .innerJoin(usersTable, eq(externalSubmissionsTable.userId, usersTable.userId))
+    .where(eq(externalSubmissionsTable.reviewToken, token))
+    .limit(1);
+  if (!row) {
+    // Token cleared after use, or never valid.
+    res.status(404).json({ error: "This review link is no longer valid — it may have already been used." });
+    return;
+  }
+  res.json({
+    studentName: `${row.firstName} ${row.lastName}`.trim(),
+    activity: row.activityName,
+    organization: row.organizationName,
+    date: row.volunteerDate,
+    hours: Number(row.hoursWorked),
+    status: row.status,
+  });
+});
+
+// POST /api/v1/external-review/:token { action: "approve" | "reject" }
+router.post("/v1/external-review/:token", async (req, res) => {
+  const token = String(req.params.token || "");
+  const action = (req.body as { action?: unknown })?.action;
+  if (action !== "approve" && action !== "reject") { res.status(400).json({ error: "Choose approve or reject." }); return; }
+  const [row] = await db
+    .select({ id: externalSubmissionsTable.externalSubmissionId })
+    .from(externalSubmissionsTable)
+    .where(eq(externalSubmissionsTable.reviewToken, token))
+    .limit(1);
+  if (!row) { res.status(404).json({ error: "This review link is no longer valid — it may have already been used." }); return; }
+  const status = action === "approve" ? "approved" : "rejected";
+  await db
+    .update(externalSubmissionsTable)
+    .set({
+      status,
+      reviewedAt: new Date(),
+      reviewToken: null,
+      supervisorComments: action === "approve" ? "Confirmed by the external supervisor." : "Declined by the external supervisor.",
+    })
+    .where(eq(externalSubmissionsTable.externalSubmissionId, row.id));
+  res.json({ status });
+});
 
 export default router;
