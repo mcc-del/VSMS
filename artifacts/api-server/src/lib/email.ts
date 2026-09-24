@@ -11,6 +11,16 @@ const FROM_ADDRESS =
 // Public app URL used to build links inside emails.
 const APP_URL = (process.env["APP_URL"] || "https://vsa.medinaacademy.org").replace(/\/$/, "");
 
+// When EMAIL_MINIMAL is set, suppress high-volume "nice to know" notifications
+// (signup confirmations, hours-reviewed, guardian signup alerts, reminders,
+// added-to-event) to stay under the email provider's daily quota. Transactional
+// mail people are actively waiting on — password resets, account/co-guardian
+// invites, the external-review approval link, and digests — still send.
+function emailMinimal(): boolean {
+  const v = (process.env["EMAIL_MINIMAL"] || "").trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes" || v === "on";
+}
+
 // Password reset link.
 export async function sendPasswordReset(toEmail: string, token: string): Promise<void> {
   const client = getClient();
@@ -52,6 +62,7 @@ export async function sendCoGuardianInvite(toEmail: string, inviterName: string)
 
 // Notify a supervisor that hours are waiting for their review.
 export async function sendHoursForReview(toEmail: string, supervisorName: string, participantName: string, eventTitle: string): Promise<void> {
+  if (emailMinimal()) return;
   const client = getClient();
   if (!client) return;
   const text = [
@@ -150,6 +161,7 @@ export async function sendHoursReviewed(
   approved: boolean,
   comments?: string | null,
 ): Promise<void> {
+  if (emailMinimal()) return;
   const client = getClient();
   if (!client) return;
   const to = recipients.filter(Boolean);
@@ -219,6 +231,7 @@ export async function sendGuardianSignupNotification(
   eventDate: string,
   location?: string | null,
 ): Promise<void> {
+  if (emailMinimal()) return;
   const client = getClient();
   if (!client) return;
   const text = [
@@ -367,6 +380,7 @@ export async function sendAddedToEvent(
   eventDate: string,
   byName: string,
 ): Promise<void> {
+  if (emailMinimal()) return;
   const client = getClient();
   if (!client) return;
   const to = recipients.filter(Boolean);
@@ -499,6 +513,7 @@ export async function sendRegistrationConfirmation(
   toName: string,
   event: EventDetails,
 ): Promise<void> {
+  if (emailMinimal()) return;
   const client = getClient();
   if (!client) return;
 
@@ -544,6 +559,7 @@ export async function sendReminderEmail(
   toName: string,
   event: EventDetails,
 ): Promise<boolean> {
+  if (emailMinimal()) return false;
   const client = getClient();
   if (!client) {
     logger.warn({ toEmail, eventTitle: event.title }, "Reminder skipped — RESEND_API_KEY not configured");
