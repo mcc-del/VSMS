@@ -39,11 +39,40 @@ export default function AwardThresholdsPage() {
 
   const [level, setLevel] = useState("all");
   const [orgId, setOrgId] = useState("all");
-  const [bronze, setBronze] = useState("40");
-  const [silver, setSilver] = useState("60");
-  const [gold, setGold] = useState("80");
+  const [bronze, setBronze] = useState("50");
+  const [silver, setSilver] = useState("75");
+  const [gold, setGold] = useState("100");
+  const [resetting, setResetting] = useState(false);
 
   function refresh() { qc.invalidateQueries({ queryKey: getGetAwardThresholdsQueryKey() }); }
+
+  // The standard PVSA bands (minimum hours per medal).
+  const PVSA_ROWS = [
+    { level: "elementary", bronze: 26, silver: 50, gold: 75 },
+    { level: "middle", bronze: 50, silver: 75, gold: 100 },
+    { level: "high", bronze: 100, silver: 175, gold: 250 },
+  ];
+
+  async function resetToPVSA() {
+    if (!window.confirm(
+      "Reset all award thresholds to the standard PVSA hours?\n\nKids (2–5): 26 / 50 / 75\nTeens (6–10): 50 / 75 / 100\nYoung Adults (11–12): 100 / 175 / 250\n\nThis removes every existing rule (including org-specific ones) and replaces them with the three PVSA bands.",
+    )) return;
+    setResetting(true);
+    try {
+      for (const r of rows ?? []) {
+        await del.mutateAsync({ awardThresholdId: r.awardThresholdId });
+      }
+      for (const r of PVSA_ROWS) {
+        await upsert.mutateAsync({ data: { level: r.level, organizationId: null, bronze: r.bronze, silver: r.silver, gold: r.gold } });
+      }
+      toast({ title: "Reset to PVSA", description: "Thresholds now match the standard PVSA bands." });
+      refresh();
+    } catch (e: any) {
+      toast({ title: "Couldn't reset", description: e?.data?.error ?? "Try again.", variant: "destructive" });
+    } finally {
+      setResetting(false);
+    }
+  }
 
   function save() {
     const b = Number(bronze), s = Number(silver), g = Number(gold);
@@ -72,11 +101,16 @@ export default function AwardThresholdsPage() {
   return (
     <AppLayout>
       <div className="space-y-6 max-w-3xl">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2"><Award className="w-6 h-6 text-primary" /> Award thresholds</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Set the Bronze / Silver / Gold hour requirements. Rules can target a grade band and/or an organization; the most specific match wins, falling back to the global default (40 / 60 / 80).
-          </p>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2"><Award className="w-6 h-6 text-primary" /> Award thresholds</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Set the Bronze / Silver / Gold hour requirements. Rules can target a grade band and/or an organization; the most specific match wins. With no custom rule, the standard PVSA hours apply per band.
+            </p>
+          </div>
+          <Button variant="outline" className="shrink-0" onClick={resetToPVSA} disabled={resetting || upsert.isPending || del.isPending}>
+            {resetting ? "Resetting…" : "Reset to PVSA"}
+          </Button>
         </div>
 
         {/* Add / edit a rule */}
@@ -108,7 +142,7 @@ export default function AwardThresholdsPage() {
               <div><Label className="text-xs">Gold (hrs)</Label><Input type="number" min="1" value={gold} onChange={(e) => setGold(e.target.value)} /></div>
             </div>
             <Button onClick={save} disabled={upsert.isPending}>{upsert.isPending ? "Saving…" : "Save rule"}</Button>
-            {!hasGlobal && <p className="text-xs text-amber-700">No global default is set yet — add one with "All grade levels" + "All organizations" so everyone has a baseline (otherwise 40/60/80 applies).</p>}
+            {!hasGlobal && <p className="text-xs text-muted-foreground">No custom global rule — the standard PVSA hours apply per band. Use "Reset to PVSA" above to write them explicitly.</p>}
           </CardContent>
         </Card>
 
@@ -119,7 +153,7 @@ export default function AwardThresholdsPage() {
             {isLoading ? (
               <div className="space-y-2">{[0,1].map(i => <Skeleton key={i} className="h-12" />)}</div>
             ) : (rows ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No custom rules — everyone uses the default 40 / 60 / 80.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">No custom rules — everyone uses the standard PVSA hours per band.</p>
             ) : (
               <div className="divide-y">
                 {(rows ?? []).map((r) => (

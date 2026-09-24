@@ -18,7 +18,7 @@ const schema = z.object({
 });
 
 type Band = "elementary" | "middle" | "high";
-const BAND_LABELS: Record<Band, string> = { elementary: "2–5", middle: "6–10", high: "11–12" };
+const BAND_LABELS: Record<Band, string> = { elementary: "Kids (2–5)", middle: "Teens (6–10)", high: "Young Adults (11–12)" };
 const FALLBACK: Record<Band, { bronze: number; silver: number; gold: number }> = {
   elementary: { bronze: 26, silver: 50, gold: 75 },
   middle: { bronze: 50, silver: 75, gold: 100 },
@@ -89,7 +89,7 @@ export default function LoginPage() {
           </p>
 
           <div className="mt-8 flex items-center gap-2">
-            <span className="text-xs text-primary-foreground/70">Goals for grades</span>
+            <span className="text-xs text-primary-foreground/70">Goals for</span>
             <div className="inline-flex gap-1 rounded-full bg-white/10 border border-white/15 p-1">
               {(["elementary", "middle", "high"] as Band[]).map((b) => (
                 <button
