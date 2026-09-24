@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { GRADES } from "@/lib/schools";
+import { NotificationToggle } from "@/components/notification-toggle";
 
 const MEDINA_SCHOOL = "Medina Academy Redmond";
 
@@ -148,6 +149,8 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         )}
+
+        <NotificationToggle description="Get an email when your hours are reviewed or there's new activity." />
       </div>
     </AppLayout>
   );

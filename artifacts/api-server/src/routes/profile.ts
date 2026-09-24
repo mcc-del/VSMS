@@ -169,24 +169,32 @@ router.patch(
 // ----- Email notification preference (any signed-in user) -----
 router.get("/v1/me/notification-preferences", authenticate, async (req, res) => {
   const [u] = await db
-    .select({ emailNotifications: usersTable.emailNotifications })
+    .select({ emailNotifications: usersTable.emailNotifications, emailDigestDaily: usersTable.emailDigestDaily })
     .from(usersTable)
     .where(eq(usersTable.userId, req.auth!.userId))
     .limit(1);
-  res.json({ emailNotifications: u?.emailNotifications ?? true });
+  res.json({ emailNotifications: u?.emailNotifications ?? true, emailDigestDaily: u?.emailDigestDaily ?? false });
 });
 
 router.patch("/v1/me/notification-preferences", authenticate, async (req, res) => {
-  const body = (req.body ?? {}) as { emailNotifications?: unknown };
-  if (typeof body.emailNotifications !== "boolean") {
-    res.status(400).json({ error: "emailNotifications (boolean) is required." });
-    return;
+  const body = (req.body ?? {}) as { emailNotifications?: unknown; emailDigestDaily?: unknown };
+  const updates: Record<string, unknown> = {};
+  if ("emailNotifications" in body) {
+    if (typeof body.emailNotifications !== "boolean") { res.status(400).json({ error: "emailNotifications must be a boolean." }); return; }
+    updates.emailNotifications = body.emailNotifications;
   }
-  await db
-    .update(usersTable)
-    .set({ emailNotifications: body.emailNotifications })
-    .where(eq(usersTable.userId, req.auth!.userId));
-  res.json({ emailNotifications: body.emailNotifications });
+  if ("emailDigestDaily" in body) {
+    if (typeof body.emailDigestDaily !== "boolean") { res.status(400).json({ error: "emailDigestDaily must be a boolean." }); return; }
+    updates.emailDigestDaily = body.emailDigestDaily;
+  }
+  if (Object.keys(updates).length === 0) { res.status(400).json({ error: "Nothing to update." }); return; }
+  await db.update(usersTable).set(updates).where(eq(usersTable.userId, req.auth!.userId));
+  const [u] = await db
+    .select({ emailNotifications: usersTable.emailNotifications, emailDigestDaily: usersTable.emailDigestDaily })
+    .from(usersTable)
+    .where(eq(usersTable.userId, req.auth!.userId))
+    .limit(1);
+  res.json({ emailNotifications: u?.emailNotifications ?? true, emailDigestDaily: u?.emailDigestDaily ?? false });
 });
 
 // ----- Adult self-logged volunteer hours (supervisors / org admins / admins) -----

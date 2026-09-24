@@ -1068,6 +1068,7 @@ export interface AuditLogEntry {
 
 export interface NotificationPreferences {
   emailNotifications: boolean;
+  emailDigestDaily?: boolean;
 }
 
 export interface AdultHoursEntry {

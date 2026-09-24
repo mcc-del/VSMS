@@ -1379,7 +1379,8 @@ export const UpdateLeaderboardPreferencesResponse = zod.object({
  * @summary Get my email notification preference
  */
 export const GetNotificationPreferencesResponse = zod.object({
-  "emailNotifications": zod.boolean()
+  "emailNotifications": zod.boolean(),
+  "emailDigestDaily": zod.boolean().optional()
 })
 
 
@@ -1387,11 +1388,13 @@ export const GetNotificationPreferencesResponse = zod.object({
  * @summary Turn my activity emails on or off
  */
 export const UpdateNotificationPreferencesBody = zod.object({
-  "emailNotifications": zod.boolean()
+  "emailNotifications": zod.boolean(),
+  "emailDigestDaily": zod.boolean().optional()
 })
 
 export const UpdateNotificationPreferencesResponse = zod.object({
-  "emailNotifications": zod.boolean()
+  "emailNotifications": zod.boolean(),
+  "emailDigestDaily": zod.boolean().optional()
 })
 
 

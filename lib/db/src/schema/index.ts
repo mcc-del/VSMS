@@ -14,3 +14,4 @@ export * from "./adult-hours";
 export * from "./audit-logs";
 export * from "./award-thresholds";
 export * from "./nonprofits";
+export * from "./email-digest";

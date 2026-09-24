@@ -239,6 +239,30 @@ export async function sendGuardianSignupNotification(
   }
 }
 
+// One batched summary of the day's activity for a user on the daily digest.
+export async function sendDigest(toEmail: string, name: string, lines: string[]): Promise<void> {
+  const client = getClient();
+  if (!client || lines.length === 0) return;
+  const text = [
+    `Hi ${name || "there"},`,
+    "",
+    `Here's your MedinaCares activity summary (${lines.length} update${lines.length === 1 ? "" : "s"}):`,
+    "",
+    ...lines.map((l) => `  • ${l}`),
+    "",
+    `Open MedinaCares: ${APP_URL}`,
+    "",
+    "You're getting one daily email because you chose the digest. Change it under Email notifications.",
+    "",
+    "— MedinaCares Council",
+  ].join("\n");
+  try {
+    await client.emails.send({ from: FROM_ADDRESS, to: toEmail, subject: `Your MedinaCares daily summary (${lines.length})`, text });
+  } catch (err) {
+    logger.error({ err, toEmail }, "Failed to send digest");
+  }
+}
+
 // Ask an external (outside-nonprofit) supervisor to verify a volunteer's hours.
 export async function sendExternalReviewRequest(
   toEmail: string,

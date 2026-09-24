@@ -49,6 +49,9 @@ export const usersTable = pgTable("users", {
   // Whether this user receives activity emails (sign-up alerts, new-user
   // alerts). Password resets and invites always send regardless. Default on.
   emailNotifications: boolean("email_notifications").notNull().default(true),
+  // When true, activity notifications are batched into a once-daily digest email
+  // instead of sending immediately. Password resets/invites always send now.
+  emailDigestDaily: boolean("email_digest_daily").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

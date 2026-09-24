@@ -8,4 +8,5 @@
 
 export interface NotificationPreferences {
   emailNotifications: boolean;
+  emailDigestDaily?: boolean;
 }

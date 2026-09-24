@@ -13,6 +13,7 @@ import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
 import { sendRegistrationConfirmation, sendEventBroadcast, sendSignupNotification, sendAddedToEvent, sendWithdrawalNotification, sendGuardianSignupNotification } from "../lib/email";
 import { eventHasEnded, todayPT, nowTimePT } from "../lib/event-time";
+import { notifyUser } from "../lib/digest";
 import { recordAudit } from "../lib/audit";
 import { ObjectStorageService } from "../lib/objectStorage";
 
@@ -532,35 +533,40 @@ router.post(
         req.log.error({ err }, "Unhandled error sending registration confirmation");
       });
 
-      // Notify the event's supervisor that someone signed up (if they haven't
-      // turned activity emails off).
-      if (supervisor?.email && supervisor.emailNotifications) {
-        sendSignupNotification(
-          supervisor.email,
-          `${supervisor.firstName} ${supervisor.lastName}`.trim(),
-          toName,
-          event.title,
-          event.eventDate,
-        ).catch((err) => req.log.error({ err }, "Unhandled error sending signup notification"));
+      // Notify the event's supervisor that someone signed up (honors their
+      // digest / opt-out preference).
+      if (supervisor?.email) {
+        void notifyUser({
+          userId: event.supervisorId,
+          category: "signup",
+          line: `${toName} signed up for "${event.title}" (${event.eventDate}).`,
+          sendNow: () => sendSignupNotification(supervisor.email!, `${supervisor.firstName} ${supervisor.lastName}`.trim(), toName, event.title, event.eventDate),
+        }).catch((err) => req.log.error({ err }, "supervisor signup notification failed"));
       }
 
-      // Notify every parent/guardian of this participant — both a linked parent
-      // account (primary and any co-guardians) and the parent email listed on
-      // the student's own account. Deduplicated, fire-and-forget.
+      // Notify every parent/guardian — linked parent accounts (digest-aware) and
+      // the raw parent email on the student's account (always immediate).
       const childName = toName;
-      const guardianEmails = new Set<string>();
       const linkedGuardians = await db
-        .select({ email: usersTable.email, emailNotifications: usersTable.emailNotifications })
+        .select({ userId: usersTable.userId, email: usersTable.email })
         .from(guardianshipsTable)
         .innerJoin(usersTable, eq(guardianshipsTable.guardianUserId, usersTable.userId))
         .where(eq(guardianshipsTable.childUserId, userId));
+      const linkedEmails = new Set<string>();
       for (const g of linkedGuardians) {
-        if (g.email && g.emailNotifications) guardianEmails.add(g.email.toLowerCase());
+        if (!g.email) continue;
+        linkedEmails.add(g.email.toLowerCase());
+        void notifyUser({
+          userId: g.userId,
+          category: "guardian_signup",
+          line: `${childName} signed up for "${event.title}" (${event.eventDate}).`,
+          sendNow: () => sendGuardianSignupNotification(g.email!, childName, event.title, event.eventDate, event.location),
+        }).catch((err) => req.log.error({ err }, "guardian signup notification failed"));
       }
-      if (user.parentEmail) guardianEmails.add(user.parentEmail.toLowerCase());
-      for (const email of guardianEmails) {
-        sendGuardianSignupNotification(email, childName, event.title, event.eventDate, event.location)
-          .catch((err) => req.log.error({ err }, "Unhandled error sending guardian signup notification"));
+      // A parent email with no linked account yet — send immediately.
+      if (user.parentEmail && !linkedEmails.has(user.parentEmail.toLowerCase())) {
+        sendGuardianSignupNotification(user.parentEmail.toLowerCase(), childName, event.title, event.eventDate, event.location)
+          .catch((err) => req.log.error({ err }, "guardian signup notification failed"));
       }
     }
   },

@@ -3712,6 +3712,8 @@ components:
       properties:
         emailNotifications:
           type: boolean
+        emailDigestDaily:
+          type: boolean
 
     AdultHoursEntry:
       type: object

@@ -20,6 +20,7 @@ import { alias } from "drizzle-orm/pg-core";
 const parentSupervisorUsers = alias(usersTable, "parent_supervisor_users");
 import { authenticate, requireRole } from "../middlewares/auth";
 import { sendCoGuardianInvite, sendSignupNotification } from "../lib/email";
+import { notifyUser } from "../lib/digest";
 
 interface ChildFields {
   firstName: string;
@@ -623,12 +624,14 @@ router.post(
     const [sup] = await db
       .select({ email: usersTable.email, firstName: usersTable.firstName, lastName: usersTable.lastName, emailNotifications: usersTable.emailNotifications })
       .from(usersTable).where(eq(usersTable.userId, event.supervisorId)).limit(1);
-    if (sup?.email && sup.emailNotifications) {
-      sendSignupNotification(
-        sup.email, `${sup.firstName} ${sup.lastName}`.trim(),
-        `${childRow2?.firstName ?? ""} ${childRow2?.lastName ?? ""}`.trim() || "A volunteer",
-        event.title, event.eventDate,
-      ).catch((err) => req.log.error({ err }, "supervisor signup notification failed"));
+    if (sup?.email) {
+      const volName = `${childRow2?.firstName ?? ""} ${childRow2?.lastName ?? ""}`.trim() || "A volunteer";
+      void notifyUser({
+        userId: event.supervisorId,
+        category: "signup",
+        line: `${volName} signed up for "${event.title}" (${event.eventDate}).`,
+        sendNow: () => sendSignupNotification(sup.email!, `${sup.firstName} ${sup.lastName}`.trim(), volName, event.title, event.eventDate),
+      }).catch((err) => req.log.error({ err }, "supervisor signup notification failed"));
     }
   },
 );

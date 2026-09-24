@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ELEM_GRADES } from "@/lib/schools";
+import { NotificationToggle } from "@/components/notification-toggle";
 import { Link } from "wouter";
 import { Pencil, Trash2, Plus } from "lucide-react";
 
@@ -142,6 +143,8 @@ export default function ParentProfile() {
             )}
           </CardContent>
         </Card>
+
+        <NotificationToggle description="Get an email when your child signs up or their hours are reviewed." />
       </div>
 
       <Dialog open={editChild !== null} onOpenChange={(o) => !o && setEditChild(null)}>
