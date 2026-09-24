@@ -6,7 +6,7 @@ import { eq, and, or } from "drizzle-orm";
 import { authenticate, signToken } from "../middlewares/auth";
 import { RegisterBody, LoginBody } from "@workspace/api-zod";
 import { linkGuardianToInviterChildren } from "./parent";
-import { sendPasswordReset, sendNewUserAlert } from "../lib/email";
+import { sendPasswordReset } from "../lib/email";
 
 const router = Router();
 
@@ -184,19 +184,8 @@ router.post("/v1/auth/register", async (req, res) => {
     userId: user.userId,
   });
 
-  // Alert Super Admins (who haven't opted out) that a new account signed up.
-  db
-    .select({ email: usersTable.email })
-    .from(usersTable)
-    .where(and(eq(usersTable.role, "admin"), eq(usersTable.emailNotifications, true)))
-    .then((admins) =>
-      sendNewUserAlert(
-        admins.map((a) => a.email).filter((e): e is string => !!e),
-        `${user.firstName} ${user.lastName}`.trim(),
-        isParent ? "parent" : "participant",
-      ),
-    )
-    .catch((err) => req.log.error({ err }, "new-user alert failed"));
+  // (No per-signup admin alert email — new accounts are visible in the Users
+  // list and dashboard. Removing it avoids one email per signup.)
 });
 
 // POST /api/v1/auth/login
