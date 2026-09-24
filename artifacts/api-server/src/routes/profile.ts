@@ -16,6 +16,7 @@ router.get("/v1/me/profile", authenticate, requireRole("participant", "parent"),
       grade: usersTable.grade,
       school: usersTable.school,
       organizationId: usersTable.organizationId,
+      parentEmail: usersTable.parentEmail,
     })
     .from(usersTable)
     .where(eq(usersTable.userId, req.auth!.userId))
@@ -31,6 +32,7 @@ router.get("/v1/me/profile", authenticate, requireRole("participant", "parent"),
     grade: u.grade ?? null,
     school: u.school ?? null,
     organizationId: u.organizationId ?? null,
+    parentEmail: u.parentEmail ?? null,
   });
 });
 
@@ -39,12 +41,18 @@ router.get("/v1/me/profile", authenticate, requireRole("participant", "parent"),
 router.patch("/v1/me/profile", authenticate, requireRole("participant", "parent"), async (req, res) => {
   const body = (req.body ?? {}) as {
     firstName?: unknown; lastName?: unknown; phone?: unknown;
-    grade?: unknown; school?: unknown; organizationId?: unknown; joinCode?: unknown;
+    grade?: unknown; school?: unknown; organizationId?: unknown; joinCode?: unknown; parentEmail?: unknown;
   };
   const updates: Record<string, unknown> = {};
   if (typeof body.firstName === "string" && body.firstName.trim()) updates.firstName = body.firstName.trim();
   if (typeof body.lastName === "string" && body.lastName.trim()) updates.lastName = body.lastName.trim();
   if ("phone" in body) updates.phone = typeof body.phone === "string" && body.phone.trim() ? body.phone.trim() : null;
+  // A student can add/update the parent email that links a parent (view-only)
+  // account to them. Only meaningful for participants.
+  if ("parentEmail" in body && req.auth!.role === "participant") {
+    const pe = typeof body.parentEmail === "string" ? body.parentEmail.trim().toLowerCase() : "";
+    updates.parentEmail = pe || null;
+  }
   if (typeof body.grade === "string" && body.grade.trim()) updates.grade = body.grade.trim();
   if (typeof body.school === "string" && body.school.trim()) updates.school = body.school.trim();
 

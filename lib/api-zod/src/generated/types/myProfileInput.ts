@@ -16,4 +16,6 @@ export interface MyProfileInput {
   /** @nullable */
   organizationId?: string | null;
   joinCode?: string;
+  /** @nullable */
+  parentEmail?: string | null;
 }

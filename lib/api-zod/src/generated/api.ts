@@ -1319,7 +1319,8 @@ export const GetMyProfileResponse = zod.object({
   "phone": zod.string().nullish(),
   "grade": zod.string().nullish(),
   "school": zod.string().nullish(),
-  "organizationId": zod.string().nullish()
+  "organizationId": zod.string().nullish(),
+  "parentEmail": zod.string().nullish()
 })
 
 
@@ -1333,7 +1334,8 @@ export const UpdateMyProfileBody = zod.object({
   "grade": zod.string().optional(),
   "school": zod.string().optional(),
   "organizationId": zod.string().nullish(),
-  "joinCode": zod.string().optional()
+  "joinCode": zod.string().optional(),
+  "parentEmail": zod.string().nullish()
 })
 
 export const UpdateMyProfileResponse = zod.object({
@@ -1803,6 +1805,18 @@ export const UpdateParentChildResponse = zod.object({
 
 
 /**
+ * @summary Remove a managed child
+ */
+export const DeleteParentChildParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const DeleteParentChildResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
  * @summary Sign a managed child up for an event
  */
 export const RegisterChildForEventParams = zod.object({
@@ -1811,6 +1825,22 @@ export const RegisterChildForEventParams = zod.object({
 
 export const RegisterChildForEventBody = zod.object({
   "eventId": zod.string()
+})
+
+
+/**
+ * @summary Withdraw a managed child from an upcoming event
+ */
+export const WithdrawChildFromEventParams = zod.object({
+  "childId": zod.coerce.string()
+})
+
+export const WithdrawChildFromEventBody = zod.object({
+  "eventId": zod.string()
+})
+
+export const WithdrawChildFromEventResponse = zod.object({
+  "ok": zod.boolean()
 })
 
 

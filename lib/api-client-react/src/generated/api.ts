@@ -6558,6 +6558,76 @@ export const useUpdateParentChild = <TError = ErrorType<ErrorResponse>,
       return useMutation(getUpdateParentChildMutationOptions(options));
     }
 
+export const getDeleteParentChildUrl = (childId: string,) => {
+
+
+
+
+  return `/api/v1/parent/children/${childId}`
+}
+
+/**
+ * @summary Remove a managed child
+ */
+export const deleteParentChild = async (childId: string, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getDeleteParentChildUrl(childId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteParentChildMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteParentChild>>, TError,{childId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteParentChild>>, TError,{childId: string}, TContext> => {
+
+const mutationKey = ['deleteParentChild'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteParentChild>>, {childId: string}> = (props) => {
+          const {childId} = props ?? {};
+
+          return  deleteParentChild(childId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteParentChildMutationResult = NonNullable<Awaited<ReturnType<typeof deleteParentChild>>>
+
+    export type DeleteParentChildMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Remove a managed child
+ */
+export const useDeleteParentChild = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteParentChild>>, TError,{childId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteParentChild>>,
+        TError,
+        {childId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteParentChildMutationOptions(options));
+    }
+
 export const getRegisterChildForEventUrl = (childId: string,) => {
 
 
@@ -6628,6 +6698,78 @@ export const useRegisterChildForEvent = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getRegisterChildForEventMutationOptions(options));
+    }
+
+export const getWithdrawChildFromEventUrl = (childId: string,) => {
+
+
+
+
+  return `/api/v1/parent/children/${childId}/register`
+}
+
+/**
+ * @summary Withdraw a managed child from an upcoming event
+ */
+export const withdrawChildFromEvent = async (childId: string,
+    childRegisterInput: ChildRegisterInput, options?: RequestInit): Promise<OkResponse> => {
+
+  return customFetch<OkResponse>(getWithdrawChildFromEventUrl(childId),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      childRegisterInput,)
+  }
+);}
+
+
+
+
+export const getWithdrawChildFromEventMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawChildFromEvent>>, TError,{childId: string;data: BodyType<ChildRegisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof withdrawChildFromEvent>>, TError,{childId: string;data: BodyType<ChildRegisterInput>}, TContext> => {
+
+const mutationKey = ['withdrawChildFromEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof withdrawChildFromEvent>>, {childId: string;data: BodyType<ChildRegisterInput>}> = (props) => {
+          const {childId,data} = props ?? {};
+
+          return  withdrawChildFromEvent(childId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type WithdrawChildFromEventMutationResult = NonNullable<Awaited<ReturnType<typeof withdrawChildFromEvent>>>
+    export type WithdrawChildFromEventMutationBody = BodyType<ChildRegisterInput>
+    export type WithdrawChildFromEventMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Withdraw a managed child from an upcoming event
+ */
+export const useWithdrawChildFromEvent = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof withdrawChildFromEvent>>, TError,{childId: string;data: BodyType<ChildRegisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof withdrawChildFromEvent>>,
+        TError,
+        {childId: string;data: BodyType<ChildRegisterInput>},
+        TContext
+      > => {
+      return useMutation(getWithdrawChildFromEventMutationOptions(options));
     }
 
 export const getSubmitChildHoursUrl = (childId: string,) => {

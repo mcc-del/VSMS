@@ -17,4 +17,6 @@ export interface MyProfile {
   school?: string | null;
   /** @nullable */
   organizationId?: string | null;
+  /** @nullable */
+  parentEmail?: string | null;
 }

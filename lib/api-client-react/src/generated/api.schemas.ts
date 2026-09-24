@@ -389,6 +389,8 @@ export interface MyProfile {
   school?: string | null;
   /** @nullable */
   organizationId?: string | null;
+  /** @nullable */
+  parentEmail?: string | null;
 }
 
 export interface MyProfileInput {
@@ -401,6 +403,8 @@ export interface MyProfileInput {
   /** @nullable */
   organizationId?: string | null;
   joinCode?: string;
+  /** @nullable */
+  parentEmail?: string | null;
 }
 
 export interface TestEmailBody {

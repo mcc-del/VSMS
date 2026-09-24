@@ -1925,6 +1925,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteParentChild
+      tags: [parent]
+      summary: Remove a managed child
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "403":
+          description: Not a managed child
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Child not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /v1/parent/children/{childId}/register:
     post:
@@ -1964,6 +1993,41 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "409":
           description: Already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: withdrawChildFromEvent
+      tags: [parent]
+      summary: Withdraw a managed child from an upcoming event
+      parameters:
+        - name: childId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChildRegisterInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+        "400":
+          description: Cannot withdraw
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
           content:
             application/json:
               schema:
@@ -2707,6 +2771,8 @@ components:
           type: ["string", "null"]
         organizationId:
           type: ["string", "null"]
+        parentEmail:
+          type: ["string", "null"]
     MyProfileInput:
       type: object
       properties:
@@ -2724,6 +2790,8 @@ components:
           type: ["string", "null"]
         joinCode:
           type: string
+        parentEmail:
+          type: ["string", "null"]
     TestEmailBody:
       type: object
       required: [to]

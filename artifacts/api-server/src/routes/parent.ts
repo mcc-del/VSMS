@@ -10,6 +10,7 @@ import {
   guardianInvitesTable,
   organizationsTable,
   awardThresholdsTable,
+  externalSubmissionsTable,
 } from "@workspace/db";
 import { thresholdsForGrade } from "../lib/thresholds";
 import { eq, and, inArray, gte, sum, sql, asc } from "drizzle-orm";
@@ -139,6 +140,39 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
   const today = new Date().toISOString().split("T")[0];
   const thresholdRows = await db.select().from(awardThresholdsTable);
 
+  // External (outside-nonprofit) submissions for all children, grouped by child.
+  const externalByChild = new Map<string, any[]>();
+  if (childIds.length) {
+    const exts = await db
+      .select({
+        externalSubmissionId: externalSubmissionsTable.externalSubmissionId,
+        userId: externalSubmissionsTable.userId,
+        activityName: externalSubmissionsTable.activityName,
+        organizationName: externalSubmissionsTable.organizationName,
+        volunteerDate: externalSubmissionsTable.volunteerDate,
+        hoursWorked: externalSubmissionsTable.hoursWorked,
+        status: externalSubmissionsTable.status,
+        supervisorComments: externalSubmissionsTable.supervisorComments,
+        submittedAt: externalSubmissionsTable.submittedAt,
+      })
+      .from(externalSubmissionsTable)
+      .where(inArray(externalSubmissionsTable.userId, childIds));
+    for (const e of exts) {
+      const list = externalByChild.get(e.userId) ?? [];
+      list.push({
+        externalSubmissionId: e.externalSubmissionId,
+        activityName: e.activityName,
+        organizationName: e.organizationName,
+        volunteerDate: e.volunteerDate,
+        hoursWorked: Number(e.hoursWorked),
+        status: e.status,
+        supervisorComments: e.supervisorComments ?? null,
+        submittedAt: e.submittedAt?.toISOString() ?? null,
+      });
+      externalByChild.set(e.userId, list);
+    }
+  }
+
   const result = [];
   for (const child of children) {
     const [internal] = await db
@@ -235,6 +269,7 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
       isManaged: child.isManaged,
       totalApprovedHours,
       thresholds: thresholdsForGrade(thresholdRows, child.grade, child.organizationId ?? null),
+      externalSubmissions: externalByChild.get(child.userId) ?? [],
       upcomingRegistrations: regs.map((r) => ({
         registrationId: r.registrationId,
         eventId: r.eventId,
@@ -403,6 +438,61 @@ router.patch(
     res.json({ status: "ok", message: "Child updated." });
   },
 );
+
+// DELETE /api/v1/parent/children/:childId — remove a managed child from the
+// parent's account. Only managed (grade 2–5, no login) children can be deleted;
+// a self-managed student owns their own account. Cascades their registrations,
+// submissions, and links.
+router.delete("/v1/parent/children/:childId", authenticate, requireRole("parent"), async (req, res) => {
+  const { childId } = req.params as { childId: string };
+  const [link] = await db
+    .select({ id: guardianshipsTable.guardianshipId })
+    .from(guardianshipsTable)
+    .where(and(eq(guardianshipsTable.guardianUserId, req.auth!.userId), eq(guardianshipsTable.childUserId, childId)))
+    .limit(1);
+  if (!link) {
+    res.status(404).json({ error: "Child not found." });
+    return;
+  }
+  const [child] = await db
+    .select({ isManaged: usersTable.isManaged })
+    .from(usersTable)
+    .where(eq(usersTable.userId, childId))
+    .limit(1);
+  if (!child?.isManaged) {
+    res.status(403).json({ error: "This student has their own account and can't be removed from here." });
+    return;
+  }
+  await db.delete(usersTable).where(eq(usersTable.userId, childId));
+  res.json({ ok: true });
+});
+
+// DELETE /api/v1/parent/children/:childId/register — withdraw a managed child
+// from an upcoming event (only while still "registered").
+router.delete("/v1/parent/children/:childId/register", authenticate, requireRole("parent"), async (req, res) => {
+  const { childId } = req.params as { childId: string };
+  const eventId = typeof (req.body as { eventId?: unknown })?.eventId === "string" ? (req.body as { eventId: string }).eventId : "";
+  const childIds = await resolveChildIds(req.auth!.userId, req.auth!.email.toLowerCase());
+  if (!childIds.includes(childId)) {
+    res.status(404).json({ error: "Child not found." });
+    return;
+  }
+  const [reg] = await db
+    .select({ id: eventRegistrationsTable.registrationId, status: eventRegistrationsTable.status })
+    .from(eventRegistrationsTable)
+    .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, childId)))
+    .limit(1);
+  if (!reg) {
+    res.status(404).json({ error: "This child isn't signed up for that event." });
+    return;
+  }
+  if (reg.status !== "registered") {
+    res.status(400).json({ error: "Can't withdraw after check-in or once hours are submitted." });
+    return;
+  }
+  await db.delete(eventRegistrationsTable).where(eq(eventRegistrationsTable.registrationId, reg.id));
+  res.json({ ok: true });
+});
 
 // POST /api/v1/parent/children/:childId/register — sign a managed child up for
 // an event on their behalf. The parent must be a guardian of the child.

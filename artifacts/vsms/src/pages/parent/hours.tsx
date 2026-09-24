@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 import {
   useGetParentChildren,
-  useListEvents,
   useListNonprofits,
   useSubmitChildHours,
   useSubmitChildExternalHours,
   getGetParentChildrenQueryKey,
-  getListEventsQueryKey,
   type ParentChild,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,12 +22,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { CalendarDays } from "lucide-react";
-import { eventHasEnded } from "@/lib/event-time";
 
 function fmtHrs(n: number) {
   return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
 }
-
 function statusBadge(s?: string | null) {
   if (s === "approved") return <Badge className="bg-green-100 text-green-700 border-0">Approved</Badge>;
   if (s === "rejected") return <Badge className="bg-red-100 text-red-700 border-0">Rejected — please resubmit</Badge>;
@@ -43,8 +39,7 @@ export default function ParentHours() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  // Only managed (grade 2–5) children — parents log hours for them. Older
-  // students with their own login submit their own hours (parent is view-only).
+  // Only managed (grade 2–5) children — parents log hours for them.
   const children = (allChildren ?? []).filter((c) => c.isManaged);
   const [childId, setChildId] = useState("");
   useEffect(() => {
@@ -52,19 +47,11 @@ export default function ParentHours() {
   }, [children, childId]);
   const child = children.find((c) => c.userId === childId) as ParentChild | undefined;
 
-  const { data: events } = useListEvents(
-    { childId },
-    { query: { enabled: !!childId, queryKey: getListEventsQueryKey({ childId }) } },
-  );
-
   const submitHours = useSubmitChildHours();
   const submitExternal = useSubmitChildExternalHours();
   const [hours, setHours] = useState<Record<string, string>>({});
 
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: getGetParentChildrenQueryKey() });
-    if (childId) qc.invalidateQueries({ queryKey: getListEventsQueryKey({ childId }) });
-  };
+  const invalidate = () => qc.invalidateQueries({ queryKey: getGetParentChildrenQueryKey() });
 
   function doSubmit(eventId: string) {
     if (!childId) return;
@@ -76,27 +63,19 @@ export default function ParentHours() {
     submitHours.mutate(
       { childId, data: { eventId, hoursWorked: val } },
       {
-        onSuccess: () => {
-          toast({ title: "Hours submitted", description: "Sent to the supervisor for review." });
-          invalidate();
-          setHours((h) => ({ ...h, [eventId]: "" }));
-        },
+        onSuccess: () => { toast({ title: "Hours submitted", description: "Sent to the supervisor for review." }); invalidate(); setHours((h) => ({ ...h, [eventId]: "" })); },
         onError: (err: any) => toast({ title: "Couldn't submit", description: err?.data?.error ?? "Try again.", variant: "destructive" }),
       },
     );
   }
 
-  // Past registered events (post-event hours).
   const past = (child?.pastRegistrations ?? []).slice().sort((a, b) => (b.eventDate ?? "").localeCompare(a.eventDate ?? ""));
+  const externals = ((child as any)?.externalSubmissions ?? []) as Array<{ externalSubmissionId: string; activityName: string; organizationName: string; volunteerDate: string; hoursWorked: number; status: string; supervisorComments?: string | null }>;
 
-  // Walk-ins: eligible past events the child is NOT registered for.
-  const registeredIds = new Set<string>([
-    ...(child?.upcomingRegistrations ?? []).map((r) => r.eventId),
-    ...(child?.pastRegistrations ?? []).map((r) => r.eventId),
-  ]);
-  const walkIns = (events ?? [])
-    .filter((e) => eventHasEnded(e.eventDate, (e as any).endTime) && e.eligibleForMe !== false && !registeredIds.has(e.eventId))
-    .sort((a, b) => b.eventDate.localeCompare(a.eventDate));
+  // Snapshot across internal + external claims.
+  const approvedHours = child?.totalApprovedHours ?? 0;
+  const waiting = past.filter((r) => r.hoursStatus === "pending").length + externals.filter((e) => e.status === "pending").length;
+  const rejected = past.filter((r) => r.hoursStatus === "rejected").length + externals.filter((e) => e.status === "rejected").length;
 
   // External form.
   const emptyExt = { activityName: "", nonprofitId: "", volunteerDate: "", hoursWorked: "", extSupervisorName: "", extSupervisorEmail: "", description: "", proofUrl: null as string | null };
@@ -114,16 +93,9 @@ export default function ParentHours() {
     const np = (nonprofits ?? []).find((n) => n.nonprofitId === ext.nonprofitId);
     submitExternal.mutate(
       { childId, data: {
-        activityName: ext.activityName.trim(),
-        organizationName: np?.name ?? "",
-        isNonprofit: true,
-        ein: np?.ein ?? undefined,
-        volunteerDate: ext.volunteerDate,
-        hoursWorked: hrs,
-        extSupervisorName: ext.extSupervisorName.trim(),
-        extSupervisorEmail: ext.extSupervisorEmail.trim(),
-        description: ext.description.trim() || undefined,
-        proofUrl: ext.proofUrl || undefined,
+        activityName: ext.activityName.trim(), organizationName: np?.name ?? "", isNonprofit: true, ein: np?.ein ?? undefined,
+        volunteerDate: ext.volunteerDate, hoursWorked: hrs, extSupervisorName: ext.extSupervisorName.trim(),
+        extSupervisorEmail: ext.extSupervisorEmail.trim(), description: ext.description.trim() || undefined, proofUrl: ext.proofUrl || undefined,
       } as any },
       {
         onSuccess: () => { toast({ title: "External hours submitted", description: "Sent for supervisor review." }); invalidate(); setExt({ ...emptyExt }); },
@@ -132,10 +104,7 @@ export default function ParentHours() {
     );
   }
 
-  if (isLoading) {
-    return <AppLayout><div className="max-w-3xl space-y-4"><Skeleton className="h-10 w-64" /><Skeleton className="h-40 rounded-xl" /></div></AppLayout>;
-  }
-
+  if (isLoading) return <AppLayout><div className="max-w-3xl space-y-4"><Skeleton className="h-10 w-64" /><Skeleton className="h-40 rounded-xl" /></div></AppLayout>;
   if (children.length === 0) {
     const hasOwnLoginKids = (allChildren ?? []).some((c) => !c.isManaged);
     return (
@@ -144,9 +113,7 @@ export default function ParentHours() {
           <Card><CardContent className="p-6 text-center">
             <p className="font-medium">{hasOwnLoginKids ? "Nothing to submit here" : "Add a child first"}</p>
             <p className="text-sm text-muted-foreground mt-1 mb-4">
-              {hasOwnLoginKids
-                ? "Your older student (grade 6+) submits their own hours — you have view-only access on your dashboard."
-                : "Add a grade 2–5 child on your dashboard, then log their hours here."}
+              {hasOwnLoginKids ? "Your older student (grade 6+) submits their own hours — you have view-only access on your dashboard." : "Add a grade 2–5 child on your dashboard, then log their hours here."}
             </p>
             <Link href="/parent"><Button>Go to my dashboard</Button></Link>
           </CardContent></Card>
@@ -160,29 +127,35 @@ export default function ParentHours() {
       <div className="max-w-3xl space-y-5">
         <div>
           <h1 className="text-2xl font-bold">Submit hours</h1>
-          <p className="text-muted-foreground text-sm mt-1">Log your child's volunteer hours for approval.</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            Two ways to log hours — use the tabs below. <span className="font-medium text-foreground">Post-event hours</span> is for
+            MedinaCares events your child signed up for or attended. <span className="font-medium text-foreground">External</span> is
+            for service they did on their own with an approved nonprofit.
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">For:</span>
           <Select value={childId} onValueChange={setChildId}>
-            <SelectTrigger className="w-56" data-testid="select-child-hours"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {(children ?? []).map((c) => (
-                <SelectItem key={c.userId} value={c.userId}>{c.firstName} {c.lastName} · Gr {c.grade || "—"}</SelectItem>
-              ))}
+              {children.map((c) => <SelectItem key={c.userId} value={c.userId}>{c.firstName} {c.lastName} · Gr {c.grade || "—"}</SelectItem>)}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <Card><CardContent className="p-4"><p className="text-2xl font-bold tabular-nums text-green-600">{approvedHours.toFixed(1)}</p><p className="text-xs font-medium mt-0.5">Approved hours</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-2xl font-bold tabular-nums text-yellow-600">{waiting}</p><p className="text-xs font-medium mt-0.5">Waiting</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-2xl font-bold tabular-nums text-red-600">{rejected}</p><p className="text-xs font-medium mt-0.5">Rejected</p></CardContent></Card>
         </div>
 
         <Tabs defaultValue="postevent">
           <TabsList>
             <TabsTrigger value="postevent">Post-event hours</TabsTrigger>
-            <TabsTrigger value="walkin">Attended without signing up</TabsTrigger>
             <TabsTrigger value="external">External</TabsTrigger>
           </TabsList>
 
-          {/* Post-event hours for registered past events */}
           <TabsContent value="postevent" className="mt-4 space-y-3">
             {past.length === 0 ? (
               <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">Once an event your child signed up for has ended, it'll appear here so you can submit their hours.</CardContent></Card>
@@ -212,13 +185,9 @@ export default function ParentHours() {
                         <div className="flex items-end gap-2">
                           <div>
                             <label className="text-xs text-muted-foreground">Hours worked</label>
-                            <Input type="number" min="0.25" max="24" step="0.25" className="w-28 h-9"
-                              placeholder={planned > 0 ? fmtHrs(planned) : "e.g. 2"}
-                              value={hours[r.eventId] ?? ""} onChange={(e) => setHours({ ...hours, [r.eventId]: e.target.value })} />
+                            <Input type="number" min="0.25" max="24" step="0.25" className="w-28 h-9" placeholder={planned > 0 ? fmtHrs(planned) : "e.g. 2"} value={hours[r.eventId] ?? ""} onChange={(e) => setHours({ ...hours, [r.eventId]: e.target.value })} />
                           </div>
-                          <Button size="sm" onClick={() => doSubmit(r.eventId)} disabled={submitHours.isPending}>
-                            {r.hoursStatus === "rejected" ? "Resubmit" : "Submit"}
-                          </Button>
+                          <Button size="sm" onClick={() => doSubmit(r.eventId)} disabled={submitHours.isPending}>{r.hoursStatus === "rejected" ? "Resubmit" : "Submit"}</Button>
                         </div>
                       </div>
                     )}
@@ -226,44 +195,15 @@ export default function ParentHours() {
                 </Card>
               );
             })}
+            <Card className="border-dashed">
+              <CardContent className="p-4 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">Attended an event they didn't sign up for?</span>{" "}
+                Go to <Link href="/parent/opportunities" className="text-primary font-medium hover:underline">Sign Up → Past</Link>, find the event, and log the hours there.
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          {/* Walk-in: eligible past events the child didn't sign up for */}
-          <TabsContent value="walkin" className="mt-4 space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Did {child?.firstName ?? "your child"} attend an event without signing up online? Find it here and log the hours — the supervisor will verify.
-            </p>
-            {walkIns.length === 0 ? (
-              <Card><CardContent className="p-6 text-sm text-muted-foreground text-center">No past events to add right now.</CardContent></Card>
-            ) : walkIns.map((e) => {
-              const planned = Number((e as any).hoursValue ?? 0);
-              return (
-                <Card key={e.eventId}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-semibold">{e.title}</p>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><CalendarDays className="w-3.5 h-3.5" />{e.eventDate}</p>
-                      </div>
-                      <Badge className="bg-blue-100 text-blue-700 border-0 shrink-0">Attended without signing up</Badge>
-                    </div>
-                    <div className="mt-3 flex items-end gap-2">
-                      <div>
-                        <label className="text-xs text-muted-foreground">Hours worked</label>
-                        <Input type="number" min="0.25" max="24" step="0.25" className="w-28 h-9"
-                          placeholder={planned > 0 ? fmtHrs(planned) : "e.g. 2"}
-                          value={hours[e.eventId] ?? ""} onChange={(ev) => setHours({ ...hours, [e.eventId]: ev.target.value })} />
-                      </div>
-                      <Button size="sm" onClick={() => doSubmit(e.eventId)} disabled={submitHours.isPending}>Submit</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </TabsContent>
-
-          {/* Outside volunteering (external) */}
-          <TabsContent value="external" className="mt-4">
+          <TabsContent value="external" className="mt-4 space-y-6">
             <Card>
               <CardContent className="p-4 space-y-3">
                 <div><Label className="text-xs">What did they do?</Label><Input value={ext.activityName} onChange={(e) => setExt({ ...ext, activityName: e.target.value })} placeholder="e.g. Food bank sorting" /></div>
@@ -271,9 +211,7 @@ export default function ParentHours() {
                   <Label className="text-xs">Nonprofit</Label>
                   <Select value={ext.nonprofitId} onValueChange={(v) => setExt({ ...ext, nonprofitId: v })}>
                     <SelectTrigger><SelectValue placeholder="Choose an approved nonprofit" /></SelectTrigger>
-                    <SelectContent>
-                      {(nonprofits ?? []).map((n) => <SelectItem key={n.nonprofitId} value={n.nonprofitId}>{n.name}</SelectItem>)}
-                    </SelectContent>
+                    <SelectContent>{(nonprofits ?? []).map((n) => <SelectItem key={n.nonprofitId} value={n.nonprofitId}>{n.name}</SelectItem>)}</SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground mt-1">
                     Not in this list? Share this{" "}
@@ -297,6 +235,30 @@ export default function ParentHours() {
                 <div className="flex justify-end">
                   <Button onClick={submitExt} disabled={submitExternal.isPending}>{submitExternal.isPending ? "Submitting…" : "Submit external hours"}</Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-base">Previous external submissions</CardTitle></CardHeader>
+              <CardContent>
+                {externals.length === 0 ? (
+                  <p className="text-muted-foreground text-sm py-6 text-center">No external submissions yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {externals.slice().reverse().map((s) => (
+                      <div key={s.externalSubmissionId} className="rounded-lg border p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm">{s.activityName}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{s.organizationName} · {s.volunteerDate} · {fmtHrs(s.hoursWorked)}h</p>
+                          </div>
+                          {statusBadge(s.status)}
+                        </div>
+                        {s.supervisorComments && <p className="text-xs text-muted-foreground italic mt-2">"{s.supervisorComments}"</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
