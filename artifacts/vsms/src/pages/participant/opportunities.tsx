@@ -33,7 +33,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MapPin, Clock, Users, Calendar, Search, User, Mail, Phone, Award, CalendarPlus, Copy, Building2, GraduationCap } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { AuthenticatedImage } from "@/components/authenticated-image";
 
@@ -66,7 +65,6 @@ export default function OpportunitiesPage() {
   const withdrawMutation = useWithdrawFromEvent();
   const submitHoursMutation = useSubmitInternalHours();
   const queryClient = useQueryClient();
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const [search, setSearch] = useState("");
@@ -127,8 +125,7 @@ export default function OpportunitiesPage() {
     (e.location ?? "").toLowerCase().includes(q);
 
   const upcoming = [...(events ?? [])]
-    .filter((e) => !eventHasEnded(e.eventDate, (e as any).endTime) && matches(e) && e.eligibleForMe !== false
-      && !(myRegMap[e.eventId] ?? e.myRegistrationStatus)) // signed-up ones live under "My sign-ups"
+    .filter((e) => !eventHasEnded(e.eventDate, (e as any).endTime) && matches(e) && e.eligibleForMe !== false)
     .sort((a, b) => (a.eventDate < b.eventDate ? -1 : 1));
 
   const past = [...(events ?? [])]
@@ -165,13 +162,11 @@ export default function OpportunitiesPage() {
         onSuccess: () => {
           toast({
             title: "You have signed up successfully!",
-            description: "Taking you to “My Schedule” on your dashboard…",
+            description: "It's now marked Signed up — find it under My sign-ups anytime.",
           });
           queryClient.invalidateQueries({ queryKey: getListMyRegistrationsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
-          // Flag the dashboard to scroll to the schedule, then navigate there.
-          try { sessionStorage.setItem("mc_scroll_schedule", "1"); } catch { /* ignore */ }
-          setLocation("/dashboard");
+          // Stay on this page; the event flips to a green "Signed up" state.
         },
         onError: (err: any) => {
           toast({
