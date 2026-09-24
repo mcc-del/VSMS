@@ -177,11 +177,30 @@ router.delete("/v1/admin/award-thresholds/:awardThresholdId", authenticate, requ
 });
 
 // GET /api/v1/admin/audit-log — recent admin activity (Super Admin only).
-router.get("/v1/admin/audit-log", authenticate, requireRole("admin"), async (req, res) => {
+router.get("/v1/admin/audit-log", authenticate, requireRole("admin", "org_admin"), async (req, res) => {
   const rawLimit = Number(req.query.limit);
   const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 500) : 200;
   const action = typeof req.query.action === "string" ? req.query.action.trim() : "";
-  const where = action ? ilike(auditLogsTable.action, `%${action}%`) : undefined;
+  const filters = [] as any[];
+  if (action) filters.push(ilike(auditLogsTable.action, `%${action}%`));
+
+  // Org Admins see only actions taken by people in their own organization(s) —
+  // themselves and their supervisors. Super Admins see everything.
+  const managed = await managedOrgIds(req.auth!.userId, req.auth!.role);
+  if (managed !== null) {
+    const orgUsers = await db
+      .select({ userId: usersTable.userId })
+      .from(usersTable)
+      .where(managed.length > 0 ? inArray(usersTable.organizationId, managed) : isNull(usersTable.userId));
+    const ids = orgUsers.map((u) => u.userId);
+    if (ids.length === 0) {
+      res.json([]);
+      return;
+    }
+    filters.push(inArray(auditLogsTable.actorUserId, ids));
+  }
+
+  const where = filters.length ? and(...filters) : undefined;
   const rows = await db
     .select()
     .from(auditLogsTable)

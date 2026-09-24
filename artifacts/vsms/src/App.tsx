@@ -107,7 +107,7 @@ function Router() {
       <ProtectedRoute path="/admin/events/new" component={AdminNewEvent} allowedRoles={["admin", "org_admin", "supervisor"]} />
       <ProtectedRoute path="/admin/events" component={AdminEventsPage} allowedRoles={["admin", "org_admin", "supervisor"]} />
       <ProtectedRoute path="/admin/reports" component={AdminReports} allowedRoles={["admin"]} />
-      <ProtectedRoute path="/admin/audit-log" component={AuditLogPage} allowedRoles={["admin"]} />
+      <ProtectedRoute path="/admin/audit-log" component={AuditLogPage} allowedRoles={["admin", "org_admin"]} />
       <ProtectedRoute path="/admin/award-thresholds" component={AwardThresholdsPage} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/nonprofits" component={AdminNonprofits} allowedRoles={["admin"]} />
       <ProtectedRoute path="/admin/organizations" component={AdminOrganizations} allowedRoles={["admin", "org_admin"]} />

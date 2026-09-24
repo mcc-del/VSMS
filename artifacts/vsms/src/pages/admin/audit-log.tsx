@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useGetAuditLog, getGetAuditLogQueryKey } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
+import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,11 @@ function actionBadge(action: string) {
 }
 
 export default function AuditLogPage() {
+  const { role } = useAuth();
+  const auditScopeNote =
+    role === "org_admin"
+      ? "A record of significant actions taken by you and your organization's supervisors."
+      : "A record of significant admin actions across the program.";
   const [action, setAction] = useState("");
   const [text, setText] = useState("");
   const { data, isLoading } = useGetAuditLog(
@@ -44,7 +50,7 @@ export default function AuditLogPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2"><ScrollText className="w-6 h-6 text-primary" /> Audit log</h1>
-          <p className="text-muted-foreground text-sm mt-1">A record of significant admin actions across the program.</p>
+          <p className="text-muted-foreground text-sm mt-1">{auditScopeNote}</p>
         </div>
 
         <Card>

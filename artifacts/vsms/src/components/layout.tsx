@@ -59,6 +59,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Reports", href: "/supervisor/reports", icon: TrendingUp },
       { label: "All Opportunities", href: "/supervisor/opportunities", icon: Calendar },
       { label: "My Hours", href: "/supervisor/my-hours", icon: Clock },
+      { label: "Audit Log", href: "/admin/audit-log", icon: ScrollText },
       { label: "Help", href: "/help", icon: HelpCircle },
     ] : []),
     ...(role === "admin" ? [
