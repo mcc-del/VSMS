@@ -72,6 +72,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       { label: "Award Thresholds", href: "/admin/award-thresholds", icon: Award },
       { label: "Nonprofits", href: "/admin/nonprofits", icon: Building2 },
       { label: "Audit Log", href: "/admin/audit-log", icon: ScrollText },
+      { label: "Help", href: "/help", icon: HelpCircle },
     ] : []),
   ];
 

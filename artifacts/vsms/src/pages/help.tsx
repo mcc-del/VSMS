@@ -8,6 +8,22 @@ type QA = { q: string; a: string };
 // `roles` limits who sees a section; omitted = everyone.
 const SECTIONS: { title: string; items: QA[]; roles?: string[] }[] = [
   {
+    title: "About the MedinaCares Volunteer Service Awards",
+    // No `roles` — shown to everyone, on every profile.
+    items: [
+      { q: "What are the awards?", a: "The MedinaCares Volunteer Service Awards recognize students for real, verified community service. As you (or your child) volunteer — at our events or with approved nonprofits — your hours are logged and approved, and you earn Bronze, Silver, and Gold medals, presented at a year-end ceremony." },
+      { q: "Why are we doing this?", a: "To make giving back a normal, celebrated part of growing up in our community. The program gives students meaningful ways to help, an easy way to track their service, and recognition for the difference they make — while helping local schools and nonprofits get the volunteers they need." },
+      { q: "Why should I take part?", a: "Because service matters — and here it's also recognized and rewarded. You build real-world skills, strengthen your community, earn medals and an official, printable service record, and align your hours with a nationally recognized standard that colleges and scholarships value. It's a simple way to turn caring into something lasting." },
+      { q: "Why are there Bronze / Silver / Gold tiers?", a: "The tiers give everyone a clear next goal and celebrate different levels of commitment, so a first-time volunteer and a long-time one both have something to reach for. The hour requirements follow the President's Volunteer Service Award (PVSA) national standard, by age band — Kids (grades 2–5): Bronze 26 / Silver 50 / Gold 75; Teens (grades 6–10): 50 / 75 / 100; Young Adults (grades 11–12): 100 / 175 / 250. Younger students have lower goals so every age can succeed. Your dashboard always shows your exact goals and progress." },
+      { q: "Why must external volunteering be with pre-approved nonprofits?", a: "So every hour is trustworthy and verifiable. Pre-approving nonprofits lets us confirm the organization is legitimate and the service genuinely benefits the community — which keeps the awards credible and PVSA-aligned. It also protects students by pointing them to safe, vetted places to serve." },
+      { q: "What if none of the opportunities offered work for me?", a: "You have options. You can log External hours for service you do on your own with any approved nonprofit, and if the group you want to help isn't on the list yet, they can ask to be added by emailing mcc@medinaacademy.org (there's a printable invitation on the External tab). New events are posted regularly, so check back — and if you're stuck, email us and we'll help you find a fit." },
+      { q: "Who can participate?", a: "Students in grades 2–12. Grades 6–12 create their own account; grades 2–5 are managed by a parent. Families and community members connected to a participating organization can join with that organization's join code." },
+      { q: "Is there any cost?", a: "No — participating in the MedinaCares Volunteer Service Awards is free." },
+      { q: "Why do my hours need to be approved?", a: "A supervisor (for our events) or the outside supervisor (for external service) confirms the hours actually happened. That verification is what makes your service record and medals meaningful and trusted." },
+      { q: "How do I get started?", a: "Create your account (or, for grades 2–5, a parent adds the child), enter your organization's join code if you have one, then head to Sign Up to find an opportunity. See the getting-started section below for your role, and don't hesitate to email mcc@medinaacademy.org with any questions." },
+    ],
+  },
+  {
     title: "Getting started — students (participant)",
     roles: ["participant"],
     items: [
