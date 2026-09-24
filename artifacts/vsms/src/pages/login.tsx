@@ -18,7 +18,7 @@ const schema = z.object({
 });
 
 type Band = "elementary" | "middle" | "high";
-const BAND_LABELS: Record<Band, string> = { elementary: "2–5", middle: "6–8", high: "9–12" };
+const BAND_LABELS: Record<Band, string> = { elementary: "2–5", middle: "6–10", high: "11–12" };
 const FALLBACK: Record<Band, { bronze: number; silver: number; gold: number }> = {
   elementary: { bronze: 26, silver: 50, gold: 75 },
   middle: { bronze: 50, silver: 75, gold: 100 },

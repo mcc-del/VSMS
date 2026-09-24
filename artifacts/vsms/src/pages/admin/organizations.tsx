@@ -220,8 +220,8 @@ export default function AdminOrganizations() {
                 <div className="space-y-2">
                   {([
                     ["allowsElementary", "Elementary (grades 2–5)"],
-                    ["allowsMiddle", "Middle School (6–8)"],
-                    ["allowsHigh", "High School (9–12)"],
+                    ["allowsMiddle", "Middle / Teens (grades 6–10)"],
+                    ["allowsHigh", "High / Young Adults (grades 11–12)"],
                   ] as const).map(([key, label]) => (
                     <label key={key} className="flex items-center gap-2.5 text-sm cursor-pointer">
                       <Checkbox

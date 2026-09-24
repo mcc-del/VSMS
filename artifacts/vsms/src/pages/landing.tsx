@@ -5,7 +5,7 @@ import { ComingSoonBanner } from "@/components/coming-soon-banner";
 import { useGetPublicThresholds } from "@workspace/api-client-react";
 
 type Band = "elementary" | "middle" | "high";
-const BAND_LABELS: Record<Band, string> = { elementary: "Grades 2–5", middle: "Grades 6–8", high: "Grades 9–12" };
+const BAND_LABELS: Record<Band, string> = { elementary: "Grades 2–5", middle: "Grades 6–10", high: "Grades 11–12" };
 const FALLBACK: Record<Band, { bronze: number; silver: number; gold: number }> = {
   elementary: { bronze: 26, silver: 50, gold: 75 },
   middle: { bronze: 50, silver: 75, gold: 100 },

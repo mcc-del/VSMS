@@ -6,7 +6,18 @@ export interface Thresholds {
   gold: number;
 }
 
-export const DEFAULT_THRESHOLDS: Thresholds = { bronze: 40, silver: 60, gold: 80 };
+// PVSA hour thresholds per band (minimum hours for each medal):
+//   Kids (grades 2–5):        Bronze 26, Silver 50, Gold 75
+//   Teens (grades 6–10):      Bronze 50, Silver 75, Gold 100
+//   Young Adults (grades 11–12): Bronze 100, Silver 175, Gold 250
+export const LEVEL_DEFAULTS: Record<SchoolLevel, Thresholds> = {
+  elementary: { bronze: 26, silver: 50, gold: 75 },
+  middle: { bronze: 50, silver: 75, gold: 100 },
+  high: { bronze: 100, silver: 175, gold: 250 },
+};
+
+// Fallback when a participant's grade/band is unknown — the Teens band.
+export const DEFAULT_THRESHOLDS: Thresholds = LEVEL_DEFAULTS.middle;
 
 export interface ThresholdRow {
   level: string | null;
@@ -31,7 +42,9 @@ export function resolveThresholds(
   const best = rows
     .filter(matches)
     .sort((a, b) => score(b) - score(a))[0];
-  if (!best) return DEFAULT_THRESHOLDS;
+  // No configured row: fall back to the PVSA default for this band (or the
+  // generic default when the band is unknown).
+  if (!best) return level ? LEVEL_DEFAULTS[level] : DEFAULT_THRESHOLDS;
   return { bronze: best.bronze, silver: best.silver, gold: best.gold };
 }
 

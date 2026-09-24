@@ -20,9 +20,9 @@ import { Award, Trash2, Plus } from "lucide-react";
 
 const LEVELS = [
   { value: "all", label: "All grade levels" },
-  { value: "elementary", label: "Elementary (grades 2–5)" },
-  { value: "middle", label: "Middle (grades 6–8)" },
-  { value: "high", label: "High (grades 9–12)" },
+  { value: "elementary", label: "Kids (grades 2–5)" },
+  { value: "middle", label: "Teens (grades 6–10)" },
+  { value: "high", label: "Young Adults (grades 11–12)" },
 ];
 
 function levelLabel(v: string | null | undefined) {
