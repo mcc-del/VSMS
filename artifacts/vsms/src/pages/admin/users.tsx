@@ -130,7 +130,7 @@ export default function AdminUsers() {
     setHourEntries(null);
     setHoursError(null);
     try {
-      const data = await customFetch<{ entries: any[] }>(`/api/v1/admin/users/${userId}/hours`);
+      const data = await customFetch<{ entries: any[] }>(`/api/v1/admin/users/${userId}/all-hours`);
       setHourEntries(Array.isArray(data?.entries) ? data.entries : []);
     } catch (err: any) {
       setHourEntries([]);
@@ -153,7 +153,7 @@ export default function AdminUsers() {
     if (!confirm(`Delete this ${entry.hours}h ${entry.type} entry (${entry.activity})? This cannot be undone.`)) return;
     setDeletingHourId(entry.id);
     try {
-      await customFetch(`/api/v1/admin/users/${manageHoursUser.userId}/hours/${entry.type}/${entry.id}`, { method: "DELETE" });
+      await customFetch(`/api/v1/admin/users/${manageHoursUser.userId}/all-hours/${entry.type}/${entry.id}`, { method: "DELETE" });
       toast({ title: "Hour entry deleted" });
       await loadHours(manageHoursUser.userId);
       queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });

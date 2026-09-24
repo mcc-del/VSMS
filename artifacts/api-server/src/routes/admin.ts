@@ -1040,11 +1040,12 @@ router.get("/v1/admin/duplicates", authenticate, requireRole("admin"), async (_r
   res.json({ groups });
 });
 
-// GET /api/v1/admin/users/:userId/hours — every hour entry logged for one user
-// (in-program event submissions, external volunteering, and admin credits),
-// across all statuses, so a Super Admin can review and clean up test data.
+// GET /api/v1/admin/users/:userId/all-hours — every hour entry logged for one
+// user (in-program event submissions, external volunteering, and admin
+// credits), across all statuses, so a Super Admin can review and clean up test
+// data. (Distinct from /hours, which lists only manual credits.)
 router.get(
-  "/v1/admin/users/:userId/hours",
+  "/v1/admin/users/:userId/all-hours",
   authenticate,
   requireRole("admin"),
   async (req, res) => {
@@ -1125,7 +1126,7 @@ router.get(
 // hour entry (event submission, external submission, or manual credit). Used to
 // clean up test data. Super Admin only.
 router.delete(
-  "/v1/admin/users/:userId/hours/:type/:id",
+  "/v1/admin/users/:userId/all-hours/:type/:id",
   authenticate,
   requireRole("admin"),
   async (req, res) => {
