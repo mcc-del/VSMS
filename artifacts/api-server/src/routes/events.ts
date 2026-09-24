@@ -51,6 +51,7 @@ function formatEvent(
     minGrade?: number | null;
     maxGrade?: number | null;
     openToAll?: boolean;
+    status?: string;
     imageUrl: string | null;
     supervisorId: string;
     supervisorFirstName: string | null;
@@ -82,6 +83,7 @@ function formatEvent(
     minGrade: e.minGrade ?? null,
     maxGrade: e.maxGrade ?? null,
     openToAll: e.openToAll ?? true,
+    status: e.status ?? "open",
     imageUrl: e.imageUrl ?? null,
     supervisorId: e.supervisorId,
     supervisorName: e.supervisorFirstName
@@ -170,6 +172,7 @@ router.get("/v1/events", authenticate, async (req, res) => {
       minGrade: eventsTable.minGrade,
       maxGrade: eventsTable.maxGrade,
       openToAll: eventsTable.openToAll,
+      status: eventsTable.status,
       imageUrl: eventsTable.imageUrl,
       supervisorId: eventsTable.supervisorId,
       supervisorFirstName: usersTable.firstName,
@@ -227,6 +230,8 @@ router.get("/v1/events", authenticate, async (req, res) => {
       if (viewerRole === "supervisor" && viewerOrgId && e.organizationId === viewerOrgId) return true; // supervisor's org
       return false;
     }
+    // Participants never see drafts (only coming_soon and open).
+    if (e.status === "draft") return false;
     // Opportunities with no host org, or explicitly marked open to all, are
     // visible to every participant.
     if (!e.organizationId || e.openToAll) return true;
@@ -342,6 +347,7 @@ router.get("/v1/events/:eventId", authenticate, async (req, res) => {
       minGrade: eventsTable.minGrade,
       maxGrade: eventsTable.maxGrade,
       openToAll: eventsTable.openToAll,
+      status: eventsTable.status,
       imageUrl: eventsTable.imageUrl,
       supervisorId: eventsTable.supervisorId,
       supervisorFirstName: usersTable.firstName,
@@ -402,6 +408,10 @@ router.post(
 
     if (!event) {
       res.status(404).json({ error: "Event not found" });
+      return;
+    }
+    if (event.status !== "open") {
+      res.status(400).json({ error: "Sign-ups aren't open for this event yet." });
       return;
     }
 
@@ -1094,6 +1104,10 @@ router.patch(
     if ("minGrade" in d) updates.minGrade = d.minGrade ?? null;
     if ("maxGrade" in d) updates.maxGrade = d.maxGrade ?? null;
     if ("openToAll" in d) updates.openToAll = (d as { openToAll?: boolean }).openToAll ?? true;
+    if ("status" in d) {
+      const s = (d as { status?: string }).status;
+      if (s && ["draft", "coming_soon", "open"].includes(s)) updates.status = s;
+    }
     if (d.supervisorId !== undefined) updates.supervisorId = d.supervisorId;
     if ("imageUrl" in d) updates.imageUrl = d.imageUrl ?? null;
     if ("organizationId" in d) updates.organizationId = d.organizationId ?? null;
@@ -1167,8 +1181,9 @@ router.post(
       return;
     }
 
-    const { title, description, slotLabel, location, street, city, state, zip, eventDate, startTime, endTime, maxCapacity, minGrade, maxGrade, imageUrl, openToAll } =
+    const { title, description, slotLabel, location, street, city, state, zip, eventDate, startTime, endTime, maxCapacity, minGrade, maxGrade, imageUrl, openToAll, status } =
       parsed.data as any;
+    const eventStatus = ["draft", "coming_soon", "open"].includes(status) ? status : "open";
     let { supervisorId, organizationId } = parsed.data as any;
 
     const role = req.auth!.role;
@@ -1220,6 +1235,7 @@ router.post(
         minGrade: minGrade ?? null,
         maxGrade: maxGrade ?? null,
         openToAll: openToAll ?? true,
+        status: eventStatus,
         supervisorId,
         imageUrl: imageUrl ?? null,
         organizationId: organizationId ?? null,
@@ -1289,16 +1305,21 @@ router.delete(
 
     // Safety: never destroy accredited hours. Block deletion if any participant
     // has approved hours for this event (deleting would cascade them away).
-    const [approved] = await db
-      .select({ c: count() })
-      .from(volunteerSubmissionsTable)
-      .where(and(eq(volunteerSubmissionsTable.eventId, eventId), eq(volunteerSubmissionsTable.status, "approved")));
-    if (Number(approved?.c ?? 0) > 0) {
-      res.status(400).json({
-        error:
-          "This event can't be deleted because participants have approved hours for it. Those hours must be preserved.",
-      });
-      return;
+    // A Super Admin can override with ?force=true (for cleaning up test data).
+    const force = req.query.force === "true" && role === "admin";
+    if (!force) {
+      const [approved] = await db
+        .select({ c: count() })
+        .from(volunteerSubmissionsTable)
+        .where(and(eq(volunteerSubmissionsTable.eventId, eventId), eq(volunteerSubmissionsTable.status, "approved")));
+      if (Number(approved?.c ?? 0) > 0) {
+        res.status(400).json({
+          code: "has_approved_hours",
+          error:
+            "This event can't be deleted because participants have approved hours for it. Those hours must be preserved.",
+        });
+        return;
+      }
     }
 
     const [deleted] = await db

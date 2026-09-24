@@ -8,6 +8,7 @@ import {
   getListEventsQueryKey,
   getListUsersQueryKey,
   getGetAdminDashboardQueryKey,
+  customFetch,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { AppLayout } from "@/components/layout";
@@ -52,6 +53,7 @@ const editSchema = z.object({
   minGrade: z.string().optional(),
   maxGrade: z.string().optional(),
   openToAll: z.boolean(),
+  status: z.enum(["draft", "coming_soon", "open"]),
   supervisorId: z.string().min(1, "Required"),
   imageUrl: z.string().nullable(),
 }).superRefine((values, ctx) => {
@@ -137,6 +139,7 @@ export default function AdminEventsPage() {
       minGrade: NONE,
       maxGrade: NONE,
       openToAll: true,
+      status: "open",
       supervisorId: "",
       imageUrl: null,
     },
@@ -160,11 +163,23 @@ export default function AdminEventsPage() {
       minGrade: event.minGrade != null ? String(event.minGrade) : NONE,
       maxGrade: event.maxGrade != null ? String(event.maxGrade) : NONE,
       openToAll: event.openToAll ?? true,
+      status: (event.status as "draft" | "coming_soon" | "open") ?? "open",
       supervisorId: event.supervisorId,
       imageUrl: event.imageUrl ?? null,
     });
   }
   const plannedHours = calculateEventDuration(form.watch("startTime"), form.watch("endTime"));
+
+  async function forceDelete(eventId: string) {
+    try {
+      await customFetch(`/api/v1/events/${eventId}?force=true`, { method: "DELETE" });
+      toast({ title: "Event deleted" });
+      queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetAdminDashboardQueryKey() });
+    } catch {
+      toast({ title: "Delete failed", variant: "destructive" });
+    }
+  }
 
   function handleDelete(eventId: string, title: string) {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
@@ -176,7 +191,26 @@ export default function AdminEventsPage() {
           queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetAdminDashboardQueryKey() });
         },
-        onError: () => {
+        onError: (err: any) => {
+          if (err?.data?.code === "has_approved_hours") {
+            if (role === "admin") {
+              if (
+                confirm(
+                  `"${title}" has approved volunteer hours logged against it. Deleting it anyway will remove the event but keep those hours on students' records. Delete anyway?`,
+                )
+              ) {
+                forceDelete(eventId);
+              }
+            } else {
+              toast({
+                title: "Can't delete this event",
+                description:
+                  "It has approved volunteer hours. Ask a Super Admin to remove it.",
+                variant: "destructive",
+              });
+            }
+            return;
+          }
           toast({ title: "Delete failed", variant: "destructive" });
         },
       },
@@ -314,6 +348,12 @@ export default function AdminEventsPage() {
                         <Badge className={isUpcoming ? "bg-green-100 text-green-700 border-0" : "bg-gray-100 text-gray-600 border-0"}>
                           {isUpcoming ? "Upcoming" : "Past"}
                         </Badge>
+                        {(event as any).status === "draft" && (
+                          <Badge className="bg-amber-100 text-amber-700 border-0">Draft</Badge>
+                        )}
+                        {(event as any).status === "coming_soon" && (
+                          <Badge className="bg-blue-100 text-blue-700 border-0">Coming soon</Badge>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1">
                         <span className="flex items-center gap-1">
@@ -483,6 +523,21 @@ export default function AdminEventsPage() {
                       </span>
                     </label>
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+
+              <FormField control={form.control} name="status" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Publish status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger data-testid="select-edit-status"><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="draft">Draft — only managers can see it</SelectItem>
+                      <SelectItem value="coming_soon">Coming soon — visible, sign-ups not open yet</SelectItem>
+                      <SelectItem value="open">Open — visible and open for sign-up</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )} />

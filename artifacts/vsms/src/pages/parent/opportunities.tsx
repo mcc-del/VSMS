@@ -159,6 +159,8 @@ export default function ParentOpportunities() {
                     <Button variant="outline" size="sm" className="gap-1.5" onClick={() => downloadEventIcs(e)}><CalendarPlus className="w-4 h-4" /> Calendar</Button>
                     {!isPast && <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-red-600" onClick={() => withdraw(e)} disabled={withdrawChild.isPending}>Withdraw</Button>}
                   </>
+                ) : (e as any).status === "coming_soon" ? (
+                  <Badge className="bg-blue-100 text-blue-700 border-0">Coming soon — sign-ups not open yet</Badge>
                 ) : (
                   <Button size="sm" disabled={full || registerChild.isPending} onClick={() => signUp(e)}>{full ? "Full" : "Sign up"}</Button>
                 )

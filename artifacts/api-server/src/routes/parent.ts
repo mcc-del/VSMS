@@ -547,6 +547,10 @@ router.post(
       res.status(404).json({ error: "Event not found." });
       return;
     }
+    if (event.status !== "open") {
+      res.status(400).json({ error: "Sign-ups aren't open for this event yet." });
+      return;
+    }
 
     const today = new Date().toISOString().split("T")[0];
     if (event.eventDate < today) {

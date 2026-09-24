@@ -239,6 +239,7 @@ export default function OpportunitiesPage() {
   function renderEvent(event: Event, isUpcoming: boolean) {
     const myStatus = myRegMap[event.eventId] ?? event.myRegistrationStatus ?? null;
     const isFull = (event.registrationCount ?? 0) >= event.maxCapacity;
+    const comingSoon = (event as any).status === "coming_soon";
 
     return (
       <Card
@@ -452,6 +453,10 @@ export default function OpportunitiesPage() {
                     </Button>
                   )}
                 </>
+              ) : comingSoon ? (
+                <Badge className="bg-blue-100 text-blue-700 border-0 text-sm px-3 py-1">
+                  Coming soon — sign-ups not open yet
+                </Badge>
               ) : isFull ? (
                 <p className="text-sm text-destructive font-medium">
                   This event has reached its maximum registration limit.

@@ -1,8 +1,12 @@
-import { pgTable, uuid, varchar, text, date, time, decimal, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, date, time, decimal, integer, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
 import { organizationsTable } from "./organizations";
+
+// Event lifecycle: draft (only managers see it), coming_soon (everyone sees it
+// but sign-ups aren't open), open (visible and open for sign-up).
+export const eventStatusEnum = pgEnum("event_status", ["draft", "coming_soon", "open"]);
 
 export const eventsTable = pgTable("events", {
   eventId: uuid("event_id").primaryKey().defaultRandom(),
@@ -32,6 +36,7 @@ export const eventsTable = pgTable("events", {
   // event (the host org still owns/manages it and gets the reporting credit).
   // When false, only the host org's students see it. Defaults to open.
   openToAll: boolean("open_to_all").notNull().default(true),
+  status: eventStatusEnum("status").notNull().default("open"),
   imageUrl: varchar("image_url", { length: 500 }),
   supervisorId: uuid("supervisor_id")
     .notNull()

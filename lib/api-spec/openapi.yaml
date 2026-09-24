@@ -3268,6 +3268,8 @@ components:
           type: ["integer", "null"]
         openToAll:
           type: boolean
+        status:
+          type: string
         imageUrl:
           type: ["string", "null"]
         supervisorId:
@@ -3325,6 +3327,8 @@ components:
           type: ["integer", "null"]
         openToAll:
           type: boolean
+        status:
+          type: string
         supervisorId:
           type: string
         imageUrl:
@@ -3366,6 +3370,8 @@ components:
           type: ["integer", "null"]
         openToAll:
           type: boolean
+        status:
+          type: string
         supervisorId:
           type: string
         imageUrl:

@@ -31,6 +31,7 @@ export interface Event {
   /** @nullable */
   maxGrade?: number | null;
   openToAll?: boolean;
+  status?: string;
   /** @nullable */
   imageUrl?: string | null;
   supervisorId: string;

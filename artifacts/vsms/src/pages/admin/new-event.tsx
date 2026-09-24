@@ -41,6 +41,7 @@ const schema = z
     minGrade: z.string().optional(),
     maxGrade: z.string().optional(),
     openToAll: z.boolean(),
+    status: z.enum(["draft", "coming_soon", "open"]),
     supervisorId: z.string().min(1, "Select a supervisor"),
     organizationId: z.string().optional(),
     imageUrl: z.string().nullable(),
@@ -91,6 +92,7 @@ export default function AdminNewEvent() {
       minGrade: NONE,
       maxGrade: NONE,
       openToAll: true,
+      status: "open" as const,
       supervisorId: "",
       organizationId: "",
       imageUrl: null,
@@ -125,6 +127,7 @@ export default function AdminNewEvent() {
       minGrade: values.minGrade && values.minGrade !== NONE ? Number(values.minGrade) : null,
       maxGrade: values.maxGrade && values.maxGrade !== NONE ? Number(values.maxGrade) : null,
       openToAll: values.openToAll,
+      status: values.status,
       supervisorId: values.supervisorId,
       ...(values.organizationId ? { organizationId: values.organizationId } : {}),
       ...(values.imageUrl ? { imageUrl: values.imageUrl } : {}),
@@ -433,6 +436,24 @@ export default function AdminNewEvent() {
                         </span>
                       </label>
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="status" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Publish status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger data-testid="select-status"><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft — only managers can see it</SelectItem>
+                        <SelectItem value="coming_soon">Coming soon — visible, sign-ups not open yet</SelectItem>
+                        <SelectItem value="open">Open — visible and open for sign-up</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Save as a draft while you finalize details, mark it "Coming soon" to tease it, or open it for sign-ups.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />
