@@ -122,11 +122,9 @@ router.post(
       return;
     }
 
-    // Proof is mandatory above 5 hours (integrity for larger claims).
-    if (hoursWorked > 5 && !(proofUrl && proofUrl.trim())) {
-      res.status(400).json({ error: "Proof is required for submissions over 5 hours." });
-      return;
-    }
+    // Proof is always optional, at any hour amount. If the volunteer has no
+    // proof/form, the external supervisor is emailed a link to approve or
+    // reject the hours (handled below via the review token).
 
     // Prevent duplicate submissions of the same activity/org/date.
     const [dupe] = await db
@@ -580,10 +578,8 @@ router.post(
       res.status(400).json({ error: fieldError });
       return;
     }
-    if (hoursWorked > 5 && !(proofUrl && proofUrl.trim())) {
-      res.status(400).json({ error: "Proof is required for submissions over 5 hours." });
-      return;
-    }
+    // Proof is always optional; with no proof the external supervisor is emailed
+    // a review link (handled below via the review token).
 
     const [dupe] = await db
       .select({ status: externalSubmissionsTable.status })
