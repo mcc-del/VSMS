@@ -28,7 +28,7 @@ export default function ProfilePage() {
   const medinaOrg = (orgs ?? []).find((o) => /medina/i.test(o.name));
   const efOrg = (orgs ?? []).find((o) => /essentials/i.test(o.name));
 
-  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", grade: "", school: "", organizationId: "" as string | null, joinCode: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", grade: "", school: "", organizationId: "" as string | null, joinCode: "", parentEmail: "" });
   const [otherSchool, setOtherSchool] = useState(false);
 
   useEffect(() => {
@@ -41,6 +41,7 @@ export default function ProfilePage() {
         school: profile.school ?? "",
         organizationId: profile.organizationId ?? null,
         joinCode: "",
+        parentEmail: (profile as any).parentEmail ?? "",
       });
       setOtherSchool(!!profile.school && profile.school !== MEDINA_SCHOOL);
     }
@@ -61,6 +62,7 @@ export default function ProfilePage() {
       { data: {
         firstName: form.firstName, lastName: form.lastName, phone: form.phone || null,
         grade: form.grade, school: form.school, organizationId: form.organizationId,
+        parentEmail: form.parentEmail.trim() || null,
         ...(form.joinCode ? { joinCode: form.joinCode } : {}),
       } },
       {
@@ -92,6 +94,11 @@ export default function ProfilePage() {
                 <div><Label>Last name</Label><Input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} /></div>
               </div>
               <div><Label>Phone (optional)</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+              <div>
+                <Label>Parent's email (optional)</Label>
+                <Input type="email" value={form.parentEmail} onChange={(e) => setForm({ ...form, parentEmail: e.target.value })} placeholder="parent@example.com" />
+                <p className="text-xs text-muted-foreground mt-1">Add your parent's email so they can follow your schedule (view-only) once they create a parent account with it.</p>
+              </div>
               <div>
                 <Label>Grade</Label>
                 <Select value={form.grade} onValueChange={(v) => setForm({ ...form, grade: v })}>
