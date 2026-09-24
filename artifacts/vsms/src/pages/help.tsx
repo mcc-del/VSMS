@@ -29,8 +29,6 @@ const SECTIONS: { title: string; items: QA[]; roles?: string[] }[] = [
     items: [
       { q: "How do I join?", a: "Middle and high school students create their own account from the sign-up page and add a parent's email. (Elementary students in grades 2–5 don't log in themselves — a parent manages them; see the parent section.)" },
       { q: "What is a join code and do I need one?", a: "A join code links you to a specific organization (for example your school or a partner nonprofit) so you can see and sign up for their private events. Enter it when you create your account, or later in My Profile under your affiliation. Ask your school/organization or email mcc@medinaacademy.org if you're not sure of your code." },
-      { q: "What are the awards?", a: "Log verified volunteer hours to earn Bronze, Silver or Gold medals, presented at the year-end ceremony. The hour goals for each medal are set by MedinaCares and can vary by grade level — your dashboard and reports always show your current goals and how close you are." },
-      { q: "What are the Bronze / Silver / Gold tiers, and how are they set?", a: "Bronze, Silver and Gold recognize increasing levels of service. The hour requirements follow the President's Volunteer Service Award (PVSA) standard, by age band: Kids (grades 2–5) Bronze 26 / Silver 50 / Gold 75; Teens (grades 6–10) 50 / 75 / 100; Young Adults (grades 11–12) 100 / 175 / 250. Aligning with PVSA keeps the awards nationally recognized and consistent. Your dashboard always shows your band's exact goals." },
     ],
   },
   {
