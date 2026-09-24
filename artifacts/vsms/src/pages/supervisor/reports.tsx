@@ -30,24 +30,6 @@ function Stat({ icon: Icon, label, value, sub, tone }: { icon: any; label: strin
 }
 
 /** Small labelled progress bar used for rate comparisons. */
-function RateBar({ label, value, benchmark, hint }: { label: string; value: number; benchmark?: number; hint?: string }) {
-  const good = benchmark == null || value >= benchmark;
-  return (
-    <div>
-      <div className="flex items-center justify-between text-sm">
-        <span>{label}</span>
-        <span className={`font-semibold ${good ? "text-green-600" : "text-amber-600"}`}>{value}%</span>
-      </div>
-      <div className="relative h-2 rounded-full bg-muted mt-1 overflow-hidden">
-        <div className={`h-full rounded-full ${good ? "bg-green-500" : "bg-amber-500"}`} style={{ width: `${Math.min(100, value)}%` }} />
-        {benchmark != null && (
-          <div className="absolute top-0 bottom-0 w-0.5 bg-foreground/40" style={{ left: `${Math.min(100, benchmark)}%` }} title={`Benchmark ${benchmark}%`} />
-        )}
-      </div>
-      {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
-    </div>
-  );
-}
 
 // Rough sector benchmarks so a supervisor can see how they compare.
 const FILL_BENCHMARK = 80;
@@ -104,18 +86,11 @@ export default function SupervisorReports() {
               <Stat icon={AlertTriangle} label="Overdue to review" value={t.overduePending} sub="Past the 7-day window" tone={t.overduePending > 0 ? "warn" : "good"} />
             </div>
 
-            {/* Benchmarks / deep dive */}
-            <Card>
-              <CardHeader><CardTitle className="text-base">How you compare</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <RateBar label="Fill rate" value={fillRate} benchmark={FILL_BENCHMARK} hint={`Typical programs fill about ${FILL_BENCHMARK}% of requested spots.`} />
-                <RateBar label="Attendance (of finalized sign-ups)" value={attendRate} benchmark={ATTEND_BENCHMARK} hint={`A healthy show-up rate is around ${ATTEND_BENCHMARK}%.`} />
-                <RateBar label="Reviewed within 7 days" value={timelyRate} benchmark={TIMELY_BENCHMARK} hint={`Aim to review at least ${TIMELY_BENCHMARK}% of hours within the 7-day window.`} />
-                <p className="text-xs text-muted-foreground">
-                  Dollar value uses Independent Sector's estimated U.S. value of a volunteer hour ({money(rate)}).
-                </p>
-              </CardContent>
-            </Card>
+            <p className="text-xs text-muted-foreground">
+              Benchmarks: a healthy program fills ~{FILL_BENCHMARK}% of spots, sees ~{ATTEND_BENCHMARK}% attendance, and
+              reviews ~{TIMELY_BENCHMARK}% of hours within 7 days — tiles turn green when you're at or above target.
+              Dollar value uses Independent Sector's estimated U.S. value of a volunteer hour ({money(rate)}).
+            </p>
 
             {/* Per-supervisor breakdown for Org Admin / Super Admin */}
             {isOrgLevel && supervisors.length > 0 && (
