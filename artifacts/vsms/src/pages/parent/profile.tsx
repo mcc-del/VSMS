@@ -71,7 +71,17 @@ export default function ParentProfile() {
     );
   }
   function removeChild(c: ParentChild) {
-    if (!window.confirm(`Remove ${c.firstName} ${c.lastName}? This deletes their profile and all their sign-ups and hours. This can't be undone.`)) return;
+    const approved = Number((c as any).totalApprovedHours ?? 0);
+    const warning =
+      approved > 0
+        ? `Remove ${c.firstName} ${c.lastName}?\n\n⚠️ ${c.firstName} has ${approved} approved volunteer hour${approved === 1 ? "" : "s"}. Deleting the profile PERMANENTLY erases those hours and their entire record — this CANNOT be undone.\n\nTo confirm, type ${c.firstName}'s first name below:`
+        : `Remove ${c.firstName} ${c.lastName}?\n\nThis permanently deletes their profile, sign-ups, and any hours. This cannot be undone.\n\nTo confirm, type ${c.firstName}'s first name below:`;
+    const typed = window.prompt(warning);
+    if (typed == null) return;
+    if (typed.trim().toLowerCase() !== c.firstName.trim().toLowerCase()) {
+      toast({ title: "Name didn't match", description: "Nothing was deleted.", variant: "destructive" });
+      return;
+    }
     deleteChild.mutate(
       { childId: c.userId },
       {

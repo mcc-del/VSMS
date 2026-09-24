@@ -21,6 +21,7 @@ const parentSupervisorUsers = alias(usersTable, "parent_supervisor_users");
 import { authenticate, requireRole } from "../middlewares/auth";
 import { sendCoGuardianInvite, sendSignupNotification } from "../lib/email";
 import { notifyUser } from "../lib/digest";
+import { recordAudit } from "../lib/audit";
 
 interface ChildFields {
   firstName: string;
@@ -471,7 +472,49 @@ router.delete("/v1/parent/children/:childId", authenticate, requireRole("parent"
     res.status(403).json({ error: "This student has their own account and can't be removed from here." });
     return;
   }
+
+  // Guardrail: never let a parent erase a child who has approved service hours.
+  // Deleting the child cascades away every hour record permanently, so if any
+  // approved hours exist we refuse and point them to the program admins. (A
+  // proper soft-delete/restore is planned; this prevents the catastrophic case.)
+  const [approvedInternal] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(volunteerSubmissionsTable)
+    .where(and(eq(volunteerSubmissionsTable.userId, childId), eq(volunteerSubmissionsTable.status, "approved")));
+  const [approvedExternal] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(externalSubmissionsTable)
+    .where(and(eq(externalSubmissionsTable.userId, childId), eq(externalSubmissionsTable.status, "approved")));
+  const [manualCount] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(manualHoursTable)
+    .where(eq(manualHoursTable.userId, childId));
+
+  if ((approvedInternal?.n ?? 0) + (approvedExternal?.n ?? 0) + (manualCount?.n ?? 0) > 0) {
+    res.status(409).json({
+      error:
+        "This child has approved volunteer hours, so they can't be deleted here — that would erase their record. Please email mcc@medinaacademy.org and we'll help.",
+      code: "has_approved_hours",
+    });
+    return;
+  }
+
+  const [childInfo] = await db
+    .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
+    .from(usersTable)
+    .where(eq(usersTable.userId, childId))
+    .limit(1);
+
   await db.delete(usersTable).where(eq(usersTable.userId, childId));
+
+  await recordAudit({
+    actorUserId: req.auth!.userId,
+    action: "delete_child",
+    summary: `Parent removed managed child ${childInfo ? `${childInfo.firstName} ${childInfo.lastName}`.trim() : ""}`.trim(),
+    targetType: "user",
+    targetId: childId,
+  }).catch(() => {});
+
   res.json({ ok: true });
 });
 
