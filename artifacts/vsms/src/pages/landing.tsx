@@ -153,10 +153,10 @@ const css = `
   .mc-landing .logo-img { height: 48px; }
 }
 @media (max-width: 560px) {
-  .mc-landing .wrap { padding: 0 22px; }
+  .mc-landing .wrap { padding: 0 28px; }
   .mc-landing nav { padding: 14px 22px; }
   .mc-landing .hero { padding: 20px 0 44px; gap: 26px; }
-  .mc-landing .hero h1 { font-size: clamp(30px, 8.5vw, 40px); line-height: 1.12; margin-top: 10px; }
+  .mc-landing .hero h1 { font-size: clamp(28px, 7.4vw, 38px); line-height: 1.15; margin-top: 10px; overflow-wrap: break-word; }
   .mc-landing .hero-sub { font-size: 16px; margin-top: 14px; }
   .mc-landing .hero-cta { margin-top: 22px; }
   .mc-landing .hero-elig { margin-top: 22px; padding-top: 20px; }
