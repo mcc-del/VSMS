@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListUsers, useCreateUser, useDeleteUser, useUpdateUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, useGetManagedOrganizations, useReassignEvents, useGetDuplicates, getGetDuplicatesQueryKey, getListUsersQueryKey, getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
+import { useListUsers, useCreateUser, useDeleteUser, useUpdateUser, useAddManualHours, useListOrganizations, useSetOrgAdmin, useGetManagedOrganizations, useReassignEvents, useGetDuplicates, getGetDuplicatesQueryKey, getListUsersQueryKey, getGetAdminDashboardQueryKey, customFetch } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Clock, Building2, Pencil, FileText, Search, Eye, EyeOff, Calendar } from "lucide-react";
+import { Plus, Trash2, Clock, Building2, Pencil, FileText, Search, Eye, EyeOff, Calendar, ListChecks } from "lucide-react";
 import { useLocation } from "wouter";
 import { roleLabel } from "@/lib/roles";
 import { useAuth } from "@/hooks/use-auth";
@@ -119,8 +119,44 @@ export default function AdminUsers() {
     );
   }
   const [hoursUser, setHoursUser] = useState<{ userId: string; name: string } | null>(null);
+  const [manageHoursUser, setManageHoursUser] = useState<{ userId: string; name: string } | null>(null);
+  const [hourEntries, setHourEntries] = useState<any[] | null>(null);
+  const [deletingHourId, setDeletingHourId] = useState<string | null>(null);
   const [orgAdminUser, setOrgAdminUser] = useState<{ userId: string; name: string } | null>(null);
   const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]);
+
+  async function loadHours(userId: string) {
+    setHourEntries(null);
+    try {
+      const data = await customFetch<{ entries: any[] }>(`/api/v1/admin/users/${userId}/hours`);
+      setHourEntries(data.entries ?? []);
+    } catch {
+      setHourEntries([]);
+      toast({ title: "Couldn't load hours", variant: "destructive" });
+    }
+  }
+
+  function openManageHours(userId: string, name: string) {
+    setManageHoursUser({ userId, name });
+    loadHours(userId);
+  }
+
+  async function deleteHourEntry(entry: any) {
+    if (!manageHoursUser) return;
+    if (!confirm(`Delete this ${entry.hours}h ${entry.type} entry (${entry.activity})? This cannot be undone.`)) return;
+    setDeletingHourId(entry.id);
+    try {
+      await customFetch(`/api/v1/admin/users/${manageHoursUser.userId}/hours/${entry.type}/${entry.id}`, { method: "DELETE" });
+      toast({ title: "Hour entry deleted" });
+      await loadHours(manageHoursUser.userId);
+      queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetAdminDashboardQueryKey() });
+    } catch {
+      toast({ title: "Delete failed", variant: "destructive" });
+    } finally {
+      setDeletingHourId(null);
+    }
+  }
 
   function openOrgAdmin(userId: string, name: string, current: string[]) {
     setOrgAdminUser({ userId, name });
@@ -360,6 +396,17 @@ export default function AdminUsers() {
                               <Clock className="w-4 h-4" /> Add hours
                             </Button>
                           )}
+                          {isSuperAdmin && u.role === "participant" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              data-testid={`button-manage-hours-${u.userId}`}
+                              onClick={() => openManageHours(u.userId, `${u.firstName} ${u.lastName}`)}
+                              className="text-muted-foreground hover:text-primary gap-1"
+                            >
+                              <ListChecks className="w-4 h-4" /> Manage hours
+                            </Button>
+                          )}
                           {u.role === "participant" && (
                             <Button
                               variant="ghost"
@@ -540,6 +587,46 @@ export default function AdminUsers() {
               </Button>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={manageHoursUser !== null} onOpenChange={(open) => { if (!open) { setManageHoursUser(null); setHourEntries(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Manage hours — {manageHoursUser?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            {hourEntries === null ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">Loading…</p>
+            ) : hourEntries.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">No hour entries logged for this participant.</p>
+            ) : (
+              hourEntries.map((entry) => (
+                <div key={`${entry.type}-${entry.id}`} className="flex items-center gap-3 border rounded-lg p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{entry.activity}</p>
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
+                      <span>{entry.date || "—"}</span>
+                      <span>· {entry.hours}h</span>
+                      <span className="capitalize">· {entry.type === "event" ? "In-program" : entry.type}</span>
+                      <span className="capitalize">· {entry.status}</span>
+                      {entry.organization && <span>· {entry.organization}</span>}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive shrink-0"
+                    onClick={() => deleteHourEntry(entry)}
+                    disabled={deletingHourId === entry.id}
+                    data-testid={`button-delete-hour-${entry.id}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

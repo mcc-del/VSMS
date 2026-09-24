@@ -282,6 +282,7 @@ router.get(
         status: eventRegistrationsTable.status,
         registeredAt: eventRegistrationsTable.registeredAt,
         eventTitle: eventsTable.title,
+        slotLabel: eventsTable.slotLabel,
         eventDate: eventsTable.eventDate,
         startTime: eventsTable.startTime,
         endTime: eventsTable.endTime,
@@ -305,7 +306,7 @@ router.get(
         userId: r.userId,
         status: r.status,
         registeredAt: r.registeredAt.toISOString(),
-        eventTitle: r.eventTitle ?? null,
+        eventTitle: r.slotLabel ? `${r.eventTitle} — ${r.slotLabel}` : (r.eventTitle ?? null),
         eventDate: r.eventDate ?? null,
         startTime: r.startTime ?? null,
         endTime: r.endTime ?? null,
@@ -720,7 +721,7 @@ router.get(
 
     res.json({
       eventId,
-      eventTitle: event.title,
+      eventTitle: event.slotLabel ? `${event.title} — ${event.slotLabel}` : event.title,
       canManage,
       participants: rows.map((r) => ({
         userId: r.userId,

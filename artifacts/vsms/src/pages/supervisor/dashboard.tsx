@@ -253,7 +253,7 @@ export default function SupervisorDashboard() {
                 {upcoming.slice(0, 6).map((e) => (
                   <div key={e.eventId} className="flex items-center justify-between gap-3 border-b last:border-0 pb-2 last:pb-0">
                     <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{e.title}</p>
+                      <p className="font-medium text-sm truncate">{e.title}{(e as any).slotLabel ? ` — ${(e as any).slotLabel}` : ""}</p>
                       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-0.5">
                         <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {e.eventDate}</span>
                         {e.startTime && <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(e.startTime)}</span>}

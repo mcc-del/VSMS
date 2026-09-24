@@ -202,6 +202,7 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
         status: eventRegistrationsTable.status,
         registeredAt: eventRegistrationsTable.registeredAt,
         eventTitle: eventsTable.title,
+        slotLabel: eventsTable.slotLabel,
         eventDate: eventsTable.eventDate,
         startTime: eventsTable.startTime,
         endTime: eventsTable.endTime,
@@ -227,6 +228,7 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
         status: eventRegistrationsTable.status,
         registeredAt: eventRegistrationsTable.registeredAt,
         eventTitle: eventsTable.title,
+        slotLabel: eventsTable.slotLabel,
         eventDate: eventsTable.eventDate,
         startTime: eventsTable.startTime,
         endTime: eventsTable.endTime,
@@ -274,7 +276,7 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
       upcomingRegistrations: regs.map((r) => ({
         registrationId: r.registrationId,
         eventId: r.eventId,
-        eventTitle: r.eventTitle ?? null,
+        eventTitle: r.slotLabel ? `${r.eventTitle} — ${r.slotLabel}` : (r.eventTitle ?? null),
         eventDate: r.eventDate ?? null,
         startTime: r.startTime ?? null,
         endTime: r.endTime ?? null,
@@ -286,7 +288,7 @@ router.get("/v1/parent/children", authenticate, requireRole("parent"), async (re
       pastRegistrations: pastRegs.map((r) => ({
         registrationId: r.registrationId,
         eventId: r.eventId,
-        eventTitle: r.eventTitle ?? null,
+        eventTitle: r.slotLabel ? `${r.eventTitle} — ${r.slotLabel}` : (r.eventTitle ?? null),
         eventDate: r.eventDate ?? null,
         startTime: r.startTime ?? null,
         endTime: r.endTime ?? null,

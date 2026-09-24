@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
-import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable, eventsTable, volunteerSubmissionsTable, eventRegistrationsTable } from "@workspace/db";
+import { db, usersTable, manualHoursTable, orgAdminsTable, organizationsTable, auditLogsTable, awardThresholdsTable, eventsTable, volunteerSubmissionsTable, externalSubmissionsTable, eventRegistrationsTable } from "@workspace/db";
 import { eq, desc, ilike, and, isNull, count, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { authenticate, requireRole } from "../middlewares/auth";
@@ -1039,5 +1039,124 @@ router.get("/v1/admin/duplicates", authenticate, requireRole("admin"), async (_r
 
   res.json({ groups });
 });
+
+// GET /api/v1/admin/users/:userId/hours — every hour entry logged for one user
+// (in-program event submissions, external volunteering, and admin credits),
+// across all statuses, so a Super Admin can review and clean up test data.
+router.get(
+  "/v1/admin/users/:userId/hours",
+  authenticate,
+  requireRole("admin"),
+  async (req, res) => {
+    const { userId } = req.params as { userId: string };
+
+    const internal = await db
+      .select({
+        id: volunteerSubmissionsTable.submissionId,
+        status: volunteerSubmissionsTable.status,
+        hoursWorked: volunteerSubmissionsTable.hoursWorked,
+        submittedAt: volunteerSubmissionsTable.submittedAt,
+        title: eventsTable.title,
+        slotLabel: eventsTable.slotLabel,
+        eventDate: eventsTable.eventDate,
+        plannedHours: eventsTable.hoursValue,
+      })
+      .from(volunteerSubmissionsTable)
+      .leftJoin(eventsTable, eq(volunteerSubmissionsTable.eventId, eventsTable.eventId))
+      .where(eq(volunteerSubmissionsTable.userId, userId));
+
+    const external = await db
+      .select({
+        id: externalSubmissionsTable.externalSubmissionId,
+        status: externalSubmissionsTable.status,
+        hours: externalSubmissionsTable.hoursWorked,
+        date: externalSubmissionsTable.volunteerDate,
+        activity: externalSubmissionsTable.activityName,
+        orgName: externalSubmissionsTable.organizationName,
+      })
+      .from(externalSubmissionsTable)
+      .where(eq(externalSubmissionsTable.userId, userId));
+
+    const manual = await db
+      .select({
+        id: manualHoursTable.manualHoursId,
+        hours: manualHoursTable.hours,
+        date: manualHoursTable.dateAwarded,
+        description: manualHoursTable.description,
+      })
+      .from(manualHoursTable)
+      .where(eq(manualHoursTable.userId, userId));
+
+    const entries = [
+      ...internal.map((r) => ({
+        id: r.id,
+        type: "event" as const,
+        status: r.status,
+        date: r.eventDate ?? "",
+        activity: r.slotLabel ? `${r.title ?? "Event"} — ${r.slotLabel}` : (r.title ?? "Event"),
+        organization: null as string | null,
+        hours: Number(r.hoursWorked ?? r.plannedHours ?? 0),
+      })),
+      ...external.map((r) => ({
+        id: r.id,
+        type: "external" as const,
+        status: r.status,
+        date: r.date ?? "",
+        activity: r.activity ?? "External volunteering",
+        organization: r.orgName ?? null,
+        hours: Number(r.hours ?? 0),
+      })),
+      ...manual.map((r) => ({
+        id: r.id,
+        type: "manual" as const,
+        status: "approved",
+        date: r.date ?? "",
+        activity: r.description ?? "Awarded hours",
+        organization: null as string | null,
+        hours: Number(r.hours ?? 0),
+      })),
+    ].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+
+    res.json({ entries });
+  },
+);
+
+// DELETE /api/v1/admin/users/:userId/hours/:type/:id — permanently remove one
+// hour entry (event submission, external submission, or manual credit). Used to
+// clean up test data. Super Admin only.
+router.delete(
+  "/v1/admin/users/:userId/hours/:type/:id",
+  authenticate,
+  requireRole("admin"),
+  async (req, res) => {
+    const { userId, type, id } = req.params as { userId: string; type: string; id: string };
+
+    if (type === "event") {
+      await db
+        .delete(volunteerSubmissionsTable)
+        .where(and(eq(volunteerSubmissionsTable.submissionId, id), eq(volunteerSubmissionsTable.userId, userId)));
+    } else if (type === "external") {
+      await db
+        .delete(externalSubmissionsTable)
+        .where(and(eq(externalSubmissionsTable.externalSubmissionId, id), eq(externalSubmissionsTable.userId, userId)));
+    } else if (type === "manual") {
+      await db
+        .delete(manualHoursTable)
+        .where(and(eq(manualHoursTable.manualHoursId, id), eq(manualHoursTable.userId, userId)));
+    } else {
+      res.status(400).json({ error: "Unknown hour type." });
+      return;
+    }
+
+    await recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "delete_hours",
+      summary: `Deleted a ${type} hour entry`,
+      targetType: "user",
+      targetId: userId,
+    });
+    res.json({ success: true });
+  },
+);
 
 export default router;

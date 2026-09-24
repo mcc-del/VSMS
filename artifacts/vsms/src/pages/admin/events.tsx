@@ -344,7 +344,10 @@ export default function AdminEventsPage() {
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold truncate">{event.title}</h3>
+                        <h3 className="font-semibold truncate">
+                          {event.title}
+                          {event.slotLabel && <span className="text-muted-foreground font-normal"> — {event.slotLabel}</span>}
+                        </h3>
                         <Badge className={isUpcoming ? "bg-green-100 text-green-700 border-0" : "bg-gray-100 text-gray-600 border-0"}>
                           {isUpcoming ? "Upcoming" : "Past"}
                         </Badge>
