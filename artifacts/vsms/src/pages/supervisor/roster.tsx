@@ -8,6 +8,7 @@ import {
   useSearchParticipants,
   getGetEventRosterQueryKey,
   getSearchParticipantsQueryKey,
+  customFetch,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X, Mail, Paperclip, Upload } from "lucide-react";
+import { ArrowLeft, Check, X, Mail, Paperclip, Upload, LogOut } from "lucide-react";
 
 function statusBadge(s: string) {
   if (s === "attended") return <Badge className="bg-green-100 text-green-700 border-0">Checked in</Badge>;
@@ -133,6 +134,23 @@ export default function RosterPage() {
     );
   }
 
+  const [checkoutBusy, setCheckoutBusy] = useState<string | null>(null);
+  async function checkOut(userId: string, checkedOut: boolean) {
+    setCheckoutBusy(userId);
+    try {
+      await customFetch(`/api/v1/events/${eventId}/checkout`, {
+        method: "POST",
+        body: JSON.stringify({ userId, checkedOut }),
+      });
+      toast({ title: checkedOut ? "Checked out — hours credited" : "Checkout undone" });
+      queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
+    } catch (err: any) {
+      toast({ title: "Couldn't update", description: err?.data?.error ?? "Try again.", variant: "destructive" });
+    } finally {
+      setCheckoutBusy(null);
+    }
+  }
+
   const participants = data?.participants ?? [];
   const checkedIn = participants.filter((p) => p.status === "attended").length;
 
@@ -239,6 +257,31 @@ export default function RosterPage() {
                         >
                           <Check className="w-4 h-4" /> {p.status === "attended" ? "Checked in" : "Check in"}
                         </Button>
+                        {p.status === "attended" && (
+                          (p as any).hoursStatus === "approved" ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="gap-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800"
+                              onClick={() => checkOut(p.userId, false)}
+                              disabled={checkoutBusy === p.userId}
+                              title="Undo checkout (removes credited hours)"
+                            >
+                              <Check className="w-4 h-4" /> Checked out
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1"
+                              onClick={() => checkOut(p.userId, true)}
+                              disabled={checkoutBusy === p.userId}
+                              title="Check out and credit hours"
+                            >
+                              <LogOut className="w-4 h-4" /> Check out
+                            </Button>
+                          )
+                        )}
                         <Button
                           size="sm"
                           variant="ghost"

@@ -716,6 +716,81 @@ router.post(
   },
 );
 
+// Sentinel comment marking hours auto-credited by a roster check-out (so an
+// undo can safely remove only those, not a student's own submission).
+const CHECKOUT_COMMENT = "Checked out at event by supervisor.";
+
+// POST /api/v1/events/:eventId/checkout — one-tap completion. Checking a student
+// out marks them attended and auto-credits the event's planned hours (approved,
+// no separate review). Undo removes those auto-credited hours.
+router.post(
+  "/v1/events/:eventId/checkout",
+  authenticate,
+  requireRole("supervisor", "admin", "org_admin"),
+  async (req, res) => {
+    const { eventId } = req.params as { eventId: string };
+    const body = (req.body ?? {}) as { userId?: unknown; checkedOut?: unknown };
+    const targetUserId = typeof body.userId === "string" ? body.userId : "";
+    const checkedOut = body.checkedOut !== false; // default true
+    if (!targetUserId) { res.status(400).json({ error: "userId is required." }); return; }
+
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
+    if (!event) { res.status(404).json({ error: "Event not found" }); return; }
+    if (!(await canManageEvent(req.auth!.role, req.auth!.userId, event))) {
+      res.status(403).json({ error: "You can only manage events you supervise." });
+      return;
+    }
+
+    // Must be on the roster.
+    const [reg] = await db
+      .select({ userId: eventRegistrationsTable.userId })
+      .from(eventRegistrationsTable)
+      .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, targetUserId)))
+      .limit(1);
+    if (!reg) { res.status(404).json({ error: "That participant isn't registered." }); return; }
+
+    const [existing] = await db
+      .select({ submissionId: volunteerSubmissionsTable.submissionId, status: volunteerSubmissionsTable.status, comments: volunteerSubmissionsTable.supervisorComments })
+      .from(volunteerSubmissionsTable)
+      .where(and(eq(volunteerSubmissionsTable.eventId, eventId), eq(volunteerSubmissionsTable.userId, targetUserId)))
+      .limit(1);
+
+    if (checkedOut) {
+      // Mark attended and credit planned hours as approved.
+      await db
+        .update(eventRegistrationsTable)
+        .set({ status: "attended" })
+        .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, targetUserId)));
+
+      const plannedHours = calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue);
+      if (existing) {
+        await db
+          .update(volunteerSubmissionsTable)
+          .set({ status: "approved", hoursWorked: String(plannedHours), supervisorComments: CHECKOUT_COMMENT, reviewedAt: new Date() })
+          .where(eq(volunteerSubmissionsTable.submissionId, existing.submissionId));
+      } else {
+        await db.insert(volunteerSubmissionsTable).values({
+          userId: targetUserId,
+          eventId,
+          hoursWorked: String(plannedHours),
+          status: "approved",
+          supervisorComments: CHECKOUT_COMMENT,
+          reviewedAt: new Date(),
+        });
+      }
+      res.json({ ok: true, checkedOut: true });
+      return;
+    }
+
+    // Undo: only remove hours that were auto-credited by a check-out — never a
+    // student's own submission.
+    if (existing && existing.comments === CHECKOUT_COMMENT) {
+      await db.delete(volunteerSubmissionsTable).where(eq(volunteerSubmissionsTable.submissionId, existing.submissionId));
+    }
+    res.json({ ok: true, checkedOut: false });
+  },
+);
+
 // GET /api/v1/participants/search?q= — name search for the roster "Add
 // participant" picker. Returns existing participant accounts (including managed
 // children, who have no email) matching the query. Managers can vouch for a
