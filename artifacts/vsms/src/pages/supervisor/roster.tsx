@@ -68,15 +68,20 @@ export default function RosterPage() {
   const [wiLast, setWiLast] = useState("");
   const [wiEmail, setWiEmail] = useState("");
   function addWalkIn() {
-    if (!wiFirst.trim() || !wiLast.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(wiEmail.trim())) {
-      toast({ title: "Enter first name, last name, and a valid email", variant: "destructive" });
+    if (!wiFirst.trim() || !wiLast.trim()) {
+      toast({ title: "Enter a first and last name", variant: "destructive" });
       return;
     }
+    if (wiEmail.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(wiEmail.trim())) {
+      toast({ title: "That email doesn't look valid", description: "Leave it blank if you don't have one.", variant: "destructive" });
+      return;
+    }
+    const emailed = !!wiEmail.trim();
     addAttendee.mutate(
-      { eventId, data: { email: wiEmail.trim(), firstName: wiFirst.trim(), lastName: wiLast.trim() } as any },
+      { eventId, data: { email: wiEmail.trim() || undefined, firstName: wiFirst.trim(), lastName: wiLast.trim() } as any },
       {
         onSuccess: () => {
-          toast({ title: "Added & invited", description: `${wiFirst} was added and emailed an invite to join. You can check them out to credit hours.` });
+          toast({ title: "Added", description: emailed ? `${wiFirst} was added and emailed an invite. Check them out to credit hours.` : `${wiFirst} was added. Check them out to credit hours; you can add an email later.` });
           queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
           setSearch(""); setWiFirst(""); setWiLast(""); setWiEmail("");
         },
@@ -242,13 +247,13 @@ export default function RosterPage() {
                     <p className="text-sm text-muted-foreground p-3">Searching…</p>
                   ) : results.length === 0 ? (
                     <div className="p-3 space-y-2">
-                      <p className="text-sm text-muted-foreground">No matching participant. Add them as a walk-in — they'll get an email invite to join, and you can credit their hours now.</p>
+                      <p className="text-sm text-muted-foreground">No matching participant. Add them with just a name — no email needed. If you add an email, they'll also get an invite to join. Either way you can credit their hours now.</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <Input placeholder="First name" value={wiFirst} onChange={(e) => setWiFirst(e.target.value)} />
                         <Input placeholder="Last name" value={wiLast} onChange={(e) => setWiLast(e.target.value)} />
                       </div>
-                      <Input type="email" placeholder="Email for their invite" value={wiEmail} onChange={(e) => setWiEmail(e.target.value)} />
-                      <Button size="sm" disabled={addAttendee.isPending} onClick={addWalkIn}>Add &amp; invite</Button>
+                      <Input type="email" placeholder="Email (optional)" value={wiEmail} onChange={(e) => setWiEmail(e.target.value)} />
+                      <Button size="sm" disabled={addAttendee.isPending} onClick={addWalkIn}>Add participant</Button>
                     </div>
                   ) : (
                     results.map((p: any) => (

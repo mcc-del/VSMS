@@ -903,7 +903,10 @@ router.post(
     const pickedUserId = typeof body.userId === "string" ? body.userId.trim() : "";
     const newFirstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
     const newLastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
-    if (!email && !pickedUserId) { res.status(400).json({ error: "Pick a participant to add." }); return; }
+    if (!email && !pickedUserId && !(newFirstName && newLastName)) {
+      res.status(400).json({ error: "Pick a participant, or enter a name to add someone new." });
+      return;
+    }
 
     const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
     if (!event) { res.status(404).json({ error: "Event not found" }); return; }
@@ -912,41 +915,48 @@ router.post(
       return;
     }
 
-    let [participant] = await db
-      .select({ userId: usersTable.userId, firstName: usersTable.firstName, lastName: usersTable.lastName, role: usersTable.role, grade: usersTable.grade, email: usersTable.email, parentEmail: usersTable.parentEmail })
-      .from(usersTable)
-      .where(pickedUserId ? eq(usersTable.userId, pickedUserId) : eq(usersTable.email, email))
-      .limit(1);
+    let participant = (pickedUserId || email)
+      ? (await db
+          .select({ userId: usersTable.userId, firstName: usersTable.firstName, lastName: usersTable.lastName, role: usersTable.role, grade: usersTable.grade, email: usersTable.email, parentEmail: usersTable.parentEmail })
+          .from(usersTable)
+          .where(pickedUserId ? eq(usersTable.userId, pickedUserId) : eq(usersTable.email, email))
+          .limit(1))[0]
+      : undefined;
 
-    // Walk-in who isn't in the system yet: create a participant account and email
-    // them an invite to set a password, so their credited hours are waiting when
-    // they join. Requires a name + email (not available when adding by userId).
-    if (!participant && email && newFirstName && newLastName) {
-      const inviteToken = randomBytes(32).toString("hex");
-      const inviteExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    // Walk-in who isn't in the system yet: create a participant record so their
+    // credited hours are tracked. With an email, we also send a set-password
+    // invite. Without an email, we create a managed (login-less) participant —
+    // like a grade 2–5 child — that a parent/email can be attached to later.
+    if (!participant && newFirstName && newLastName) {
+      const hasEmail = !!email;
+      const inviteToken = hasEmail ? randomBytes(32).toString("hex") : null;
+      const inviteExpires = hasEmail ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null;
       const passwordHash = await bcrypt.hash(randomBytes(18).toString("hex"), 12);
       const [created] = await db
         .insert(usersTable)
         .values({
           firstName: newFirstName,
           lastName: newLastName,
-          email,
+          email: hasEmail ? email : null,
           passwordHash,
           role: "participant",
+          isManaged: !hasEmail,
           resetToken: inviteToken,
           resetTokenExpiresAt: inviteExpires,
         })
         .returning({ userId: usersTable.userId, firstName: usersTable.firstName, lastName: usersTable.lastName, role: usersTable.role, grade: usersTable.grade, email: usersTable.email, parentEmail: usersTable.parentEmail });
       participant = created;
-      sendAccountInvite(email, newFirstName, "Participant", inviteToken)
-        .catch((err) => req.log.error({ err }, "walk-in account invite failed"));
+      if (hasEmail && inviteToken) {
+        sendAccountInvite(email, newFirstName, "Participant", inviteToken)
+          .catch((err) => req.log.error({ err }, "walk-in account invite failed"));
+      }
     }
 
     if (!participant || participant.role !== "participant") {
       res.status(404).json({
         error: pickedUserId
           ? "That participant no longer exists."
-          : "No participant found with that email. Add their name to create an account and send an invite.",
+          : "No participant found. Add their name to create a record (email optional).",
         code: "not_found_needs_name",
       });
       return;
