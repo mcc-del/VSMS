@@ -2745,6 +2745,8 @@ components:
           type: string
         eventTitle:
           type: string
+        imageUrl:
+          type: ["string", "null"]
         canManage:
           type: boolean
         participants:

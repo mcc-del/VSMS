@@ -10,6 +10,8 @@ import type { RosterParticipant } from './rosterParticipant';
 export interface EventRoster {
   eventId: string;
   eventTitle: string;
+  /** @nullable */
+  imageUrl?: string | null;
   canManage?: boolean;
   participants: RosterParticipant[];
 }

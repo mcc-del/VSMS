@@ -351,6 +351,8 @@ export interface RosterParticipant {
 export interface EventRoster {
   eventId: string;
   eventTitle: string;
+  /** @nullable */
+  imageUrl?: string | null;
   canManage?: boolean;
   participants: RosterParticipant[];
 }

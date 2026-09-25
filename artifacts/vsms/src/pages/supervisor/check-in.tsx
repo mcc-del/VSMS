@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { Calendar, Clock, MapPin, Users, CheckSquare } from "lucide-react";
 import { todayPT, eventHasEnded } from "@/lib/event-time";
+import { AuthenticatedImage } from "@/components/authenticated-image";
 
 function formatTime(t?: string | null) {
   if (!t) return "";
@@ -29,6 +30,9 @@ function EventRow({ event }: { event: any }) {
   return (
     <Card>
       <CardContent className="flex items-start gap-4 p-4">
+        {event.imageUrl && (
+          <AuthenticatedImage objectPath={event.imageUrl} alt={event.title} className="w-16 h-16 rounded-lg object-cover shrink-0" />
+        )}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">{event.title}</h3>
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-1">

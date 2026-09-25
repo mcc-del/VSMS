@@ -359,6 +359,7 @@ export const GetEventRosterParams = zod.object({
 export const GetEventRosterResponse = zod.object({
   "eventId": zod.string(),
   "eventTitle": zod.string(),
+  "imageUrl": zod.string().nullish(),
   "canManage": zod.boolean().optional(),
   "participants": zod.array(zod.object({
   "userId": zod.string(),

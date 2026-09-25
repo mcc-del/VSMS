@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Check, X, Mail, Paperclip, Upload, LogOut } from "lucide-react";
+import { AuthenticatedImage } from "@/components/authenticated-image";
 
 function statusBadge(s: string) {
   if (s === "attended") return <Badge className="bg-green-100 text-green-700 border-0">Checked in</Badge>;
@@ -197,7 +198,11 @@ export default function RosterPage() {
           <ArrowLeft className="w-4 h-4" /> Back to events
         </button>
         <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
+          <div className="flex items-start gap-4">
+            {(data as any)?.imageUrl && (
+              <AuthenticatedImage objectPath={(data as any).imageUrl} alt={data?.eventTitle ?? "Event"} className="w-20 h-20 rounded-lg object-cover shrink-0" />
+            )}
+            <div>
             <h1 className="text-2xl font-bold">{data?.eventTitle ?? "Roster"}</h1>
             <p className="text-muted-foreground text-sm mt-1">
               {participants.length} signed up · {checkedIn} checked in.{canManage ? " Tap ✓ to check a student in at the event." : ""}
@@ -210,6 +215,7 @@ export default function RosterPage() {
             <p className="text-xs text-amber-700 mt-1">
               Before sharing building access (e.g. a QR code), confirm each attendee is a verified member — "Community · unverified" means they joined without an organization join code.
             </p>
+            </div>
           </div>
           {canManage && (
             <Button variant="outline" className="gap-1.5 shrink-0" disabled={participants.length === 0} onClick={() => setMsgOpen(true)}>

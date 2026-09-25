@@ -673,6 +673,7 @@ router.get(
     res.json({
       eventId,
       eventTitle: event.slotLabel ? `${event.title} — ${event.slotLabel}` : event.title,
+      imageUrl: event.imageUrl ?? null,
       canManage,
       participants: rows.map((r) => ({
         userId: r.userId,
