@@ -992,6 +992,73 @@ router.post(
   },
 );
 
+// POST /api/v1/events/:eventId/attendees/bulk — add many participants at once by
+// name (email optional). Each name with no matching account becomes a managed,
+// login-less participant. Already-registered people are skipped.
+router.post(
+  "/v1/events/:eventId/attendees/bulk",
+  authenticate,
+  requireRole("supervisor", "admin", "org_admin"),
+  async (req, res) => {
+    const { eventId } = req.params as { eventId: string };
+    const body = (req.body ?? {}) as { people?: unknown };
+    const people = Array.isArray(body.people) ? body.people : [];
+    if (people.length === 0) { res.status(400).json({ error: "Add at least one name." }); return; }
+    if (people.length > 200) { res.status(400).json({ error: "Please add at most 200 names at a time." }); return; }
+
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
+    if (!event) { res.status(404).json({ error: "Event not found" }); return; }
+    if (!(await canManageEvent(req.auth!.role, req.auth!.userId, event))) {
+      res.status(403).json({ error: "You can only manage events you supervise." });
+      return;
+    }
+
+    let added = 0, skipped = 0;
+    for (const raw of people) {
+      const p = raw as { firstName?: unknown; lastName?: unknown; email?: unknown };
+      const firstName = typeof p.firstName === "string" ? p.firstName.trim() : "";
+      const lastName = typeof p.lastName === "string" ? p.lastName.trim() : "";
+      const email = typeof p.email === "string" ? p.email.trim().toLowerCase() : "";
+      if (!firstName || !lastName) { skipped++; continue; }
+
+      let user = email
+        ? (await db.select({ userId: usersTable.userId }).from(usersTable).where(eq(usersTable.email, email)).limit(1))[0]
+        : undefined;
+      if (!user) {
+        const passwordHash = await bcrypt.hash(randomBytes(18).toString("hex"), 12);
+        const inviteToken = email ? randomBytes(32).toString("hex") : null;
+        const [created] = await db
+          .insert(usersTable)
+          .values({
+            firstName, lastName,
+            email: email || null,
+            passwordHash,
+            role: "participant",
+            isManaged: !email,
+            resetToken: inviteToken,
+            resetTokenExpiresAt: inviteToken ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null,
+          })
+          .returning({ userId: usersTable.userId });
+        user = created;
+        if (email && inviteToken) {
+          sendAccountInvite(email, firstName, "Participant", inviteToken).catch(() => {});
+        }
+      }
+
+      const [existing] = await db
+        .select({ id: eventRegistrationsTable.registrationId })
+        .from(eventRegistrationsTable)
+        .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, user.userId)))
+        .limit(1);
+      if (existing) { skipped++; continue; }
+      await db.insert(eventRegistrationsTable).values({ eventId, userId: user.userId, status: "registered" });
+      added++;
+    }
+
+    res.status(201).json({ added, skipped, total: people.length });
+  },
+);
+
 // POST /api/v1/events/:eventId/broadcast — supervisor emails everyone who is
 // registered for the event (and optionally the guardians of managed children).
 router.post(

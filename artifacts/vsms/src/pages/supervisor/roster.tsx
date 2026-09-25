@@ -21,8 +21,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X, Mail, Paperclip, Upload, LogOut } from "lucide-react";
+import { ArrowLeft, Check, X, Mail, Paperclip, Upload, LogOut, Printer } from "lucide-react";
 import { AuthenticatedImage } from "@/components/authenticated-image";
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c));
+}
 
 function statusBadge(s: string) {
   if (s === "attended") return <Badge className="bg-green-100 text-green-700 border-0">Checked in</Badge>;
@@ -162,6 +166,50 @@ export default function RosterPage() {
     );
   }
 
+  // Bulk paste-a-list importer.
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const [pasteBusy, setPasteBusy] = useState(false);
+  function parseNames(text: string): { firstName: string; lastName: string; email?: string }[] {
+    return text
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        // Optional email after a comma, tab, or angle brackets.
+        const emailMatch = line.match(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/);
+        const email = emailMatch ? emailMatch[0] : undefined;
+        let namePart = line.replace(/[<,\t].*$/, "").replace(email ?? "", "").trim();
+        if (!namePart) namePart = line.replace(email ?? "", "").replace(/[<>,]/g, "").trim();
+        const parts = namePart.split(/\s+/).filter(Boolean);
+        const firstName = parts.shift() ?? "";
+        const lastName = parts.join(" ");
+        return { firstName, lastName, email };
+      })
+      .filter((p) => p.firstName && p.lastName);
+  }
+  async function importPaste() {
+    const people = parseNames(pasteText);
+    if (people.length === 0) {
+      toast({ title: "No valid names found", description: "Use one 'First Last' per line.", variant: "destructive" });
+      return;
+    }
+    setPasteBusy(true);
+    try {
+      const r = await customFetch<{ added: number; skipped: number }>(`/api/v1/events/${eventId}/attendees/bulk`, {
+        method: "POST",
+        body: JSON.stringify({ people }),
+      });
+      toast({ title: `Added ${r.added}`, description: r.skipped ? `${r.skipped} skipped (already on the event or incomplete).` : "All added to the event." });
+      queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
+      setPasteText(""); setPasteOpen(false);
+    } catch (err: any) {
+      toast({ title: "Import failed", description: err?.data?.error ?? "Try again.", variant: "destructive" });
+    } finally {
+      setPasteBusy(false);
+    }
+  }
+
   const [checkoutBusy, setCheckoutBusy] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   async function checkOutAll() {
@@ -196,6 +244,34 @@ export default function RosterPage() {
   const participants = data?.participants ?? [];
   const checkedIn = participants.filter((p) => p.status === "attended").length;
 
+  function printRoster() {
+    const rows = participants
+      .map(
+        (p: any, i: number) =>
+          `<tr><td>${i + 1}</td><td>${escapeHtml(p.name)}</td><td>${p.grade ? "Gr " + escapeHtml(String(p.grade)) : ""}</td><td>${escapeHtml(p.school ?? "")}</td><td class="box"></td><td class="sig"></td></tr>`,
+      )
+      .join("");
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Roster</title>
+      <style>
+        body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:24px;}
+        h1{font-size:20px;margin:0 0 2px;} .sub{color:#555;font-size:13px;margin:0 0 16px;}
+        table{width:100%;border-collapse:collapse;font-size:13px;}
+        th,td{border:1px solid #bbb;padding:6px 8px;text-align:left;}
+        th{background:#f2f2f2;} td.box{width:60px;} td.sig{width:180px;}
+        @media print{@page{margin:14mm;}}
+      </style></head><body>
+      <h1>${escapeHtml(data?.eventTitle ?? "Roster")}</h1>
+      <p class="sub">${participants.length} signed up · Printed ${new Date().toLocaleDateString()}</p>
+      <table><thead><tr><th>#</th><th>Name</th><th>Grade</th><th>School</th><th>Present</th><th>Signature</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="6">No participants</td></tr>'}</tbody></table>
+      <script>window.onload=function(){window.print();}</script>
+      </body></html>`;
+    const w = window.open("", "_blank");
+    if (!w) { toast({ title: "Pop-up blocked", description: "Allow pop-ups to print.", variant: "destructive" }); return; }
+    w.document.write(html);
+    w.document.close();
+  }
+
   return (
     <AppLayout>
       <div className="space-y-5 max-w-2xl">
@@ -222,11 +298,16 @@ export default function RosterPage() {
             </p>
             </div>
           </div>
-          {canManage && (
-            <Button variant="outline" className="gap-1.5 shrink-0" disabled={participants.length === 0} onClick={() => setMsgOpen(true)}>
-              <Mail className="w-4 h-4" /> Message attendees
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" className="gap-1.5" disabled={participants.length === 0} onClick={printRoster}>
+              <Printer className="w-4 h-4" /> Print
             </Button>
-          )}
+            {canManage && (
+              <Button variant="outline" className="gap-1.5" disabled={participants.length === 0} onClick={() => setMsgOpen(true)}>
+                <Mail className="w-4 h-4" /> Message attendees
+              </Button>
+            )}
+          </div>
         </div>
 
         {canManage && (
@@ -241,6 +322,30 @@ export default function RosterPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
+
+              <div className="mt-3 border-t pt-3">
+                {!pasteOpen ? (
+                  <button type="button" className="text-sm text-primary font-medium hover:underline" onClick={() => setPasteOpen(true)}>
+                    + Paste a list of names (bulk add)
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      One person per line: <span className="font-mono">First Last</span>. Email is optional — add it after a comma to also send an invite (e.g. <span className="font-mono">Maya Khan, maya@email.com</span>).
+                    </p>
+                    <Textarea
+                      rows={6}
+                      placeholder={"Maya Khan\nAli Rahman\nSara Ahmed, sara@email.com"}
+                      value={pasteText}
+                      onChange={(e) => setPasteText(e.target.value)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" disabled={pasteBusy} onClick={importPaste}>{pasteBusy ? "Adding…" : `Add ${parseNames(pasteText).length || ""} to event`.trim()}</Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setPasteOpen(false); setPasteText(""); }}>Cancel</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
               {searchQ.length >= 2 && (
                 <div className="mt-2 rounded-lg border divide-y max-h-64 overflow-y-auto">
                   {searching && results.length === 0 ? (
