@@ -11,7 +11,9 @@ import {
 import { eq, count, sql, and, inArray, ilike, or } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { CreateEventBody, UpdateEventBody } from "@workspace/api-zod";
-import { sendRegistrationConfirmation, sendEventBroadcast, sendAddedToEvent, sendGuardianSignupNotification } from "../lib/email";
+import { sendRegistrationConfirmation, sendEventBroadcast, sendAddedToEvent, sendGuardianSignupNotification, sendAccountInvite } from "../lib/email";
+import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 import { eventHasEnded, todayPT, nowTimePT } from "../lib/event-time";
 import { notifyUser } from "../lib/digest";
 import { recordAudit } from "../lib/audit";
@@ -791,6 +793,51 @@ router.post(
   },
 );
 
+// POST /api/v1/events/:eventId/checkout-all — check out (credit hours to) every
+// participant currently checked in (status "attended") who isn't already checked
+// out. One tap to finish a whole event.
+router.post(
+  "/v1/events/:eventId/checkout-all",
+  authenticate,
+  requireRole("supervisor", "admin", "org_admin"),
+  async (req, res) => {
+    const { eventId } = req.params as { eventId: string };
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
+    if (!event) { res.status(404).json({ error: "Event not found" }); return; }
+    if (!(await canManageEvent(req.auth!.role, req.auth!.userId, event))) {
+      res.status(403).json({ error: "You can only manage events you supervise." });
+      return;
+    }
+
+    const attendees = await db
+      .select({ userId: eventRegistrationsTable.userId })
+      .from(eventRegistrationsTable)
+      .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.status, "attended")));
+
+    const existingSubs = await db
+      .select({ userId: volunteerSubmissionsTable.userId })
+      .from(volunteerSubmissionsTable)
+      .where(and(eq(volunteerSubmissionsTable.eventId, eventId), eq(volunteerSubmissionsTable.status, "approved")));
+    const alreadyCredited = new Set(existingSubs.map((s) => s.userId));
+
+    const plannedHours = calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue);
+    const toCredit = attendees.filter((a) => !alreadyCredited.has(a.userId));
+    if (toCredit.length > 0) {
+      await db.insert(volunteerSubmissionsTable).values(
+        toCredit.map((a) => ({
+          userId: a.userId,
+          eventId,
+          hoursWorked: String(plannedHours),
+          status: "approved" as const,
+          supervisorComments: CHECKOUT_COMMENT,
+          reviewedAt: new Date(),
+        })),
+      );
+    }
+    res.json({ ok: true, checkedOut: toCredit.length });
+  },
+);
+
 // GET /api/v1/participants/search?q= — name search for the roster "Add
 // participant" picker. Returns existing participant accounts (including managed
 // children, who have no email) matching the query. Managers can vouch for a
@@ -850,9 +897,11 @@ router.post(
   requireRole("supervisor", "admin", "org_admin"),
   async (req, res) => {
     const { eventId } = req.params as { eventId: string };
-    const body = (req.body ?? {}) as { email?: unknown; userId?: unknown };
+    const body = (req.body ?? {}) as { email?: unknown; userId?: unknown; firstName?: unknown; lastName?: unknown };
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const pickedUserId = typeof body.userId === "string" ? body.userId.trim() : "";
+    const newFirstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
+    const newLastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
     if (!email && !pickedUserId) { res.status(400).json({ error: "Pick a participant to add." }); return; }
 
     const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
@@ -862,13 +911,43 @@ router.post(
       return;
     }
 
-    const [participant] = await db
+    let [participant] = await db
       .select({ userId: usersTable.userId, firstName: usersTable.firstName, lastName: usersTable.lastName, role: usersTable.role, grade: usersTable.grade, email: usersTable.email, parentEmail: usersTable.parentEmail })
       .from(usersTable)
       .where(pickedUserId ? eq(usersTable.userId, pickedUserId) : eq(usersTable.email, email))
       .limit(1);
+
+    // Walk-in who isn't in the system yet: create a participant account and email
+    // them an invite to set a password, so their credited hours are waiting when
+    // they join. Requires a name + email (not available when adding by userId).
+    if (!participant && email && newFirstName && newLastName) {
+      const inviteToken = randomBytes(32).toString("hex");
+      const inviteExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const passwordHash = await bcrypt.hash(randomBytes(18).toString("hex"), 12);
+      const [created] = await db
+        .insert(usersTable)
+        .values({
+          firstName: newFirstName,
+          lastName: newLastName,
+          email,
+          passwordHash,
+          role: "participant",
+          resetToken: inviteToken,
+          resetTokenExpiresAt: inviteExpires,
+        })
+        .returning({ userId: usersTable.userId, firstName: usersTable.firstName, lastName: usersTable.lastName, role: usersTable.role, grade: usersTable.grade, email: usersTable.email, parentEmail: usersTable.parentEmail });
+      participant = created;
+      sendAccountInvite(email, newFirstName, "Participant", inviteToken)
+        .catch((err) => req.log.error({ err }, "walk-in account invite failed"));
+    }
+
     if (!participant || participant.role !== "participant") {
-      res.status(404).json({ error: pickedUserId ? "That participant no longer exists." : "No participant found with that email." });
+      res.status(404).json({
+        error: pickedUserId
+          ? "That participant no longer exists."
+          : "No participant found with that email. Add their name to create an account and send an invite.",
+        code: "not_found_needs_name",
+      });
       return;
     }
 

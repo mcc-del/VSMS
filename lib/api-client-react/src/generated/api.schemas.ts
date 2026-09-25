@@ -1020,6 +1020,8 @@ export interface ParticipantDashboard {
 export interface AddAttendeeInput {
   email?: string;
   userId?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface ParticipantSearchResult {

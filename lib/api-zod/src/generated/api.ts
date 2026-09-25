@@ -1481,7 +1481,9 @@ export const AddEventAttendeeParams = zod.object({
 
 export const AddEventAttendeeBody = zod.object({
   "email": zod.string().optional(),
-  "userId": zod.string().optional()
+  "userId": zod.string().optional(),
+  "firstName": zod.string().optional(),
+  "lastName": zod.string().optional()
 })
 
 

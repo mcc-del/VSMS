@@ -61,6 +61,28 @@ export default function RosterPage() {
       },
     );
   }
+
+  // Walk-in who isn't in the system: create + invite them, then credit hours.
+  const [wiFirst, setWiFirst] = useState("");
+  const [wiLast, setWiLast] = useState("");
+  const [wiEmail, setWiEmail] = useState("");
+  function addWalkIn() {
+    if (!wiFirst.trim() || !wiLast.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(wiEmail.trim())) {
+      toast({ title: "Enter first name, last name, and a valid email", variant: "destructive" });
+      return;
+    }
+    addAttendee.mutate(
+      { eventId, data: { email: wiEmail.trim(), firstName: wiFirst.trim(), lastName: wiLast.trim() } as any },
+      {
+        onSuccess: () => {
+          toast({ title: "Added & invited", description: `${wiFirst} was added and emailed an invite to join. You can check them out to credit hours.` });
+          queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
+          setSearch(""); setWiFirst(""); setWiLast(""); setWiEmail("");
+        },
+        onError: (e: any) => toast({ title: "Couldn't add", description: e?.data?.error ?? "Try again.", variant: "destructive" }),
+      },
+    );
+  }
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -135,6 +157,20 @@ export default function RosterPage() {
   }
 
   const [checkoutBusy, setCheckoutBusy] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  async function checkOutAll() {
+    if (!confirm("Check out everyone who's checked in and credit their hours?")) return;
+    setBulkBusy(true);
+    try {
+      const r = await customFetch<{ checkedOut: number }>(`/api/v1/events/${eventId}/checkout-all`, { method: "POST", body: JSON.stringify({}) });
+      toast({ title: `Checked out ${r.checkedOut} student${r.checkedOut === 1 ? "" : "s"}`, description: "Hours credited." });
+      queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
+    } catch (err: any) {
+      toast({ title: "Couldn't check out all", description: err?.data?.error ?? "Try again.", variant: "destructive" });
+    } finally {
+      setBulkBusy(false);
+    }
+  }
   async function checkOut(userId: string, checkedOut: boolean) {
     setCheckoutBusy(userId);
     try {
@@ -199,7 +235,15 @@ export default function RosterPage() {
                   {searching && results.length === 0 ? (
                     <p className="text-sm text-muted-foreground p-3">Searching…</p>
                   ) : results.length === 0 ? (
-                    <p className="text-sm text-muted-foreground p-3">No matching participant. They may need to register first.</p>
+                    <div className="p-3 space-y-2">
+                      <p className="text-sm text-muted-foreground">No matching participant. Add them as a walk-in — they'll get an email invite to join, and you can credit their hours now.</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <Input placeholder="First name" value={wiFirst} onChange={(e) => setWiFirst(e.target.value)} />
+                        <Input placeholder="Last name" value={wiLast} onChange={(e) => setWiLast(e.target.value)} />
+                      </div>
+                      <Input type="email" placeholder="Email for their invite" value={wiEmail} onChange={(e) => setWiEmail(e.target.value)} />
+                      <Button size="sm" disabled={addAttendee.isPending} onClick={addWalkIn}>Add &amp; invite</Button>
+                    </div>
                   ) : (
                     results.map((p: any) => (
                       <div key={p.userId} className="flex items-center justify-between gap-3 p-2.5">
@@ -222,7 +266,14 @@ export default function RosterPage() {
         )}
 
         <Card>
-          <CardHeader><CardTitle className="text-base">Participants</CardTitle></CardHeader>
+          <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
+            <CardTitle className="text-base">Participants</CardTitle>
+            {canManage && checkedIn > 0 && (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={checkOutAll} disabled={bulkBusy}>
+                <LogOut className="w-4 h-4" /> Check out all
+              </Button>
+            )}
+          </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12" />)}</div>
