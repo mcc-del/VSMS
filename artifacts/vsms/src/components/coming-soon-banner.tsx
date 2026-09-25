@@ -1,7 +1,7 @@
 import { Clock } from "lucide-react";
 
 // Flip this to true (or delete the banner usages) once the competition opens.
-export const COMPETITION_OPEN = false;
+export const COMPETITION_OPEN = true;
 
 // A prominent notice shown on the public pages while the competition hasn't
 // started. Kept in one place so it's a one-line change to turn off.
