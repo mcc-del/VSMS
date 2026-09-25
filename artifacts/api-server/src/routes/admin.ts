@@ -1034,20 +1034,25 @@ router.get("/v1/admin/duplicates", authenticate, requireRole("admin"), async (_r
     })
     .from(usersTable);
 
-  const norm = (p: string | null) => (p ? p.replace(/[^0-9]/g, "") : "");
-  const byPhone = new Map<string, typeof rows>();
+  // A shared phone is normal for families (a parent and child, or siblings), so
+  // that's not a duplicate signal. A real duplicate is the SAME person with two
+  // accounts — so we group by normalized full name and only surface names that
+  // appear more than once.
+  const normName = (f: string | null, l: string | null) =>
+    `${(f ?? "").trim().toLowerCase()} ${(l ?? "").trim().toLowerCase()}`.trim().replace(/\s+/g, " ");
+  const byName = new Map<string, typeof rows>();
   for (const r of rows) {
-    const key = norm(r.phone) || norm(r.parentPhone);
+    const key = normName(r.firstName, r.lastName);
     if (!key) continue;
-    const list = byPhone.get(key) ?? [];
+    const list = byName.get(key) ?? [];
     list.push(r);
-    byPhone.set(key, list);
+    byName.set(key, list);
   }
 
-  const groups = [...byPhone.entries()]
+  const groups = [...byName.entries()]
     .filter(([, list]) => list.length > 1)
-    .map(([phone, list]) => ({
-      phone,
+    .map(([, list]) => ({
+      label: `${list[0].firstName} ${list[0].lastName}`.trim(),
       accounts: list.map((u) => ({
         userId: u.userId,
         name: `${u.firstName} ${u.lastName}`.trim(),

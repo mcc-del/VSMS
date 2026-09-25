@@ -303,11 +303,11 @@ export default function AdminUsers() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-amber-800">
-                These accounts share a phone number. Review and delete or merge any true duplicates.
+                These accounts have the same name. Review and delete any that are true duplicates.
               </p>
               {duplicates!.groups.map((g) => (
-                <div key={g.phone} className="rounded-lg bg-white/70 border border-amber-200 p-3">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Phone ending …{g.phone.slice(-4)}</p>
+                <div key={g.label} className="rounded-lg bg-white/70 border border-amber-200 p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{g.label}</p>
                   <ul className="text-sm space-y-0.5">
                     {g.accounts.map((a) => (
                       <li key={a.userId} className="flex items-center justify-between gap-2">

@@ -1717,7 +1717,7 @@ export const GetSupervisorReportsResponse = zod.object({
  */
 export const GetDuplicatesResponse = zod.object({
   "groups": zod.array(zod.object({
-  "phone": zod.string(),
+  "label": zod.string(),
   "accounts": zod.array(zod.object({
   "userId": zod.string(),
   "name": zod.string(),

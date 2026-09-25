@@ -112,7 +112,7 @@ export interface DuplicateAccount {
 }
 
 export interface DuplicateGroup {
-  phone: string;
+  label: string;
   accounts: DuplicateAccount[];
 }
 

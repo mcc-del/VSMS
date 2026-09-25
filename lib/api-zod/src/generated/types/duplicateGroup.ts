@@ -8,6 +8,6 @@
 import type { DuplicateAccount } from './duplicateAccount';
 
 export interface DuplicateGroup {
-  phone: string;
+  label: string;
   accounts: DuplicateAccount[];
 }
