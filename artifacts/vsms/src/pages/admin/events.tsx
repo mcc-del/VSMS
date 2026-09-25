@@ -8,6 +8,8 @@ import {
   getListEventsQueryKey,
   getListUsersQueryKey,
   getGetAdminDashboardQueryKey,
+  useListOrganizations,
+  getListOrganizationsQueryKey,
   customFetch,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -21,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription, FormMessage } from "@/components/ui/form";
 import { ImageUpload } from "@/components/image-upload";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,6 +56,7 @@ const editSchema = z.object({
   maxGrade: z.string().optional(),
   openToAll: z.boolean(),
   status: z.enum(["draft", "coming_soon", "open"]),
+  organizationId: z.string(),
   supervisorId: z.string().min(1, "Required"),
   imageUrl: z.string().nullable(),
 }).superRefine((values, ctx) => {
@@ -78,6 +81,10 @@ export default function AdminEventsPage() {
   const isSelfSupervised = isOrgAdmin || isSupervisor;
   const { data: events, isLoading } = useListEvents();
   const { data: managed } = useGetManagedOrganizations();
+  const isSuperAdmin = role === "admin";
+  const { data: organizations } = useListOrganizations({
+    query: { enabled: isSuperAdmin, queryKey: getListOrganizationsQueryKey() },
+  });
   const { data: users } = useListUsers({
     query: { enabled: !isSelfSupervised, queryKey: getListUsersQueryKey() },
   });
@@ -142,6 +149,7 @@ export default function AdminEventsPage() {
       maxGrade: NONE,
       openToAll: true,
       status: "open",
+      organizationId: NONE,
       supervisorId: "",
       imageUrl: null,
     },
@@ -166,6 +174,7 @@ export default function AdminEventsPage() {
       maxGrade: event.maxGrade != null ? String(event.maxGrade) : NONE,
       openToAll: event.openToAll ?? true,
       status: (event.status as "draft" | "coming_soon" | "open") ?? "open",
+      organizationId: event.organizationId ?? NONE,
       supervisorId: event.supervisorId,
       imageUrl: event.imageUrl ?? null,
     });
@@ -232,6 +241,12 @@ export default function AdminEventsPage() {
     payload.zip = values.zip?.trim() || null;
     payload.minGrade = values.minGrade && values.minGrade !== NONE ? Number(values.minGrade) : null;
     payload.maxGrade = values.maxGrade && values.maxGrade !== NONE ? Number(values.maxGrade) : null;
+    // Only Super Admins can retarget the host org; otherwise leave it untouched.
+    if (isSuperAdmin) {
+      payload.organizationId = values.organizationId && values.organizationId !== NONE ? values.organizationId : null;
+    } else {
+      delete payload.organizationId;
+    }
 
     updateEvent.mutate(
       {
@@ -531,6 +546,25 @@ export default function AdminEventsPage() {
                   <FormMessage />
                 </FormItem>
               )} />
+
+              {isSuperAdmin && (
+                <FormField control={form.control} name="organizationId" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Host organization</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger data-testid="select-edit-org"><SelectValue placeholder="Community (no host org)" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Community (no host org)</SelectItem>
+                        {(organizations ?? []).map((o) => (
+                          <SelectItem key={o.organizationId} value={o.organizationId}>{o.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>The organization that owns this event and can manage its roster / check-in.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              )}
 
               <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem>
