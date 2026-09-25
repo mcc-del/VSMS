@@ -224,6 +224,12 @@ export default function ParentHours() {
                   <div><Label className="text-xs">Date</Label><Input type="date" value={ext.volunteerDate} onChange={(e) => setExt({ ...ext, volunteerDate: e.target.value })} /></div>
                   <div><Label className="text-xs">Hours</Label><Input type="number" min="0.5" max="24" step="0.5" value={ext.hoursWorked} onChange={(e) => setExt({ ...ext, hoursWorked: e.target.value })} placeholder="e.g. 3" /></div>
                 </div>
+                <div>
+                  <a href="/service-hours-form.html" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Download / print the signed-hours form</a>
+                  <Label className="text-xs mt-2 block">Signed form <span className="text-muted-foreground">(optional)</span></Label>
+                  <p className="text-xs text-muted-foreground mb-1">Have a signed form from the supervisor? Upload it now. If not, we'll email the supervisor to review.</p>
+                  <ProofUpload value={ext.proofUrl} onChange={(p) => setExt({ ...ext, proofUrl: p })} />
+                </div>
                 {(ext.proofUrl && ext.proofUrl.trim()) ? (
                   <p className="text-xs text-muted-foreground rounded-lg border bg-muted/30 p-2.5">You've attached a signed form, so no supervisor email is needed — an administrator will verify the hours from the form.</p>
                 ) : (
@@ -233,12 +239,6 @@ export default function ParentHours() {
                   </>
                 )}
                 <div><Label className="text-xs">Notes (optional)</Label><Textarea rows={2} value={ext.description} onChange={(e) => setExt({ ...ext, description: e.target.value })} /></div>
-                <div>
-                  <a href="/service-hours-form.html" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Download / print the signed-hours form</a>
-                  <Label className="text-xs mt-2 block">Signed form <span className="text-muted-foreground">(optional)</span></Label>
-                  <p className="text-xs text-muted-foreground mb-1">Have a signed form from the supervisor? Upload it now. If not, we'll email the supervisor to review.</p>
-                  <ProofUpload value={ext.proofUrl} onChange={(p) => setExt({ ...ext, proofUrl: p })} />
-                </div>
                 <div className="flex justify-end">
                   <Button onClick={submitExt} disabled={submitExternal.isPending}>{submitExternal.isPending ? "Submitting…" : "Submit external hours"}</Button>
                 </div>

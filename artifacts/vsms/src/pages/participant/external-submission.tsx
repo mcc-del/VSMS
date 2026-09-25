@@ -369,6 +369,39 @@ export default function ExternalSubmissionPage() {
                   />
                 </div>
 
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+                  <p className="font-medium">Signed hours form</p>
+                  <p className="text-muted-foreground text-xs mt-0.5">
+                    Take this form to your activity and have the supervisor sign it, then upload it here as proof.
+                  </p>
+                  <a
+                    href="/service-hours-form.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-2 text-primary font-medium hover:underline"
+                  >
+                    <FileDown className="w-4 h-4" /> Download / print the form
+                  </a>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="proofUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Signed form <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
+                      <FormDescription className="mb-2">
+                        Do you have a signed form from the supervisor? If yes, upload it now. If not,
+                        we'll email the supervisor to review and confirm your hours.
+                      </FormDescription>
+                      <FormControl>
+                        <ProofUpload value={field.value ?? null} onChange={field.onChange} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {(form.watch("proofUrl") || "").trim() ? (
                   <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-3">
                     You've attached a signed form, so no supervisor email is needed — an administrator will verify your hours from the form.
@@ -422,39 +455,6 @@ export default function ExternalSubmissionPage() {
                       <FormDescription>
                         Describe the activity and how it benefits the community
                       </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm">
-                  <p className="font-medium">Signed hours form</p>
-                  <p className="text-muted-foreground text-xs mt-0.5">
-                    Take this form to your activity and have the supervisor sign it, then upload it below as proof.
-                  </p>
-                  <a
-                    href="/service-hours-form.html"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-2 text-primary font-medium hover:underline"
-                  >
-                    <FileDown className="w-4 h-4" /> Download / print the form
-                  </a>
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="proofUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Signed form <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
-                      <FormDescription className="mb-2">
-                        Do you have a signed form from the supervisor? If yes, upload it now. If not,
-                        we'll email the supervisor to review and confirm your hours.
-                      </FormDescription>
-                      <FormControl>
-                        <ProofUpload value={field.value ?? null} onChange={field.onChange} />
-                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
