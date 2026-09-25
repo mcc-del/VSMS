@@ -77,7 +77,10 @@ export default function AdminNewEvent() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const supervisors = (users ?? []).filter((u) => u.role === "supervisor");
+  // Anyone who can run an event: plain supervisors plus org admins and admins
+  // (an org admin can be assigned as an event's supervisor).
+  const ROLE_LABEL: Record<string, string> = { supervisor: "Supervisor", org_admin: "Admin", admin: "Super Admin" };
+  const supervisors = (users ?? []).filter((u) => ["supervisor", "org_admin", "admin"].includes(u.role));
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -373,7 +376,7 @@ export default function AdminNewEvent() {
                           ) : (
                             supervisors.map((sv) => (
                               <SelectItem key={sv.userId} value={sv.userId}>
-                                {sv.firstName} {sv.lastName}
+                                {sv.firstName} {sv.lastName}{ROLE_LABEL[sv.role] ? ` (${ROLE_LABEL[sv.role]})` : ""}
                               </SelectItem>
                             ))
                           )}

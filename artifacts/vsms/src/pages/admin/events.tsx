@@ -92,7 +92,9 @@ export default function AdminEventsPage() {
   const [toDate, setToDate] = useState("");
   const [showOptional, setShowOptional] = useState(false);
 
-  const supervisors = (users ?? []).filter((u) => u.role === "supervisor");
+  // Anyone who can run an event: plain supervisors plus org admins and admins.
+  const ROLE_LABEL: Record<string, string> = { supervisor: "Supervisor", org_admin: "Admin", admin: "Super Admin" };
+  const supervisors = (users ?? []).filter((u) => ["supervisor", "org_admin", "admin"].includes(u.role));
 
   // Org admins manage their own org's events; supervisors manage events they
   // supervise; admins see everything.
@@ -558,7 +560,7 @@ export default function AdminEventsPage() {
                       <SelectContent>
                         {supervisors.map((s) => (
                           <SelectItem key={s.userId} value={s.userId}>
-                            {s.firstName} {s.lastName}
+                            {s.firstName} {s.lastName}{ROLE_LABEL[s.role] ? ` (${ROLE_LABEL[s.role]})` : ""}
                           </SelectItem>
                         ))}
                       </SelectContent>
