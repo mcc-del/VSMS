@@ -15,8 +15,8 @@ interface ExternalFields {
   organizationName: string;
   volunteerDate: string;
   hoursWorked: number;
-  extSupervisorName: string;
-  extSupervisorEmail: string;
+  extSupervisorName?: string;
+  extSupervisorEmail?: string;
   description?: string | null;
   isNonprofit?: boolean;
   ein?: string | null;
@@ -24,7 +24,18 @@ interface ExternalFields {
 
 // Field-level validation shared by create and edit. Returns an error message,
 // or null when the fields are valid. `selfEmail` is the submitter's own email.
-function validateExternalFields(data: ExternalFields, selfEmail: string | null): string | null {
+function validateExternalFields(data: ExternalFields, selfEmail: string | null, hasProof: boolean): string | null {
+  // When no proof is attached, a supervisor name + email are required so we can
+  // email them a verification link. With proof, the org admin verifies from the
+  // uploaded form, so supervisor contact isn't needed.
+  if (!hasProof) {
+    if (!data.extSupervisorName?.trim() || !data.extSupervisorEmail?.trim()) {
+      return "Add the supervisor's name and email, or attach a signed form as proof.";
+    }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.extSupervisorEmail.trim())) {
+      return "Please enter a valid supervisor email, or attach a signed form as proof.";
+    }
+  }
   // Note: no EIN is required from the submitter — external hours are logged only
   // against pre-approved nonprofits from the allowlist, which is the vetting
   // step. Any EIN stored comes from the nonprofit record, not the submitter.
@@ -48,7 +59,8 @@ function validateExternalFields(data: ExternalFields, selfEmail: string | null):
   }
   if (
     selfEmail &&
-    data.extSupervisorEmail.trim().toLowerCase() === selfEmail.toLowerCase()
+    (data.extSupervisorEmail ?? "").trim().toLowerCase() === selfEmail.toLowerCase() &&
+    (data.extSupervisorEmail ?? "").trim() !== ""
   ) {
     return "The supervisor email must belong to someone other than you.";
   }
@@ -107,7 +119,7 @@ router.post(
     }
 
     const userId = req.auth!.userId;
-    const { activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail, description, isNonprofit, ein, proofUrl } = parsed.data;
+    const { activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName = "", extSupervisorEmail = "", description, isNonprofit, ein, proofUrl } = parsed.data;
 
     // The external supervisor must be someone other than the student.
     const [self] = await db
@@ -116,7 +128,7 @@ router.post(
       .where(eq(usersTable.userId, userId))
       .limit(1);
 
-    const fieldError = validateExternalFields(parsed.data, self?.email ?? null);
+    const fieldError = validateExternalFields(parsed.data, self?.email ?? null, !!(parsed.data as any).proofUrl?.trim());
     if (fieldError) {
       res.status(400).json({ error: fieldError });
       return;
@@ -221,8 +233,8 @@ router.patch(
       organizationName,
       volunteerDate,
       hoursWorked,
-      extSupervisorName,
-      extSupervisorEmail,
+      extSupervisorName = "",
+      extSupervisorEmail = "",
       description,
       isNonprofit,
       ein,
@@ -235,7 +247,7 @@ router.patch(
       .where(eq(usersTable.userId, userId))
       .limit(1);
 
-    const fieldError = validateExternalFields(parsed.data, self?.email ?? null);
+    const fieldError = validateExternalFields(parsed.data, self?.email ?? null, !!(parsed.data as any).proofUrl?.trim());
     if (fieldError) {
       res.status(400).json({ error: fieldError });
       return;
@@ -570,10 +582,10 @@ router.post(
       res.status(400).json({ error: "Invalid input", issues: parsed.error.issues });
       return;
     }
-    const { activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName, extSupervisorEmail, description, isNonprofit, ein, proofUrl } = parsed.data;
+    const { activityName, organizationName, volunteerDate, hoursWorked, extSupervisorName = "", extSupervisorEmail = "", description, isNonprofit, ein, proofUrl } = parsed.data;
 
     // The external supervisor must not be the parent submitting on behalf.
-    const fieldError = validateExternalFields(parsed.data, req.auth!.email);
+    const fieldError = validateExternalFields(parsed.data, req.auth!.email, !!(parsed.data as any).proofUrl?.trim());
     if (fieldError) {
       res.status(400).json({ error: fieldError });
       return;

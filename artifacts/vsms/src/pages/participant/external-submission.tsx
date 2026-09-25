@@ -46,12 +46,21 @@ const schema = z.object({
   ein: z.string().optional(),
   volunteerDate: z.string().min(1, "Required"),
   hoursWorked: z.coerce.number().min(0.5, "Min 0.5 hours").max(24, "Max 24 hours"),
-  extSupervisorName: z.string().min(2, "Required").max(100),
-  extSupervisorEmail: z.string().email("Enter a valid email"),
+  extSupervisorName: z.string().max(100).optional().or(z.literal("")),
+  extSupervisorEmail: z.string().optional().or(z.literal("")),
   description: z.string().optional(),
   proofUrl: z.string().nullable().optional(),
   guidelines: z.array(z.string()).min(1, "Please check at least one guideline"),
 }).refine(
+  // Without proof, a supervisor name + valid email are required (we email them
+  // a verification link). With proof attached, they can be left blank.
+  (v) => {
+    const hasProof = !!(v.proofUrl && v.proofUrl.trim());
+    if (hasProof) return true;
+    return !!v.extSupervisorName?.trim() && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test((v.extSupervisorEmail ?? "").trim());
+  },
+  { message: "Add the supervisor's name and email, or attach a signed form above.", path: ["extSupervisorEmail"] },
+).refine(
   (v) => !v.volunteerDate || v.volunteerDate <= new Date().toISOString().split("T")[0],
   { message: "The date can't be in the future — log hours after you've volunteered.", path: ["volunteerDate"] },
 ).refine(
@@ -360,6 +369,11 @@ export default function ExternalSubmissionPage() {
                   />
                 </div>
 
+                {(form.watch("proofUrl") || "").trim() ? (
+                  <p className="text-sm text-muted-foreground rounded-lg border bg-muted/30 p-3">
+                    You've attached a signed form, so no supervisor email is needed — an administrator will verify your hours from the form.
+                  </p>
+                ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
@@ -383,11 +397,13 @@ export default function ExternalSubmissionPage() {
                         <FormControl>
                           <Input data-testid="input-supervisor-email" type="email" placeholder="supervisor@org.com" {...field} />
                         </FormControl>
+                        <FormDescription>No signed form? We'll email this supervisor a one-click link to verify your hours.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
+                )}
 
                 <FormField
                   control={form.control}

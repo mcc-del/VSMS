@@ -940,12 +940,9 @@ export interface ExternalSubmissionInput {
      * @maximum 24
      */
   hoursWorked: number;
-  /**
-     * @minLength 2
-     * @maxLength 100
-     */
-  extSupervisorName: string;
-  extSupervisorEmail: string;
+  /** @maxLength 100 */
+  extSupervisorName?: string;
+  extSupervisorEmail?: string;
   description?: string;
   isNonprofit?: boolean;
   ein?: string;

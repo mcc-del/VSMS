@@ -87,8 +87,9 @@ export default function ParentHours() {
     if (ext.activityName.trim().length < 2 || !ext.nonprofitId) { toast({ title: "Add the activity and nonprofit", variant: "destructive" }); return; }
     if (!ext.volunteerDate) { toast({ title: "Pick the date", variant: "destructive" }); return; }
     if (!Number.isFinite(hrs) || hrs < 0.5 || hrs > 24) { toast({ title: "Enter valid hours (0.5–24)", variant: "destructive" }); return; }
-    if (!ext.extSupervisorName.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ext.extSupervisorEmail.trim())) {
-      toast({ title: "Add a supervisor name and valid email", variant: "destructive" }); return;
+    const hasProof = !!(ext.proofUrl && ext.proofUrl.trim());
+    if (!hasProof && (!ext.extSupervisorName.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ext.extSupervisorEmail.trim()))) {
+      toast({ title: "Add a supervisor name and valid email, or attach a signed form", variant: "destructive" }); return;
     }
     const np = (nonprofits ?? []).find((n) => n.nonprofitId === ext.nonprofitId);
     submitExternal.mutate(
@@ -223,8 +224,14 @@ export default function ParentHours() {
                   <div><Label className="text-xs">Date</Label><Input type="date" value={ext.volunteerDate} onChange={(e) => setExt({ ...ext, volunteerDate: e.target.value })} /></div>
                   <div><Label className="text-xs">Hours</Label><Input type="number" min="0.5" max="24" step="0.5" value={ext.hoursWorked} onChange={(e) => setExt({ ...ext, hoursWorked: e.target.value })} placeholder="e.g. 3" /></div>
                 </div>
-                <div><Label className="text-xs">Supervisor name</Label><Input value={ext.extSupervisorName} onChange={(e) => setExt({ ...ext, extSupervisorName: e.target.value })} placeholder="Who supervised them" /></div>
-                <div><Label className="text-xs">Supervisor email</Label><Input type="email" value={ext.extSupervisorEmail} onChange={(e) => setExt({ ...ext, extSupervisorEmail: e.target.value })} placeholder="supervisor@org.org" /></div>
+                {(ext.proofUrl && ext.proofUrl.trim()) ? (
+                  <p className="text-xs text-muted-foreground rounded-lg border bg-muted/30 p-2.5">You've attached a signed form, so no supervisor email is needed — an administrator will verify the hours from the form.</p>
+                ) : (
+                  <>
+                    <div><Label className="text-xs">Supervisor name</Label><Input value={ext.extSupervisorName} onChange={(e) => setExt({ ...ext, extSupervisorName: e.target.value })} placeholder="Who supervised them" /></div>
+                    <div><Label className="text-xs">Supervisor email</Label><Input type="email" value={ext.extSupervisorEmail} onChange={(e) => setExt({ ...ext, extSupervisorEmail: e.target.value })} placeholder="supervisor@org.org" /><p className="text-[11px] text-muted-foreground mt-1">No signed form? We'll email this supervisor a one-click link to verify.</p></div>
+                  </>
+                )}
                 <div><Label className="text-xs">Notes (optional)</Label><Textarea rows={2} value={ext.description} onChange={(e) => setExt({ ...ext, description: e.target.value })} /></div>
                 <div>
                   <a href="/service-hours-form.html" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">Download / print the signed-hours form</a>

@@ -523,7 +523,6 @@ export const submitExternalActivityBodyOrganizationNameMax = 200;
 export const submitExternalActivityBodyHoursWorkedMin = 0.5;
 export const submitExternalActivityBodyHoursWorkedMax = 24;
 
-export const submitExternalActivityBodyExtSupervisorNameMin = 2;
 export const submitExternalActivityBodyExtSupervisorNameMax = 100;
 
 
@@ -533,8 +532,8 @@ export const SubmitExternalActivityBody = zod.object({
   "organizationName": zod.string().min(submitExternalActivityBodyOrganizationNameMin).max(submitExternalActivityBodyOrganizationNameMax),
   "volunteerDate": zod.string(),
   "hoursWorked": zod.number().min(submitExternalActivityBodyHoursWorkedMin).max(submitExternalActivityBodyHoursWorkedMax),
-  "extSupervisorName": zod.string().min(submitExternalActivityBodyExtSupervisorNameMin).max(submitExternalActivityBodyExtSupervisorNameMax),
-  "extSupervisorEmail": zod.string().email(),
+  "extSupervisorName": zod.string().max(submitExternalActivityBodyExtSupervisorNameMax).optional(),
+  "extSupervisorEmail": zod.string().optional(),
   "description": zod.string().optional(),
   "isNonprofit": zod.boolean().optional(),
   "ein": zod.string().optional(),
@@ -558,7 +557,6 @@ export const editExternalSubmissionBodyOrganizationNameMax = 200;
 export const editExternalSubmissionBodyHoursWorkedMin = 0.5;
 export const editExternalSubmissionBodyHoursWorkedMax = 24;
 
-export const editExternalSubmissionBodyExtSupervisorNameMin = 2;
 export const editExternalSubmissionBodyExtSupervisorNameMax = 100;
 
 
@@ -568,8 +566,8 @@ export const EditExternalSubmissionBody = zod.object({
   "organizationName": zod.string().min(editExternalSubmissionBodyOrganizationNameMin).max(editExternalSubmissionBodyOrganizationNameMax),
   "volunteerDate": zod.string(),
   "hoursWorked": zod.number().min(editExternalSubmissionBodyHoursWorkedMin).max(editExternalSubmissionBodyHoursWorkedMax),
-  "extSupervisorName": zod.string().min(editExternalSubmissionBodyExtSupervisorNameMin).max(editExternalSubmissionBodyExtSupervisorNameMax),
-  "extSupervisorEmail": zod.string().email(),
+  "extSupervisorName": zod.string().max(editExternalSubmissionBodyExtSupervisorNameMax).optional(),
+  "extSupervisorEmail": zod.string().optional(),
   "description": zod.string().optional(),
   "isNonprofit": zod.boolean().optional(),
   "ein": zod.string().optional(),
@@ -1907,7 +1905,6 @@ export const submitChildExternalHoursBodyOrganizationNameMax = 200;
 export const submitChildExternalHoursBodyHoursWorkedMin = 0.5;
 export const submitChildExternalHoursBodyHoursWorkedMax = 24;
 
-export const submitChildExternalHoursBodyExtSupervisorNameMin = 2;
 export const submitChildExternalHoursBodyExtSupervisorNameMax = 100;
 
 
@@ -1917,8 +1914,8 @@ export const SubmitChildExternalHoursBody = zod.object({
   "organizationName": zod.string().min(submitChildExternalHoursBodyOrganizationNameMin).max(submitChildExternalHoursBodyOrganizationNameMax),
   "volunteerDate": zod.string(),
   "hoursWorked": zod.number().min(submitChildExternalHoursBodyHoursWorkedMin).max(submitChildExternalHoursBodyHoursWorkedMax),
-  "extSupervisorName": zod.string().min(submitChildExternalHoursBodyExtSupervisorNameMin).max(submitChildExternalHoursBodyExtSupervisorNameMax),
-  "extSupervisorEmail": zod.string().email(),
+  "extSupervisorName": zod.string().max(submitChildExternalHoursBodyExtSupervisorNameMax).optional(),
+  "extSupervisorEmail": zod.string().optional(),
   "description": zod.string().optional(),
   "isNonprofit": zod.boolean().optional(),
   "ein": zod.string().optional(),
