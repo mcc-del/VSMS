@@ -41,8 +41,6 @@ const SECTIONS: { title: string; items: QA[]; roles?: string[] }[] = [
       { q: "How do I sign my child up for an opportunity?", a: "Go to Find Opportunities, pick your child at the top, choose an event, and sign them up. Their events (with add-to-calendar) then show on your dashboard." },
       { q: "Can another parent help?", a: "Yes — invite a co-guardian from your dashboard; they get the same access to your children." },
       { q: "What is a join code and do I need one?", a: "A join code links your child to a specific organization so they can see its private events. Enter it when you add the child, or later from your dashboard. Email mcc@medinaacademy.org if you're not sure of your code." },
-      { q: "What are the awards?", a: "Your child earns Bronze, Silver or Gold medals for verified volunteer hours, with hour goals that can be lower for younger grades. Your dashboard shows each child's progress toward their next medal." },
-      { q: "How are the Bronze / Silver / Gold tiers set?", a: "They follow the President's Volunteer Service Award (PVSA) standard, by age band: Kids (grades 2–5) Bronze 26 / Silver 50 / Gold 75; Teens (grades 6–10) 50 / 75 / 100; Young Adults (grades 11–12) 100 / 175 / 250. Aligning with PVSA keeps the awards nationally recognized. Your dashboard shows each child's exact goals." },
     ],
   },
   {
