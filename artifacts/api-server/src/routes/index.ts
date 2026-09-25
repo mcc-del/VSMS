@@ -22,7 +22,12 @@ import digestsRouter from "./digests";
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(debugRouter);
+// Diagnostic routes (they reseed test accounts and report which test passwords
+// verify) are only mounted when test data is explicitly enabled — never in
+// production, where they would be an unauthenticated account-takeover path.
+if (["1", "true", "yes", "on"].includes((process.env["SEED_TEST_DATA"] || "").trim().toLowerCase())) {
+  router.use(debugRouter);
+}
 router.use(authRouter);
 router.use(eventsRouter);
 router.use(submissionsRouter);

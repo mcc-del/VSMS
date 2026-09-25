@@ -1,7 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.SESSION_SECRET ?? "vsms-secret-key";
+// No insecure fallback: the signing secret must come from the environment.
+// A hardcoded default in a public repo would let anyone forge auth tokens.
+const rawSecret = process.env.SESSION_SECRET;
+if (!rawSecret || rawSecret.length < 16) {
+  throw new Error(
+    "SESSION_SECRET is not set (or too short). Set a long, random SESSION_SECRET " +
+      "environment secret before starting the server.",
+  );
+}
+const JWT_SECRET: string = rawSecret;
 
 export interface AuthPayload {
   userId: string;
