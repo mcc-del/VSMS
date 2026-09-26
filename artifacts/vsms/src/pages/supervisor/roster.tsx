@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X, Mail, Paperclip, Upload, LogOut, Printer } from "lucide-react";
+import { ArrowLeft, Check, X, Mail, Paperclip, Upload, LogOut, Printer, Trash2 } from "lucide-react";
 import { AuthenticatedImage } from "@/components/authenticated-image";
 
 function escapeHtml(s: string): string {
@@ -207,6 +207,21 @@ export default function RosterPage() {
       toast({ title: "Import failed", description: err?.data?.error ?? "Try again.", variant: "destructive" });
     } finally {
       setPasteBusy(false);
+    }
+  }
+
+  const [removeBusy, setRemoveBusy] = useState<string | null>(null);
+  async function removeFromRoster(userId: string, name: string) {
+    if (!confirm(`Remove ${name} from this event's roster?`)) return;
+    setRemoveBusy(userId);
+    try {
+      await customFetch(`/api/v1/events/${eventId}/attendees/${userId}`, { method: "DELETE" });
+      toast({ title: "Removed from roster" });
+      queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
+    } catch (err: any) {
+      toast({ title: "Couldn't remove", description: err?.data?.error ?? "Try again.", variant: "destructive" });
+    } finally {
+      setRemoveBusy(null);
     }
   }
 
@@ -452,12 +467,22 @@ export default function RosterPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="text-muted-foreground hover:text-red-600"
-                          onClick={() => mark(p.userId, "no_show")}
+                          className="text-muted-foreground hover:text-amber-600"
+                          onClick={() => mark(p.userId, p.status === "no_show" ? "registered" : "no_show")}
                           disabled={setAttendance.isPending}
-                          title="Mark no-show"
+                          title={p.status === "no_show" ? "Undo no-show" : "Mark no-show"}
                         >
                           <X className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-muted-foreground hover:text-red-600"
+                          onClick={() => removeFromRoster(p.userId, p.name)}
+                          disabled={removeBusy === p.userId}
+                          title="Remove from roster"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     )}

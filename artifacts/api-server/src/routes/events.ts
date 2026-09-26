@@ -1059,6 +1059,47 @@ router.post(
   },
 );
 
+// DELETE /api/v1/events/:eventId/attendees/:userId — a manager removes someone
+// from the roster entirely (e.g. added by mistake). Blocked once they've been
+// credited hours, so a completed record isn't silently erased.
+router.delete(
+  "/v1/events/:eventId/attendees/:userId",
+  authenticate,
+  requireRole("supervisor", "admin", "org_admin"),
+  async (req, res) => {
+    const { eventId, userId: targetUserId } = req.params as { eventId: string; userId: string };
+    const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
+    if (!event) { res.status(404).json({ error: "Event not found" }); return; }
+    if (!(await canManageEvent(req.auth!.role, req.auth!.userId, event))) {
+      res.status(403).json({ error: "You can only manage events you supervise." });
+      return;
+    }
+
+    const [approved] = await db
+      .select({ id: volunteerSubmissionsTable.submissionId })
+      .from(volunteerSubmissionsTable)
+      .where(and(
+        eq(volunteerSubmissionsTable.eventId, eventId),
+        eq(volunteerSubmissionsTable.userId, targetUserId),
+        eq(volunteerSubmissionsTable.status, "approved"),
+      ))
+      .limit(1);
+    if (approved) {
+      res.status(409).json({ error: "This person already has approved hours for this event. Undo their check-out first, then remove them.", code: "has_approved_hours" });
+      return;
+    }
+
+    // Remove any pending/rejected submission and the registration.
+    await db.delete(volunteerSubmissionsTable).where(and(eq(volunteerSubmissionsTable.eventId, eventId), eq(volunteerSubmissionsTable.userId, targetUserId)));
+    const removed = await db
+      .delete(eventRegistrationsTable)
+      .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, targetUserId)))
+      .returning({ id: eventRegistrationsTable.registrationId });
+    if (removed.length === 0) { res.status(404).json({ error: "That participant isn't on this event." }); return; }
+    res.json({ ok: true });
+  },
+);
+
 // POST /api/v1/events/:eventId/broadcast — supervisor emails everyone who is
 // registered for the event (and optionally the guardians of managed children).
 router.post(
