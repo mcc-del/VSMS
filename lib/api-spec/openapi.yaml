@@ -2749,6 +2749,10 @@ components:
           type: ["string", "null"]
         plannedHours:
           type: number
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
         canManage:
           type: boolean
         participants:

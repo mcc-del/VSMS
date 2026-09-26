@@ -354,6 +354,10 @@ export interface EventRoster {
   /** @nullable */
   imageUrl?: string | null;
   plannedHours?: number;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
   canManage?: boolean;
   participants: RosterParticipant[];
 }

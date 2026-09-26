@@ -675,6 +675,8 @@ router.get(
       eventTitle: event.slotLabel ? `${event.title} — ${event.slotLabel}` : event.title,
       imageUrl: event.imageUrl ?? null,
       plannedHours: calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue),
+      startTime: event.startTime ?? null,
+      endTime: event.endTime ?? null,
       canManage,
       participants: rows.map((r) => ({
         userId: r.userId,

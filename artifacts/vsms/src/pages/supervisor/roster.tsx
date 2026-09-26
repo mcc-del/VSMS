@@ -241,12 +241,33 @@ export default function RosterPage() {
       setBulkBusy(false);
     }
   }
-  // Check-out dialog: pick the actual hours each student did.
+  // Check-out dialog: enter actual in/out times → computes hours (or edit hours
+  // directly).
   const [coTarget, setCoTarget] = useState<{ userId: string; name: string } | null>(null);
   const [coHours, setCoHours] = useState("");
+  const [coIn, setCoIn] = useState("");
+  const [coOut, setCoOut] = useState("");
+  function hoursBetween(inT: string, outT: string): number | null {
+    if (!inT || !outT) return null;
+    const [ih, im] = inT.split(":").map(Number);
+    const [oh, om] = outT.split(":").map(Number);
+    if ([ih, im, oh, om].some((n) => Number.isNaN(n))) return null;
+    const mins = (oh * 60 + om) - (ih * 60 + im);
+    if (mins <= 0) return null;
+    return Math.round((mins / 60) * 4) / 4; // round to nearest 0.25h
+  }
   function openCheckout(userId: string, name: string) {
     setCoTarget({ userId, name });
+    const start = ((data as any)?.startTime ?? "").slice(0, 5);
+    const end = ((data as any)?.endTime ?? "").slice(0, 5);
+    setCoIn(start);
+    setCoOut(end);
     setCoHours(String((data as any)?.plannedHours ?? ""));
+  }
+  function setTimes(inT: string, outT: string) {
+    setCoIn(inT); setCoOut(outT);
+    const h = hoursBetween(inT, outT);
+    if (h != null) setCoHours(String(h));
   }
   async function confirmCheckout() {
     if (!coTarget) return;
@@ -531,8 +552,18 @@ export default function RosterPage() {
             <DialogTitle>Check out {coTarget?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-sm">Check-in time</Label>
+                <Input type="time" value={coIn} onChange={(e) => setTimes(e.target.value, coOut)} />
+              </div>
+              <div>
+                <Label className="text-sm">Check-out time</Label>
+                <Input type="time" value={coOut} onChange={(e) => setTimes(coIn, e.target.value)} />
+              </div>
+            </div>
             <div>
-              <Label className="text-sm">Hours they actually did</Label>
+              <Label className="text-sm">Hours credited</Label>
               <Input
                 type="number"
                 inputMode="decimal"
@@ -541,9 +572,8 @@ export default function RosterPage() {
                 step="0.25"
                 value={coHours}
                 onChange={(e) => setCoHours(e.target.value)}
-                autoFocus
               />
-              <p className="text-xs text-muted-foreground mt-1">Defaults to the full event time. Enter fewer if they left early.</p>
+              <p className="text-xs text-muted-foreground mt-1">Auto-calculated from the times above — or type hours directly. Defaults to the full event time.</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setCoTarget(null)}>Cancel</Button>
