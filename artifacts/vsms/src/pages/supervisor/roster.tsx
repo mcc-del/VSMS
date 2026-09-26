@@ -247,14 +247,26 @@ export default function RosterPage() {
   const [coHours, setCoHours] = useState("");
   const [coIn, setCoIn] = useState("");
   const [coOut, setCoOut] = useState("");
-  function hoursBetween(inT: string, outT: string): number | null {
+  function minsBetween(inT: string, outT: string): number | null {
     if (!inT || !outT) return null;
     const [ih, im] = inT.split(":").map(Number);
     const [oh, om] = outT.split(":").map(Number);
     if ([ih, im, oh, om].some((n) => Number.isNaN(n))) return null;
     const mins = (oh * 60 + om) - (ih * 60 + im);
-    if (mins <= 0) return null;
-    return Math.round((mins / 60) * 4) / 4; // round to nearest 0.25h
+    return mins > 0 ? mins : null;
+  }
+  function hoursBetween(inT: string, outT: string): number | null {
+    const mins = minsBetween(inT, outT);
+    if (mins == null) return null;
+    return Math.round((mins / 60) * 100) / 100; // exact, to 2 decimals
+  }
+  function fmtDuration(hoursStr: string): string {
+    const h = Number(hoursStr);
+    if (!Number.isFinite(h) || h <= 0) return "";
+    const total = Math.round(h * 60);
+    const hh = Math.floor(total / 60);
+    const mm = total % 60;
+    return `${hh}h${mm ? ` ${mm}m` : ""}`;
   }
   function openCheckout(userId: string, name: string) {
     setCoTarget({ userId, name });
@@ -563,7 +575,7 @@ export default function RosterPage() {
               </div>
             </div>
             <div>
-              <Label className="text-sm">Hours credited</Label>
+              <Label className="text-sm">Hours credited {fmtDuration(coHours) && <span className="text-muted-foreground font-normal">= {fmtDuration(coHours)}</span>}</Label>
               <Input
                 type="number"
                 inputMode="decimal"
@@ -573,7 +585,7 @@ export default function RosterPage() {
                 value={coHours}
                 onChange={(e) => setCoHours(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground mt-1">Auto-calculated from the times above — or type hours directly. Defaults to the full event time.</p>
+              <p className="text-xs text-muted-foreground mt-1">Decimal hours (e.g. 2.75 = 2h 45m). Auto-calculated from the times above — or type it directly.</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setCoTarget(null)}>Cancel</Button>
