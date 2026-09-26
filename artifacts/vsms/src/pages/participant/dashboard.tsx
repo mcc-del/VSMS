@@ -4,7 +4,6 @@ import {
   useListMySubmissions,
   useListMyExternalSubmissions,
   useListMyRegistrations,
-  useCheckInToEvent,
   useSubmitInternalHours,
   getListMySubmissionsQueryKey,
   getGetParticipantDashboardQueryKey,
@@ -13,7 +12,7 @@ import {
 import type { EventRegistration } from "@workspace/api-client-react";
 import { GettingStarted } from "@/components/getting-started";
 import { NewEventsBanner } from "@/components/new-events-banner";
-import { eventHasEnded, todayPT, nowTimePT } from "@/lib/event-time";
+import { eventHasEnded, todayPT } from "@/lib/event-time";
 import { MedalBadge } from "@/components/medal-badge";
 import { AppLayout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,7 +63,6 @@ export default function ParticipantDashboard() {
   const { data: externalSubs } = useListMyExternalSubmissions();
   const { data: submissions, isLoading: subLoading } = useListMySubmissions();
   const { data: registrations, isLoading: registrationsLoading } = useListMyRegistrations();
-  const checkIn = useCheckInToEvent();
   const submitInternalHours = useSubmitInternalHours();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -84,7 +82,6 @@ export default function ParticipantDashboard() {
   }, []);
 
   const today = todayPT();
-  const nowTime = nowTimePT().slice(0, 5);
 
   const pending = submissions?.filter((s) => s.status === "pending" && s.hoursWorked != null) ?? [];
 
@@ -113,29 +110,6 @@ export default function ParticipantDashboard() {
     return { label: "Registered", className: "bg-primary/10 text-primary" };
   }
 
-  function handleCheckIn(eventId: string, title: string) {
-    checkIn.mutate(
-      { eventId },
-      {
-        onSuccess: () => {
-          toast({
-            title: "Check-in successful!",
-            description: "After the event ends, return here to submit the actual hours you worked.",
-          });
-          queryClient.invalidateQueries({ queryKey: getListMyRegistrationsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getListMySubmissionsQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetParticipantDashboardQueryKey() });
-        },
-        onError: (err: any) => {
-          toast({
-            title: "Check-in failed",
-            description: err?.data?.error ?? "Something went wrong",
-            variant: "destructive",
-          });
-        },
-      },
-    );
-  }
 
   function openHoursForm(registration: EventRegistration) {
     setHoursRegistration(registration);
@@ -188,13 +162,6 @@ export default function ParticipantDashboard() {
         },
       },
     );
-  }
-
-  function isWithinTimeWindow(startTime: string | null | undefined, endTime: string | null | undefined) {
-    if (!startTime || !endTime) return false;
-    const start = startTime.slice(0, 5);
-    const end = endTime.slice(0, 5);
-    return nowTime >= start && nowTime <= end;
   }
 
   return (
@@ -334,12 +301,11 @@ export default function ParticipantDashboard() {
           <Card className="border-green-200 bg-green-50/50">
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2 text-green-800">
-                <CheckCheck className="w-4 h-4" /> Today's Events — Check In Now
+                <CheckCheck className="w-4 h-4" /> Today's Events
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {todayRegistrations.map((reg) => {
-                const withinWindow = isWithinTimeWindow(reg.startTime, reg.endTime);
                 return (
                   <div
                     key={reg.registrationId}
@@ -357,21 +323,10 @@ export default function ParticipantDashboard() {
                           </span>
                         )}
                       </div>
-                      {!withinWindow && (
-                        <p className="text-xs text-amber-600 mt-1">
-                          Check-in opens at {reg.startTime ? formatTime(reg.startTime) : "event start"}
-                        </p>
-                      )}
                     </div>
-                    <Button
-                      size="sm"
-                      data-testid={`button-checkin-${reg.eventId}`}
-                      onClick={() => handleCheckIn(reg.eventId, reg.eventTitle ?? "")}
-                      disabled={!withinWindow || checkIn.isPending}
-                      className={withinWindow ? "bg-green-600 hover:bg-green-700 text-white" : ""}
-                    >
-                      {withinWindow ? "Check In" : "Not Open Yet"}
-                    </Button>
+                    <span className="text-xs text-muted-foreground text-right shrink-0 max-w-[140px]">
+                      Your supervisor checks you in at the event.
+                    </span>
                   </div>
                 );
               })}

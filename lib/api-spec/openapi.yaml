@@ -2747,6 +2747,8 @@ components:
           type: string
         imageUrl:
           type: ["string", "null"]
+        plannedHours:
+          type: number
         canManage:
           type: boolean
         participants:

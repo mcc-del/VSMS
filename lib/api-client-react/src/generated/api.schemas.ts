@@ -353,6 +353,7 @@ export interface EventRoster {
   eventTitle: string;
   /** @nullable */
   imageUrl?: string | null;
+  plannedHours?: number;
   canManage?: boolean;
   participants: RosterParticipant[];
 }

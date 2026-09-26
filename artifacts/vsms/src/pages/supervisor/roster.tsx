@@ -228,7 +228,7 @@ export default function RosterPage() {
   const [checkoutBusy, setCheckoutBusy] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   async function checkOutAll() {
-    if (!confirm("Check out everyone who's checked in and credit their hours?")) return;
+    if (!confirm("Check out everyone who's checked in and credit the full event hours to each?\n\nFor anyone who left early, use their individual Check out button to enter fewer hours.")) return;
     setBulkBusy(true);
     try {
       const r = await customFetch<{ checkedOut: number }>(`/api/v1/events/${eventId}/checkout-all`, { method: "POST", body: JSON.stringify({}) });
@@ -240,14 +240,29 @@ export default function RosterPage() {
       setBulkBusy(false);
     }
   }
-  async function checkOut(userId: string, checkedOut: boolean) {
+  async function checkOut(userId: string, checkedOut: boolean, name?: string) {
+    let hours: number | undefined;
+    if (checkedOut) {
+      const planned = (data as any)?.plannedHours ?? "";
+      const input = window.prompt(
+        `How many hours did ${name ?? "this student"} actually do?\n(Left early? Enter fewer. Default is the full event time.)`,
+        String(planned),
+      );
+      if (input === null) return; // cancelled
+      const n = Number(input);
+      if (!Number.isFinite(n) || n < 0.25 || n > 24) {
+        toast({ title: "Enter hours between 0.25 and 24", variant: "destructive" });
+        return;
+      }
+      hours = n;
+    }
     setCheckoutBusy(userId);
     try {
       await customFetch(`/api/v1/events/${eventId}/checkout`, {
         method: "POST",
-        body: JSON.stringify({ userId, checkedOut }),
+        body: JSON.stringify({ userId, checkedOut, ...(hours != null ? { hours } : {}) }),
       });
-      toast({ title: checkedOut ? "Checked out — hours credited" : "Checkout undone" });
+      toast({ title: checkedOut ? `Checked out — ${hours}h credited` : "Checkout undone" });
       queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
     } catch (err: any) {
       toast({ title: "Couldn't update", description: err?.data?.error ?? "Try again.", variant: "destructive" });
@@ -456,7 +471,7 @@ export default function RosterPage() {
                               size="sm"
                               variant="outline"
                               className="gap-1"
-                              onClick={() => checkOut(p.userId, true)}
+                              onClick={() => checkOut(p.userId, true, p.name)}
                               disabled={checkoutBusy === p.userId}
                               title="Check out and credit hours"
                             >

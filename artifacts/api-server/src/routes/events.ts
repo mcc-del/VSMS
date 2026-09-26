@@ -674,6 +674,7 @@ router.get(
       eventId,
       eventTitle: event.slotLabel ? `${event.title} — ${event.slotLabel}` : event.title,
       imageUrl: event.imageUrl ?? null,
+      plannedHours: calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue),
       canManage,
       participants: rows.map((r) => ({
         userId: r.userId,
@@ -732,10 +733,15 @@ router.post(
   requireRole("supervisor", "admin", "org_admin"),
   async (req, res) => {
     const { eventId } = req.params as { eventId: string };
-    const body = (req.body ?? {}) as { userId?: unknown; checkedOut?: unknown };
+    const body = (req.body ?? {}) as { userId?: unknown; checkedOut?: unknown; hours?: unknown };
     const targetUserId = typeof body.userId === "string" ? body.userId : "";
     const checkedOut = body.checkedOut !== false; // default true
+    const customHours = typeof body.hours === "number" && Number.isFinite(body.hours) ? body.hours : null;
     if (!targetUserId) { res.status(400).json({ error: "userId is required." }); return; }
+    if (customHours !== null && (customHours < 0.25 || customHours > 24)) {
+      res.status(400).json({ error: "Hours must be between 0.25 and 24." });
+      return;
+    }
 
     const [event] = await db.select().from(eventsTable).where(eq(eventsTable.eventId, eventId)).limit(1);
     if (!event) { res.status(404).json({ error: "Event not found" }); return; }
@@ -766,16 +772,17 @@ router.post(
         .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.userId, targetUserId)));
 
       const plannedHours = calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue);
+      const creditHours = customHours ?? plannedHours;
       if (existing) {
         await db
           .update(volunteerSubmissionsTable)
-          .set({ status: "approved", hoursWorked: String(plannedHours), supervisorComments: CHECKOUT_COMMENT, reviewedAt: new Date() })
+          .set({ status: "approved", hoursWorked: String(creditHours), supervisorComments: CHECKOUT_COMMENT, reviewedAt: new Date() })
           .where(eq(volunteerSubmissionsTable.submissionId, existing.submissionId));
       } else {
         await db.insert(volunteerSubmissionsTable).values({
           userId: targetUserId,
           eventId,
-          hoursWorked: String(plannedHours),
+          hoursWorked: String(creditHours),
           status: "approved",
           supervisorComments: CHECKOUT_COMMENT,
           reviewedAt: new Date(),
@@ -815,27 +822,36 @@ router.post(
       .from(eventRegistrationsTable)
       .where(and(eq(eventRegistrationsTable.eventId, eventId), eq(eventRegistrationsTable.status, "attended")));
 
+    // Existing submissions (any status) for this event, so we reconcile rather
+    // than create duplicates: already-approved are left alone; a pending/rejected
+    // one is upgraded to approved; users with none get a fresh approved row.
     const existingSubs = await db
-      .select({ userId: volunteerSubmissionsTable.userId })
+      .select({ userId: volunteerSubmissionsTable.userId, submissionId: volunteerSubmissionsTable.submissionId, status: volunteerSubmissionsTable.status })
       .from(volunteerSubmissionsTable)
-      .where(and(eq(volunteerSubmissionsTable.eventId, eventId), eq(volunteerSubmissionsTable.status, "approved")));
-    const alreadyCredited = new Set(existingSubs.map((s) => s.userId));
+      .where(eq(volunteerSubmissionsTable.eventId, eventId));
+    const subByUser = new Map(existingSubs.map((s) => [s.userId, s]));
 
     const plannedHours = calculateDurationHours(event.startTime, event.endTime) ?? Number(event.hoursValue);
-    const toCredit = attendees.filter((a) => !alreadyCredited.has(a.userId));
-    if (toCredit.length > 0) {
-      await db.insert(volunteerSubmissionsTable).values(
-        toCredit.map((a) => ({
-          userId: a.userId,
-          eventId,
-          hoursWorked: String(plannedHours),
-          status: "approved" as const,
-          supervisorComments: CHECKOUT_COMMENT,
-          reviewedAt: new Date(),
-        })),
-      );
+    const toInsert: { userId: string; eventId: string; hoursWorked: string; status: "approved"; supervisorComments: string; reviewedAt: Date }[] = [];
+    let credited = 0;
+    for (const a of attendees) {
+      const sub = subByUser.get(a.userId);
+      if (sub?.status === "approved") continue; // already credited
+      if (sub) {
+        await db
+          .update(volunteerSubmissionsTable)
+          .set({ status: "approved", hoursWorked: String(plannedHours), supervisorComments: CHECKOUT_COMMENT, reviewedAt: new Date() })
+          .where(eq(volunteerSubmissionsTable.submissionId, sub.submissionId));
+        credited++;
+      } else {
+        toInsert.push({ userId: a.userId, eventId, hoursWorked: String(plannedHours), status: "approved", supervisorComments: CHECKOUT_COMMENT, reviewedAt: new Date() });
+      }
     }
-    res.json({ ok: true, checkedOut: toCredit.length });
+    if (toInsert.length > 0) {
+      await db.insert(volunteerSubmissionsTable).values(toInsert);
+      credited += toInsert.length;
+    }
+    res.json({ ok: true, checkedOut: credited });
   },
 );
 
