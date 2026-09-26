@@ -454,7 +454,7 @@ export default function RosterPage() {
                         >
                           <Check className="w-4 h-4" /> {p.status === "attended" ? "Checked in" : "Check in"}
                         </Button>
-                        {p.status === "attended" && (
+                        {p.status !== "no_show" && (
                           (p as any).hoursStatus === "approved" ? (
                             <Button
                               size="sm"
