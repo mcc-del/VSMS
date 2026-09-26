@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -240,29 +241,44 @@ export default function RosterPage() {
       setBulkBusy(false);
     }
   }
-  async function checkOut(userId: string, checkedOut: boolean, name?: string) {
-    let hours: number | undefined;
-    if (checkedOut) {
-      const planned = (data as any)?.plannedHours ?? "";
-      const input = window.prompt(
-        `How many hours did ${name ?? "this student"} actually do?\n(Left early? Enter fewer. Default is the full event time.)`,
-        String(planned),
-      );
-      if (input === null) return; // cancelled
-      const n = Number(input);
-      if (!Number.isFinite(n) || n < 0.25 || n > 24) {
-        toast({ title: "Enter hours between 0.25 and 24", variant: "destructive" });
-        return;
-      }
-      hours = n;
+  // Check-out dialog: pick the actual hours each student did.
+  const [coTarget, setCoTarget] = useState<{ userId: string; name: string } | null>(null);
+  const [coHours, setCoHours] = useState("");
+  function openCheckout(userId: string, name: string) {
+    setCoTarget({ userId, name });
+    setCoHours(String((data as any)?.plannedHours ?? ""));
+  }
+  async function confirmCheckout() {
+    if (!coTarget) return;
+    const n = Number(coHours);
+    if (!Number.isFinite(n) || n < 0.25 || n > 24) {
+      toast({ title: "Enter hours between 0.25 and 24", variant: "destructive" });
+      return;
     }
+    const { userId } = coTarget;
     setCheckoutBusy(userId);
     try {
       await customFetch(`/api/v1/events/${eventId}/checkout`, {
         method: "POST",
-        body: JSON.stringify({ userId, checkedOut, ...(hours != null ? { hours } : {}) }),
+        body: JSON.stringify({ userId, checkedOut: true, hours: n }),
       });
-      toast({ title: checkedOut ? `Checked out — ${hours}h credited` : "Checkout undone" });
+      toast({ title: `Checked out — ${n}h credited` });
+      queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
+      setCoTarget(null);
+    } catch (err: any) {
+      toast({ title: "Couldn't update", description: err?.data?.error ?? "Try again.", variant: "destructive" });
+    } finally {
+      setCheckoutBusy(null);
+    }
+  }
+  async function undoCheckout(userId: string) {
+    setCheckoutBusy(userId);
+    try {
+      await customFetch(`/api/v1/events/${eventId}/checkout`, {
+        method: "POST",
+        body: JSON.stringify({ userId, checkedOut: false }),
+      });
+      toast({ title: "Checkout undone" });
       queryClient.invalidateQueries({ queryKey: getGetEventRosterQueryKey(eventId) });
     } catch (err: any) {
       toast({ title: "Couldn't update", description: err?.data?.error ?? "Try again.", variant: "destructive" });
@@ -460,7 +476,7 @@ export default function RosterPage() {
                               size="sm"
                               variant="ghost"
                               className="gap-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800"
-                              onClick={() => checkOut(p.userId, false)}
+                              onClick={() => undoCheckout(p.userId)}
                               disabled={checkoutBusy === p.userId}
                               title="Undo checkout (removes credited hours)"
                             >
@@ -471,7 +487,7 @@ export default function RosterPage() {
                               size="sm"
                               variant="outline"
                               className="gap-1"
-                              onClick={() => checkOut(p.userId, true, p.name)}
+                              onClick={() => openCheckout(p.userId, p.name)}
                               disabled={checkoutBusy === p.userId}
                               title="Check out and credit hours"
                             >
@@ -508,6 +524,34 @@ export default function RosterPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={coTarget !== null} onOpenChange={(o) => { if (!o) setCoTarget(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Check out {coTarget?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-sm">Hours they actually did</Label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                min="0.25"
+                max="24"
+                step="0.25"
+                value={coHours}
+                onChange={(e) => setCoHours(e.target.value)}
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground mt-1">Defaults to the full event time. Enter fewer if they left early.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setCoTarget(null)}>Cancel</Button>
+              <Button onClick={confirmCheckout} disabled={checkoutBusy === coTarget?.userId}>Check out &amp; credit</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={msgOpen} onOpenChange={setMsgOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
