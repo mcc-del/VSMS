@@ -20,7 +20,8 @@ function formatTime(t: string) {
 }
 
 export default function SupervisorAllOpportunities() {
-  const { data: events, isLoading } = useListEvents();
+  // Program-wide, read-only view so staff can see what every org is running.
+  const { data: events, isLoading } = useListEvents({ scope: "all" });
   const [search, setSearch] = useState("");
   const [whenFilter, setWhenFilter] = useState<"all" | "upcoming" | "past">("all");
 

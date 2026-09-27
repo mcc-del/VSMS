@@ -163,6 +163,12 @@ paths:
           description: When a parent browses on behalf of a managed child, filter eligibility and sign-ups by that child.
           schema:
             type: string
+        - name: scope
+          in: query
+          required: false
+          description: Staff only. "all" returns a program-wide, read-only view of every org's events (drafts excluded for non-super-admins).
+          schema:
+            type: string
       responses:
         "200":
           description: OK

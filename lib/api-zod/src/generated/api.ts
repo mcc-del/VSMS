@@ -108,7 +108,8 @@ export const GetMeResponse = zod.object({
  * @summary List all calendar events
  */
 export const ListEventsQueryParams = zod.object({
-  "childId": zod.coerce.string().optional().describe('When a parent browses on behalf of a managed child, filter eligibility and sign-ups by that child.')
+  "childId": zod.coerce.string().optional().describe('When a parent browses on behalf of a managed child, filter eligibility and sign-ups by that child.'),
+  "scope": zod.coerce.string().optional().describe('Staff only. \"all\" returns a program-wide, read-only view of every org\'s events (drafts excluded for non-super-admins).')
 })
 
 export const ListEventsResponseItem = zod.object({

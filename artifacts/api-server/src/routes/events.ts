@@ -222,9 +222,14 @@ router.get("/v1/events", authenticate, async (req, res) => {
   // across organizations.
   const viewerRole = req.auth!.role;
   const managed = viewerIsParticipant ? [] : await managedOrgIds(userId!, viewerRole);
+  // Staff can opt into a program-wide view (read-only awareness of what other
+  // orgs are running) with ?scope=all. Drafts stay hidden across orgs.
+  const scopeAll = req.query.scope === "all" &&
+    (viewerRole === "supervisor" || viewerRole === "org_admin" || viewerRole === "admin");
 
   const visible = events.filter((e) => {
     if (!viewerIsParticipant) {
+      if (scopeAll) return e.status !== "draft" || viewerRole === "admin"; // program-wide (no other-org drafts)
       if (viewerRole === "admin") return true; // Super Admin: everything
       if (!e.organizationId) return true; // open-to-all
       if (managed !== null && managed.includes(e.organizationId)) return true; // Org Admin's org(s)

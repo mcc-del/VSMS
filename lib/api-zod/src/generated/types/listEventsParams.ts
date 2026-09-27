@@ -11,4 +11,8 @@ export type ListEventsParams = {
  * When a parent browses on behalf of a managed child, filter eligibility and sign-ups by that child.
  */
 childId?: string;
+/**
+ * Staff only. "all" returns a program-wide, read-only view of every org's events (drafts excluded for non-super-admins).
+ */
+scope?: string;
 };
