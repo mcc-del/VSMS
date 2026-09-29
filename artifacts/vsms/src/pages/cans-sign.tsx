@@ -4,14 +4,18 @@ import { Button } from "@/components/ui/button";
 import { canDropoffUrl } from "@/lib/grades";
 import { Printer } from "lucide-react";
 
-// Printable sign for the dumpster: a big QR code that opens the public
-// drop-off form. Print it, laminate it (it lives outside), tape it on.
+// Printable sign for the side of the dumpster: a big QR code that opens the
+// public drop-off form. It lives outside in the rain, so print it large,
+// laminate it (matte if possible, to cut glare) and keep the URL printed
+// under the code as a fallback.
 export default function CansSignPage() {
   const url = canDropoffUrl();
   const [svg, setSvg] = useState<string>("");
 
   useEffect(() => {
-    QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M" })
+    // Level H still scans with ~30% of the code damaged: rain spots,
+    // scratches or glare on the laminate outside.
+    QRCode.toString(url, { type: "svg", margin: 2, errorCorrectionLevel: "H" })
       .then(setSvg)
       .catch(() => setSvg(""));
   }, [url]);
@@ -30,15 +34,15 @@ export default function CansSignPage() {
         <p className="text-xl mt-2 font-semibold">Help us reach 100,000 cans!</p>
 
         <div
-          className="mx-auto my-6 w-72 h-72 [&>svg]:w-full [&>svg]:h-full"
+          className="mx-auto my-6 w-72 h-72 print:w-[4in] print:h-[4in] [&>svg]:w-full [&>svg]:h-full"
           data-testid="qr-code"
           dangerouslySetInnerHTML={{ __html: svg }}
         />
 
         <ol className="text-left text-lg space-y-2 max-w-sm mx-auto list-decimal list-inside">
-          <li>Weigh your bag of cans on the scale.</li>
-          <li>Scan this code with your phone camera.</li>
-          <li>Enter the weight and your grade.</li>
+          <li>Pour out any liquid. Press <b>ZERO</b> on the scale.</li>
+          <li>Weigh your bag of cans.</li>
+          <li>Scan this code and enter the weight and your grade.</li>
           <li>Toss the bag in the dumpster!</li>
         </ol>
 

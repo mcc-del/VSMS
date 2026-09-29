@@ -152,9 +152,9 @@ export default function CansDropoffPage() {
             noValidate
           >
             <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-              <li>Put your bag of cans on the scale.</li>
-              <li>Type the weight below.</li>
-              <li>Choose the grade that gets the credit.</li>
+              <li>Pour out any liquid, then press <b>ZERO</b> on the scale.</li>
+              <li>Put your bag on the scale and type the weight below.</li>
+              <li>Choose the grade that gets the credit, then toss the bag in.</li>
             </ol>
 
             <div>
