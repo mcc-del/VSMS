@@ -7,7 +7,8 @@
  */
 
 export interface CanDropoffBody {
-  grade: string;
+  /** Required only while the grade competition is on (see RecyclingSummary.gradesEnabled). */
+  grade?: string;
   weightLbs: number;
   contributorName?: string;
 }

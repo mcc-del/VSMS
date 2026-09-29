@@ -7,6 +7,14 @@ export const CANS_PER_POUND = 35;
 // Heavier loads can be entered as several bags.
 export const MAX_DROPOFF_LBS = 100;
 
+// Grade-vs-grade competition switch. OFF: the dumpster is weighed
+// unsupervised, so per-grade prizes can't be policed; the whole school works
+// toward one goal instead. While off, drop-offs are credited to SCHOOL_WIDE,
+// "Top grades" is hidden and staff bin logging is disabled. Flip to true to
+// bring grade credit back — nothing was deleted.
+export const GRADE_COMPETITION_ENABLED = false;
+export const SCHOOL_WIDE = "Whole school";
+
 // Grades a drop-off can be credited to (mirrors the frontend list).
 export const GRADES = [
   "Pre-School",
@@ -23,14 +31,19 @@ export type DropoffInput = { grade: string; contributorName: string | null; weig
 
 // Validates the public drop-off body. Returns the cleaned input or a
 // user-facing error message.
+// Pass `grades: null` when the grade competition is off: any grade sent is
+// ignored and the drop-off is credited to the whole school.
 export function parseDropoff(
   body: unknown,
-  grades: readonly string[],
+  grades: readonly string[] | null,
 ): { ok: true; value: DropoffInput } | { ok: false; error: string } {
   const b = (body ?? {}) as { grade?: unknown; contributorName?: unknown; weightLbs?: unknown };
 
-  const grade = typeof b.grade === "string" ? b.grade.trim() : "";
-  if (!grades.includes(grade)) return { ok: false, error: "Please choose a grade." };
+  let grade: string = SCHOOL_WIDE;
+  if (grades) {
+    grade = typeof b.grade === "string" ? b.grade.trim() : "";
+    if (!grades.includes(grade)) return { ok: false, error: "Please choose a grade." };
+  }
 
   const weightLbs =
     typeof b.weightLbs === "number"

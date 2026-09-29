@@ -271,6 +271,8 @@ export interface RecyclingSummary {
   goal: number;
   binSize: number;
   cansPerPound: number;
+  /** Grade-vs-grade credit is on. When false, drop-offs count for the whole school and topGrades is empty. */
+  gradesEnabled: boolean;
   totalCans: number;
   topGrades: TopGrade[];
 }
@@ -281,7 +283,8 @@ export interface LogBinBody {
 }
 
 export interface CanDropoffBody {
-  grade: string;
+  /** Required only while the grade competition is on (see RecyclingSummary.gradesEnabled). */
+  grade?: string;
   weightLbs: number;
   contributorName?: string;
 }

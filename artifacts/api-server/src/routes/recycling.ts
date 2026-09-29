@@ -3,7 +3,13 @@ import { db, recyclingBinsTable } from "@workspace/db";
 import { sql, desc, eq, and, isNotNull } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { recordAudit } from "../lib/audit";
-import { CANS_PER_POUND, GRADES, cansFromPounds, parseDropoff } from "../lib/cans";
+import {
+  CANS_PER_POUND,
+  GRADES,
+  GRADE_COMPETITION_ENABLED,
+  cansFromPounds,
+  parseDropoff,
+} from "../lib/cans";
 
 const router = Router();
 
@@ -19,7 +25,7 @@ async function summary() {
     .from(recyclingBinsTable);
   const totalCans = Number(totals?.total ?? 0);
 
-  const byGrade = await db
+  const byGrade = !GRADE_COMPETITION_ENABLED ? [] : await db
     .select({
       grade: recyclingBinsTable.grade,
       cans: sql<string>`sum(${recyclingBinsTable.cans})`,
@@ -34,6 +40,7 @@ async function summary() {
     goal: GOAL,
     binSize: BIN_SIZE,
     cansPerPound: CANS_PER_POUND,
+    gradesEnabled: GRADE_COMPETITION_ENABLED,
     totalCans,
     topGrades: byGrade.map((r) => ({ grade: r.grade, cans: Number(r.cans) })),
   };
@@ -46,11 +53,17 @@ router.get("/v1/recycling/summary", async (_req, res) => {
 
 // POST /api/v1/recycling/bins — log one collected bin toward the total.
 // Admins / supervisors / org admins log bins (e.g. when a class bin is emptied).
+// Disabled while the grade competition is off: the QR drop-off form is the
+// only thing that moves the total.
 router.post(
   "/v1/recycling/bins",
   authenticate,
   requireRole("admin", "supervisor", "org_admin"),
   async (req, res) => {
+    if (!GRADE_COMPETITION_ENABLED) {
+      res.status(403).json({ error: "Bin logging is turned off. Cans are logged from the dumpster QR form." });
+      return;
+    }
     const body = (req.body ?? {}) as { grade?: unknown; cans?: unknown };
     const grade = typeof body.grade === "string" ? body.grade.trim() : "";
     if (!grade) {
@@ -105,7 +118,7 @@ function allowDropoff(ip: string, now = Date.now()): boolean {
 // POST /api/v1/recycling/dropoffs — PUBLIC. The QR code on the dumpster opens
 // the drop-off form: weigh the bag, enter the pounds, credit a grade.
 router.post("/v1/recycling/dropoffs", async (req, res) => {
-  const parsed = parseDropoff(req.body, GRADES);
+  const parsed = parseDropoff(req.body, GRADE_COMPETITION_ENABLED ? GRADES : null);
   if (!parsed.ok) {
     res.status(400).json({ error: parsed.error });
     return;

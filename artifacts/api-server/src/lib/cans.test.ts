@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cansFromPounds, parseDropoff, CANS_PER_POUND, MAX_DROPOFF_LBS } from "./cans";
+import { cansFromPounds, parseDropoff, CANS_PER_POUND, MAX_DROPOFF_LBS, SCHOOL_WIDE } from "./cans";
 
 const GRADES = ["Kindergarten", "Grade 4"];
 
@@ -32,5 +32,14 @@ describe("parseDropoff", () => {
     expect(parseDropoff({ grade: "Grade 4", weightLbs: "abc" }, GRADES).ok).toBe(false);
     expect(parseDropoff({ grade: "Grade 4", weightLbs: MAX_DROPOFF_LBS + 1 }, GRADES).ok).toBe(false);
     expect(parseDropoff({ grade: "Grade 4", weightLbs: 0.001 }, GRADES).ok).toBe(false);
+  });
+  it("credits the whole school and ignores grade when the grade competition is off", () => {
+    expect(parseDropoff({ weightLbs: 2 }, null)).toEqual({
+      ok: true,
+      value: { grade: SCHOOL_WIDE, contributorName: null, weightLbs: 2 },
+    });
+    const r = parseDropoff({ grade: "Grade 4", weightLbs: 2 }, null);
+    expect(r.ok && r.value.grade).toBe(SCHOOL_WIDE);
+    expect(parseDropoff({ weightLbs: 0 }, null).ok).toBe(false);
   });
 });

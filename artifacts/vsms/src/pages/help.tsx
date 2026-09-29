@@ -69,7 +69,7 @@ const SECTIONS: { title: string; items: QA[] }[] = [
   {
     title: "Admins & Super Admins",
     items: [
-      { q: "What's the difference between an Admin and a Super Admin?", a: "An Admin manages a single organization: they can do everything a supervisor can, plus add supervisors, generate their org's join code, add participant hours, and manage their org's users and events. A Super Admin can do all of that across every organization, and additionally creates organizations and updates the recycling cans total." },
+      { q: "What's the difference between an Admin and a Super Admin?", a: "An Admin manages a single organization: they can do everything a supervisor can, plus add supervisors, generate their org's join code, add participant hours, and manage their org's users and events. A Super Admin can do all of that across every organization, and additionally creates organizations and can remove mistaken entries from the recycling cans total (the total itself comes from the dumpster QR form)." },
       { q: "How do I add a supervisor?", a: "Open Users → Add user, choose the Supervisor role, and save. The person is emailed an invite to set their own password (the temporary password you enter is just a fallback)." },
       { q: "How do I make someone an Admin?", a: "In Users, open a person's admin-access dialog and check the organization(s) they should manage. Checking at least one makes them an Admin; unchecking all returns them to a participant." },
       { q: "How do I hand out a join code?", a: "Each organization has a join code (set on the Organizations screen). Share it with that org's members so they can enter it at sign-up and see the org's private events." },

@@ -40,7 +40,9 @@ function remember(name: string, grade: string) {
 }
 
 // PUBLIC page opened by the QR code on the dumpster. No login: weigh the bag,
-// type the pounds, pick the grade to credit, done.
+// type the pounds, done. This form is the only thing that moves the total.
+// The grade question and "Top grades" only show while the server's grade
+// competition switch is on (summary.gradesEnabled).
 export default function CansDropoffPage() {
   const queryClient = useQueryClient();
   const { data: summary } = useGetRecyclingSummary({
@@ -55,6 +57,7 @@ export default function CansDropoffPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CanDropoffResult | null>(null);
 
+  const gradesEnabled = summary?.gradesEnabled ?? false;
   const perPound = summary?.cansPerPound ?? CANS_PER_POUND_FALLBACK;
   const lbs = Number(weight.replace(",", "."));
   const validWeight = weight.trim() !== "" && Number.isFinite(lbs) && lbs > 0 && lbs <= MAX_LBS;
@@ -71,12 +74,12 @@ export default function CansDropoffPage() {
       );
       return;
     }
-    if (!grade) {
+    if (gradesEnabled && !grade) {
       setError("Please choose which grade gets credit.");
       return;
     }
     submit.mutate(
-      { data: { grade, weightLbs: lbs, ...(name.trim() ? { contributorName: name.trim() } : {}) } },
+      { data: { ...(gradesEnabled ? { grade } : {}), weightLbs: lbs, ...(name.trim() ? { contributorName: name.trim() } : {}) } },
       {
         onSuccess: (res) => {
           remember(name.trim(), grade);
@@ -103,6 +106,9 @@ export default function CansDropoffPage() {
           <img src="/medinacares-logo.png" alt="" className="w-14 h-14 object-contain mx-auto mb-2" />
           <h1 className="text-2xl font-bold text-foreground">Drop off your cans 🥫</h1>
           <p className="text-muted-foreground text-sm mt-1">Million Cans Recycling Competition</p>
+          <p className="text-sm mt-2">
+            Every can helps our school buy an <b>ice cream machine</b> 🍦
+          </p>
         </div>
 
         {/* Progress toward the goal */}
@@ -135,7 +141,15 @@ export default function CansDropoffPage() {
             <PartyPopper className="w-10 h-10 mx-auto text-green-600" />
             <p className="text-3xl font-bold mt-3">+{result.cansAdded.toLocaleString()} cans!</p>
             <p className="text-muted-foreground mt-1">
-              {result.weightLbs} lbs credited to <b className="text-foreground">{result.grade}</b>. Thank you for recycling!
+              {gradesEnabled ? (
+                <>{result.weightLbs} lbs credited to <b className="text-foreground">{result.grade}</b>.</>
+              ) : (
+                <>{result.weightLbs} lbs added to the school total.</>
+              )}{" "}
+              Thank you for recycling!
+            </p>
+            <p className="mt-3 font-semibold">
+              Now empty your cans into the dumpster and take your bag with you. 🙏
             </p>
             <Button
               className="w-full h-12 text-base mt-6 gap-2"
@@ -153,8 +167,9 @@ export default function CansDropoffPage() {
           >
             <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
               <li>Pour out any liquid, then press <b>ZERO</b> on the scale.</li>
-              <li>Put your bag on the scale and type the weight below.</li>
-              <li>Choose the grade that gets the credit, then toss the bag in.</li>
+              <li>Weigh your bag of cans and type the weight below.</li>
+              {gradesEnabled && <li>Choose the grade that gets the credit.</li>}
+              <li>Empty the cans into the dumpster and take your bag with you.</li>
             </ol>
 
             <div>
@@ -183,6 +198,7 @@ export default function CansDropoffPage() {
               </p>
             </div>
 
+            {gradesEnabled && (
             <div>
               <label htmlFor="grade" className="text-sm font-semibold mb-1.5 block">
                 Which grade gets credit?
@@ -200,6 +216,7 @@ export default function CansDropoffPage() {
                 ))}
               </select>
             </div>
+            )}
 
             <div>
               <label htmlFor="name" className="text-sm font-semibold mb-1.5 block">
@@ -233,7 +250,7 @@ export default function CansDropoffPage() {
           </form>
         )}
 
-        {summary && summary.topGrades.length > 0 && (
+        {gradesEnabled && summary && summary.topGrades.length > 0 && (
           <div className="mt-5 bg-card border border-card-border/70 rounded-2xl p-4 shadow-soft">
             <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Top grades</p>
             <ol className="space-y-1.5 text-sm">

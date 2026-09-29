@@ -9,11 +9,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { canDropoffUrl } from "@/lib/grades";
+import { canDropoffUrl, SCHOOL_WIDE } from "@/lib/grades";
 import { QrCode, Trash2, Copy, Scale } from "lucide-react";
 
 // Admin view of the public dumpster drop-offs: link + printable QR sign, and
-// the latest entries so obvious typos (e.g. 150 lbs) can be removed.
+// the latest entries so obvious typos (e.g. 150 lbs) can be removed. Admins
+// never add cans; the QR form is the only input.
 export function CanDropoffsCard() {
   const { data: rows } = useListCanDropoffs({
     query: { queryKey: getListCanDropoffsQueryKey() },
@@ -57,7 +58,8 @@ export function CanDropoffsCard() {
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-3">
-          People weigh their bag, scan the QR code on the dumpster and enter the pounds. Each pound counts as 35 cans.
+          People weigh their bag, scan the QR code on the dumpster and enter the pounds. Each pound counts as 35 cans
+          and the ribbon updates on its own — nothing to enter here. Use the list below only to remove obvious mistakes.
         </p>
         <div className="flex flex-wrap gap-2 mb-4">
           <Button asChild variant="outline" size="sm" className="gap-1.5">
@@ -74,7 +76,7 @@ export function CanDropoffsCard() {
         ) : (
           <ul className="divide-y text-sm max-h-72 overflow-y-auto">
             {rows.map((r) => {
-              const label = `${r.weightLbs} lbs · ${r.grade}`;
+              const label = r.grade === SCHOOL_WIDE ? `${r.weightLbs} lbs` : `${r.weightLbs} lbs · ${r.grade}`;
               return (
                 <li key={r.dropoffId} className="flex items-center justify-between gap-2 py-1.5">
                   <div className="min-w-0">

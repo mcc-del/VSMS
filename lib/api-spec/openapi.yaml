@@ -2418,7 +2418,7 @@ components:
           type: number
     RecyclingSummary:
       type: object
-      required: [name, goal, binSize, cansPerPound, totalCans, topGrades]
+      required: [name, goal, binSize, cansPerPound, gradesEnabled, totalCans, topGrades]
       properties:
         name:
           type: string
@@ -2428,6 +2428,9 @@ components:
           type: number
         cansPerPound:
           type: number
+        gradesEnabled:
+          type: boolean
+          description: Grade-vs-grade credit is on. When false, drop-offs count for the whole school and topGrades is empty.
         totalCans:
           type: number
         topGrades:
@@ -2444,10 +2447,11 @@ components:
           type: number
     CanDropoffBody:
       type: object
-      required: [grade, weightLbs]
+      required: [weightLbs]
       properties:
         grade:
           type: string
+          description: Required only while the grade competition is on (see RecyclingSummary.gradesEnabled).
         weightLbs:
           type: number
         contributorName:

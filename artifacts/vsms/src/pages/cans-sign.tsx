@@ -31,7 +31,8 @@ export default function CansSignPage() {
       <div className="w-full max-w-xl text-center border-4 border-green-700 rounded-3xl p-8">
         <p className="text-5xl">🥫♻️</p>
         <h1 className="text-4xl font-extrabold mt-3 text-green-800">Million Cans Challenge</h1>
-        <p className="text-xl mt-2 font-semibold">Help us reach 100,000 cans!</p>
+        <p className="text-xl mt-2 font-semibold">Help us reach 100,000 cans by April 30!</p>
+        <p className="text-lg mt-1">Every can helps buy an <b>ice cream machine</b> for our school 🍦</p>
 
         <div
           className="mx-auto my-6 w-72 h-72 print:w-[4in] print:h-[4in] [&>svg]:w-full [&>svg]:h-full"
@@ -42,9 +43,10 @@ export default function CansSignPage() {
         <ol className="text-left text-lg space-y-2 max-w-sm mx-auto list-decimal list-inside">
           <li>Pour out any liquid. Press <b>ZERO</b> on the scale.</li>
           <li>Weigh your bag of cans.</li>
-          <li>Scan this code and enter the weight and your grade.</li>
-          <li>Toss the bag in the dumpster!</li>
+          <li>Scan this code and enter the weight.</li>
+          <li>Empty the cans into the dumpster. Take your bag with you.</li>
         </ol>
+        <p className="mt-4 text-base font-semibold">Aluminum cans only · Weigh each bag once</p>
 
         <p className="mt-6 text-sm text-neutral-600 break-all">{url}</p>
       </div>
