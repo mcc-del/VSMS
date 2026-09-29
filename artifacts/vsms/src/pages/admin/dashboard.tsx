@@ -1,6 +1,7 @@
 import { useGetAdminDashboard } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { RecyclingLogCard } from "@/components/recycling-log-card";
+import { CanDropoffsCard } from "@/components/can-dropoffs-card";
 import { EmailTestCard } from "@/components/email-test-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,6 +78,7 @@ export default function AdminDashboard() {
         )}
 
         <RecyclingLogCard />
+        <CanDropoffsCard />
         <NotificationToggle description="Get an email when a new user signs up. Password resets always send." />
         <EmailTestCard />
       </div>

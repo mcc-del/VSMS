@@ -10,13 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Recycle } from "lucide-react";
-
-const GRADES = [
-  "Pre-School",
-  "Kindergarten",
-  "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6",
-  "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12",
-];
+import { GRADES } from "@/lib/grades";
 
 // Admin/supervisor control: log one full classroom bin (~250 cans) toward the
 // Million Cans total. Each tap moves the ribbon and the logging grade's standing.

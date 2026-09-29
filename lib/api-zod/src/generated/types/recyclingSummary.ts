@@ -11,6 +11,7 @@ export interface RecyclingSummary {
   name: string;
   goal: number;
   binSize: number;
+  cansPerPound: number;
   totalCans: number;
   topGrades: TopGrade[];
 }

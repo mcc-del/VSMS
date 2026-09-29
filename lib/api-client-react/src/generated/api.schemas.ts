@@ -270,6 +270,7 @@ export interface RecyclingSummary {
   name: string;
   goal: number;
   binSize: number;
+  cansPerPound: number;
   totalCans: number;
   topGrades: TopGrade[];
 }
@@ -277,6 +278,29 @@ export interface RecyclingSummary {
 export interface LogBinBody {
   grade: string;
   cans?: number;
+}
+
+export interface CanDropoffBody {
+  grade: string;
+  weightLbs: number;
+  contributorName?: string;
+}
+
+export interface CanDropoffResult {
+  cansAdded: number;
+  weightLbs: number;
+  grade: string;
+  summary: RecyclingSummary;
+}
+
+export interface CanDropoff {
+  dropoffId: string;
+  grade: string;
+  /** @nullable */
+  contributorName: string | null;
+  weightLbs: number;
+  cans: number;
+  createdAt: string;
 }
 
 export interface ManagedOrganizations {

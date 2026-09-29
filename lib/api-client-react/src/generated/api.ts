@@ -32,6 +32,9 @@ import type {
   AwardThresholdInput,
   AwardThresholdRow,
   BroadcastResult,
+  CanDropoff,
+  CanDropoffBody,
+  CanDropoffResult,
   CheckInResponse,
   ChildHoursInput,
   ChildInput,
@@ -4091,6 +4094,224 @@ export const useLogRecyclingBin = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getLogRecyclingBinMutationOptions(options));
+    }
+
+export const getSubmitCanDropoffUrl = () => {
+
+
+
+
+  return `/api/v1/recycling/dropoffs`
+}
+
+/**
+ * @summary Public dumpster drop-off (QR form) — weight in lbs, credited to a grade
+ */
+export const submitCanDropoff = async (canDropoffBody: CanDropoffBody, options?: RequestInit): Promise<CanDropoffResult> => {
+
+  return customFetch<CanDropoffResult>(getSubmitCanDropoffUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      canDropoffBody,)
+  }
+);}
+
+
+
+
+export const getSubmitCanDropoffMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitCanDropoff>>, TError,{data: BodyType<CanDropoffBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitCanDropoff>>, TError,{data: BodyType<CanDropoffBody>}, TContext> => {
+
+const mutationKey = ['submitCanDropoff'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitCanDropoff>>, {data: BodyType<CanDropoffBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitCanDropoff(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitCanDropoffMutationResult = NonNullable<Awaited<ReturnType<typeof submitCanDropoff>>>
+    export type SubmitCanDropoffMutationBody = BodyType<CanDropoffBody>
+    export type SubmitCanDropoffMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Public dumpster drop-off (QR form) — weight in lbs, credited to a grade
+ */
+export const useSubmitCanDropoff = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitCanDropoff>>, TError,{data: BodyType<CanDropoffBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitCanDropoff>>,
+        TError,
+        {data: BodyType<CanDropoffBody>},
+        TContext
+      > => {
+      return useMutation(getSubmitCanDropoffMutationOptions(options));
+    }
+
+export const getListCanDropoffsUrl = () => {
+
+
+
+
+  return `/api/v1/recycling/dropoffs`
+}
+
+/**
+ * @summary Recent public drop-offs (admin)
+ */
+export const listCanDropoffs = async ( options?: RequestInit): Promise<CanDropoff[]> => {
+
+  return customFetch<CanDropoff[]>(getListCanDropoffsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCanDropoffsQueryKey = () => {
+    return [
+    `/api/v1/recycling/dropoffs`
+    ] as const;
+    }
+
+
+export const getListCanDropoffsQueryOptions = <TData = Awaited<ReturnType<typeof listCanDropoffs>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCanDropoffs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCanDropoffsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCanDropoffs>>> = ({ signal }) => listCanDropoffs({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCanDropoffs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCanDropoffsQueryResult = NonNullable<Awaited<ReturnType<typeof listCanDropoffs>>>
+export type ListCanDropoffsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Recent public drop-offs (admin)
+ */
+
+export function useListCanDropoffs<TData = Awaited<ReturnType<typeof listCanDropoffs>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCanDropoffs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCanDropoffsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDeleteCanDropoffUrl = (dropoffId: string,) => {
+
+
+
+
+  return `/api/v1/recycling/dropoffs/${dropoffId}`
+}
+
+/**
+ * @summary Remove a mistaken drop-off (admin)
+ */
+export const deleteCanDropoff = async (dropoffId: string, options?: RequestInit): Promise<RecyclingSummary> => {
+
+  return customFetch<RecyclingSummary>(getDeleteCanDropoffUrl(dropoffId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteCanDropoffMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCanDropoff>>, TError,{dropoffId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCanDropoff>>, TError,{dropoffId: string}, TContext> => {
+
+const mutationKey = ['deleteCanDropoff'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCanDropoff>>, {dropoffId: string}> = (props) => {
+          const {dropoffId} = props ?? {};
+
+          return  deleteCanDropoff(dropoffId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCanDropoffMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCanDropoff>>>
+
+    export type DeleteCanDropoffMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Remove a mistaken drop-off (admin)
+ */
+export const useDeleteCanDropoff = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCanDropoff>>, TError,{dropoffId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCanDropoff>>,
+        TError,
+        {dropoffId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteCanDropoffMutationOptions(options));
     }
 
 export const getGetMyServiceRecordUrl = () => {
