@@ -32,6 +32,7 @@ import type {
   AwardThresholdInput,
   AwardThresholdRow,
   BroadcastResult,
+  CanContributor,
   CanDropoff,
   CanDropoffBody,
   CanDropoffResult,
@@ -4683,6 +4684,83 @@ export function useListCanDropoffs<TData = Awaited<ReturnType<typeof listCanDrop
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListCanDropoffsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getListCanContributorsUrl = () => {
+
+
+
+
+  return `/api/v1/recycling/contributors`
+}
+
+/**
+ * @summary Named drop-off contributors with their totals (admin)
+ */
+export const listCanContributors = async ( options?: RequestInit): Promise<CanContributor[]> => {
+
+  return customFetch<CanContributor[]>(getListCanContributorsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCanContributorsQueryKey = () => {
+    return [
+    `/api/v1/recycling/contributors`
+    ] as const;
+    }
+
+
+export const getListCanContributorsQueryOptions = <TData = Awaited<ReturnType<typeof listCanContributors>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCanContributors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCanContributorsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCanContributors>>> = ({ signal }) => listCanContributors({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCanContributors>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListCanContributorsQueryResult = NonNullable<Awaited<ReturnType<typeof listCanContributors>>>
+export type ListCanContributorsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Named drop-off contributors with their totals (admin)
+ */
+
+export function useListCanContributors<TData = Awaited<ReturnType<typeof listCanContributors>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCanContributors>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListCanContributorsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

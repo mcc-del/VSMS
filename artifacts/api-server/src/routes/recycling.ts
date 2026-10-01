@@ -87,9 +87,12 @@ router.post(
 
 // Simple in-memory limiter for the public drop-off form so one phone can't
 // flood the total. Keyed by the client IP (first X-Forwarded-For hop, since
-// the app runs behind a proxy). Generous enough for a family emptying a car.
+// the app runs behind a proxy).
 const DROPOFF_WINDOW_MS = 10 * 60 * 1000;
-const DROPOFF_MAX_PER_WINDOW = 30;
+// Many phones can share one public IP (school Wi-Fi, cellular carrier NAT),
+// so this is a per-network ceiling against scripted spam, not a per-person
+// limit. Typos and junk are removed from the admin card.
+const DROPOFF_MAX_PER_WINDOW = 120;
 const dropoffHits = new Map<string, number[]>();
 
 function clientIp(req: Request): string {
@@ -157,6 +160,39 @@ router.get("/v1/recycling/dropoffs", authenticate, requireRole("admin"), async (
       weightLbs: Number(r.weightLbs),
       cans: r.cans,
       createdAt: r.createdAt.toISOString(),
+    })),
+  );
+});
+
+// GET /api/v1/recycling/contributors — everyone who typed a name on the QR
+// form, with their totals. Names are free text, so they're grouped ignoring
+// case and extra spaces ("aisha  khan" and "Aisha Khan" are one person).
+// Admin only: these are students' names.
+router.get("/v1/recycling/contributors", authenticate, requireRole("admin"), async (_req, res) => {
+  const key = sql`lower(regexp_replace(trim(${recyclingBinsTable.contributorName}), '\\s+', ' ', 'g'))`;
+  const rows = await db
+    .select({
+      // Show the most recent spelling of the name.
+      name: sql<string>`(array_agg(${recyclingBinsTable.contributorName} order by ${recyclingBinsTable.createdAt} desc))[1]`,
+      dropoffs: sql<string>`count(*)`,
+      weightLbs: sql<string>`coalesce(sum(${recyclingBinsTable.weightLbs}), 0)`,
+      cans: sql<string>`sum(${recyclingBinsTable.cans})`,
+      firstAt: sql<Date>`min(${recyclingBinsTable.createdAt})`,
+      lastAt: sql<Date>`max(${recyclingBinsTable.createdAt})`,
+    })
+    .from(recyclingBinsTable)
+    .where(and(isNotNull(recyclingBinsTable.weightLbs), isNotNull(recyclingBinsTable.contributorName)))
+    .groupBy(key)
+    .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`));
+
+  res.json(
+    rows.map((r) => ({
+      name: r.name.trim().replace(/\s+/g, " "),
+      dropoffs: Number(r.dropoffs),
+      weightLbs: Math.round(Number(r.weightLbs) * 100) / 100,
+      cans: Number(r.cans),
+      firstDropoffAt: new Date(r.firstAt).toISOString(),
+      lastDropoffAt: new Date(r.lastAt).toISOString(),
     })),
   );
 });

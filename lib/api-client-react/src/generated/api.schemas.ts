@@ -460,6 +460,15 @@ export interface CanDropoffResult {
   summary: RecyclingSummary;
 }
 
+export interface CanContributor {
+  name: string;
+  dropoffs: number;
+  weightLbs: number;
+  cans: number;
+  firstDropoffAt: string;
+  lastDropoffAt: string;
+}
+
 export interface CanDropoff {
   dropoffId: string;
   grade: string;

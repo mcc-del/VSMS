@@ -23,6 +23,7 @@ export * from './awardThresholdInput';
 export * from './awardThresholdRow';
 export * from './awardThresholds';
 export * from './broadcastResult';
+export * from './canContributor';
 export * from './canDropoff';
 export * from './canDropoffBody';
 export * from './canDropoffResult';

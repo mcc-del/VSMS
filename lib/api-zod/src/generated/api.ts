@@ -1295,6 +1295,20 @@ export const ListCanDropoffsResponse = zod.array(ListCanDropoffsResponseItem)
 
 
 /**
+ * @summary Named drop-off contributors with their totals (admin)
+ */
+export const ListCanContributorsResponseItem = zod.object({
+  "name": zod.string(),
+  "dropoffs": zod.number(),
+  "weightLbs": zod.number(),
+  "cans": zod.number(),
+  "firstDropoffAt": zod.coerce.date(),
+  "lastDropoffAt": zod.coerce.date()
+})
+export const ListCanContributorsResponse = zod.array(ListCanContributorsResponseItem)
+
+
+/**
  * @summary Remove a mistaken drop-off (admin)
  */
 export const DeleteCanDropoffParams = zod.object({

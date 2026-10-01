@@ -7,6 +7,7 @@ import {
 import { AppLayout } from "@/components/layout";
 import { RecyclingLogCard } from "@/components/recycling-log-card";
 import { CanDropoffsCard } from "@/components/can-dropoffs-card";
+import { CanContributorsCard } from "@/components/can-contributors-card";
 import { EmailTestCard } from "@/components/email-test-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -99,6 +100,7 @@ export default function AdminDashboard() {
             QR drop-off form is the only thing that moves the total. */}
         {recycling?.gradesEnabled && <RecyclingLogCard />}
         <CanDropoffsCard />
+        <CanContributorsCard />
         <NotificationToggle description="Get an email when a new user signs up. Password resets always send." />
         <EmailTestCard />
       </div>

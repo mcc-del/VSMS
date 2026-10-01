@@ -1422,6 +1422,21 @@ paths:
                 items:
                   $ref: "#/components/schemas/CanDropoff"
 
+  /v1/recycling/contributors:
+    get:
+      operationId: listCanContributors
+      tags: [recycling]
+      summary: Named drop-off contributors with their totals (admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CanContributor"
+
   /v1/recycling/dropoffs/{dropoffId}:
     delete:
       operationId: deleteCanDropoff
@@ -2970,6 +2985,24 @@ components:
           type: string
         summary:
           $ref: "#/components/schemas/RecyclingSummary"
+    CanContributor:
+      type: object
+      required: [name, dropoffs, weightLbs, cans, firstDropoffAt, lastDropoffAt]
+      properties:
+        name:
+          type: string
+        dropoffs:
+          type: number
+        weightLbs:
+          type: number
+        cans:
+          type: number
+        firstDropoffAt:
+          type: string
+          format: date-time
+        lastDropoffAt:
+          type: string
+          format: date-time
     CanDropoff:
       type: object
       required: [dropoffId, grade, contributorName, weightLbs, cans, createdAt]

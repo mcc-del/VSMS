@@ -220,18 +220,21 @@ export default function CansDropoffPage() {
 
             <div>
               <label htmlFor="name" className="text-sm font-semibold mb-1.5 block">
-                Your name <span className="font-normal text-muted-foreground">(optional)</span>
+                Your first and last name <span className="font-normal text-muted-foreground">(optional)</span>
               </label>
               <Input
                 id="name"
                 autoComplete="name"
                 maxLength={80}
-                placeholder="e.g. Aisha K."
+                placeholder="e.g. Aisha Khan"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="h-12"
                 data-testid="input-name"
               />
+              <p className="text-xs mt-1.5 text-muted-foreground">
+                Students: add your name so we can thank you! Use the same spelling every time.
+              </p>
             </div>
 
             {error && (
