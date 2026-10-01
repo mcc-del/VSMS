@@ -1,6 +1,11 @@
-import { useGetAdminDashboard } from "@workspace/api-client-react";
+import {
+  useGetAdminDashboard,
+  useGetRecyclingSummary,
+  getGetRecyclingSummaryQueryKey,
+} from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout";
 import { RecyclingLogCard } from "@/components/recycling-log-card";
+import { CanDropoffsCard } from "@/components/can-dropoffs-card";
 import { EmailTestCard } from "@/components/email-test-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +37,9 @@ function StatCard({ title, value, icon, testId }: StatCardProps) {
 
 export default function AdminDashboard() {
   const { data, isLoading } = useGetAdminDashboard();
+  const { data: recycling } = useGetRecyclingSummary({
+    query: { queryKey: getGetRecyclingSummaryQueryKey(), staleTime: 60_000 },
+  });
 
   return (
     <AppLayout>
@@ -76,7 +84,10 @@ export default function AdminDashboard() {
           </>
         )}
 
-        <RecyclingLogCard />
+        {/* Staff bin logging is off while the grade competition is off; the
+            QR drop-off form is the only thing that moves the total. */}
+        {recycling?.gradesEnabled && <RecyclingLogCard />}
+        <CanDropoffsCard />
         <NotificationToggle description="Get an email when a new user signs up. Password resets always send." />
         <EmailTestCard />
       </div>

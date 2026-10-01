@@ -60,7 +60,7 @@ export function RecyclingRibbon() {
         />
       </span>
       <span style={{ fontFamily: "ui-monospace, monospace", fontSize: "12px", whiteSpace: "nowrap", opacity: 0.95 }}>
-        {pct}% to our {data.goal.toLocaleString()} goal · {remaining.toLocaleString()} to go 🎯
+        {pct}% to our {data.goal.toLocaleString()} goal · {remaining.toLocaleString()} to go 🍦
       </span>
     </div>
   );
