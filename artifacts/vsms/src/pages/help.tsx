@@ -112,7 +112,7 @@ const SECTIONS: { title: string; items: QA[]; roles?: string[] }[] = [
     title: "Super Admins",
     roles: ["admin"],
     items: [
-      { q: "What can a Super Admin do?", a: "Everything an Admin can, across every organization — plus create organizations, upload per-org logos, set award thresholds, view the audit log, and manage the recycling total." },
+      { q: "What can a Super Admin do?", a: "Everything an Admin can, across every organization — plus create organizations, upload per-org logos, set award thresholds, view the audit log, and remove mistaken entries from the recycling total (the total itself comes from the dumpster QR form)." },
       { q: "How do I add a supervisor or Admin?", a: "Open Users → Add user for supervisors (choose their organization). To make someone an Admin, open a person's admin-access dialog and check the organization(s) they should manage — checking at least one makes them an Admin; unchecking all returns them to a participant." },
       { q: "How do I set the medal thresholds?", a: "Open Award Thresholds. Set Bronze / Silver / Gold hour targets globally, per organization, or per grade level — younger grades can have lower targets. The most specific rule wins (grade + org, then org, then grade, then global). Leaderboards, reports, and the metrics chart all use these automatically." },
       { q: "Can I see the supervisor reports?", a: "Yes — Supervisor Reports (in your menu) shows the deep-dive event and hours analytics across every organization, with a per-supervisor breakdown." },
