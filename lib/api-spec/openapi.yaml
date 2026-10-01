@@ -1378,6 +1378,75 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/recycling/dropoffs:
+    post:
+      operationId: submitCanDropoff
+      tags: [recycling]
+      summary: Public dumpster drop-off (QR form) — weight in lbs, credited to a grade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CanDropoffBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanDropoffResult"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Too many drop-offs from this device
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: listCanDropoffs
+      tags: [recycling]
+      summary: Recent public drop-offs (admin)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CanDropoff"
+
+  /v1/recycling/dropoffs/{dropoffId}:
+    delete:
+      operationId: deleteCanDropoff
+      tags: [recycling]
+      summary: Remove a mistaken drop-off (admin)
+      parameters:
+        - name: dropoffId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecyclingSummary"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/me/service-record:
     get:
       operationId: getMyServiceRecord
@@ -2851,7 +2920,7 @@ components:
           type: number
     RecyclingSummary:
       type: object
-      required: [name, goal, binSize, totalCans, topGrades]
+      required: [name, goal, binSize, cansPerPound, gradesEnabled, totalCans, topGrades]
       properties:
         name:
           type: string
@@ -2859,6 +2928,11 @@ components:
           type: number
         binSize:
           type: number
+        cansPerPound:
+          type: number
+        gradesEnabled:
+          type: boolean
+          description: Grade-vs-grade credit is on. When false, drop-offs count for the whole school and topGrades is empty.
         totalCans:
           type: number
         topGrades:
@@ -2873,6 +2947,46 @@ components:
           type: string
         cans:
           type: number
+    CanDropoffBody:
+      type: object
+      required: [weightLbs]
+      properties:
+        grade:
+          type: string
+          description: Required only while the grade competition is on (see RecyclingSummary.gradesEnabled).
+        weightLbs:
+          type: number
+        contributorName:
+          type: string
+    CanDropoffResult:
+      type: object
+      required: [cansAdded, weightLbs, grade, summary]
+      properties:
+        cansAdded:
+          type: number
+        weightLbs:
+          type: number
+        grade:
+          type: string
+        summary:
+          $ref: "#/components/schemas/RecyclingSummary"
+    CanDropoff:
+      type: object
+      required: [dropoffId, grade, contributorName, weightLbs, cans, createdAt]
+      properties:
+        dropoffId:
+          type: string
+        grade:
+          type: string
+        contributorName:
+          type: ["string", "null"]
+        weightLbs:
+          type: number
+        cans:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
     ManagedOrganizations:
       type: object
       required: [all, organizationIds]

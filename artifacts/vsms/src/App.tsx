@@ -42,6 +42,8 @@ import ServiceRecordPage from "@/pages/service-record";
 import ProfilePage from "@/pages/participant/profile";
 import ParticipantReports from "@/pages/participant/reports";
 import HelpPage from "@/pages/help";
+import CansDropoffPage from "@/pages/cans";
+import CansSignPage from "@/pages/cans-sign";
 import { useAuth } from "@/hooks/use-auth";
 
 const queryClient = new QueryClient({
@@ -74,6 +76,9 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/external-review" component={ExternalReviewPage} />
+      {/* Public: opened by the QR code on the recycling dumpster. */}
+      <Route path="/cans" component={CansDropoffPage} />
+      <ProtectedRoute path="/cans/sign" component={CansSignPage} allowedRoles={["admin", "supervisor", "org_admin"]} />
 
       <ProtectedRoute path="/dashboard" component={ParticipantDashboard} allowedRoles={["participant"]} />
       <ProtectedRoute path="/opportunities" component={OpportunitiesPage} allowedRoles={["participant"]} />

@@ -1251,6 +1251,8 @@ export const GetRecyclingSummaryResponse = zod.object({
   "name": zod.string(),
   "goal": zod.number(),
   "binSize": zod.number(),
+  "cansPerPound": zod.number(),
+  "gradesEnabled": zod.boolean().describe('Grade-vs-grade credit is on. When false, drop-offs count for the whole school and topGrades is empty.'),
   "totalCans": zod.number(),
   "topGrades": zod.array(zod.object({
   "grade": zod.string(),
@@ -1265,6 +1267,51 @@ export const GetRecyclingSummaryResponse = zod.object({
 export const LogRecyclingBinBody = zod.object({
   "grade": zod.string(),
   "cans": zod.number().optional()
+})
+
+
+/**
+ * @summary Public dumpster drop-off (QR form) — weight in lbs, credited to a grade
+ */
+export const SubmitCanDropoffBody = zod.object({
+  "grade": zod.string().optional().describe('Required only while the grade competition is on (see RecyclingSummary.gradesEnabled).'),
+  "weightLbs": zod.number(),
+  "contributorName": zod.string().optional()
+})
+
+
+/**
+ * @summary Recent public drop-offs (admin)
+ */
+export const ListCanDropoffsResponseItem = zod.object({
+  "dropoffId": zod.string(),
+  "grade": zod.string(),
+  "contributorName": zod.string().nullable(),
+  "weightLbs": zod.number(),
+  "cans": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const ListCanDropoffsResponse = zod.array(ListCanDropoffsResponseItem)
+
+
+/**
+ * @summary Remove a mistaken drop-off (admin)
+ */
+export const DeleteCanDropoffParams = zod.object({
+  "dropoffId": zod.coerce.string()
+})
+
+export const DeleteCanDropoffResponse = zod.object({
+  "name": zod.string(),
+  "goal": zod.number(),
+  "binSize": zod.number(),
+  "cansPerPound": zod.number(),
+  "gradesEnabled": zod.boolean().describe('Grade-vs-grade credit is on. When false, drop-offs count for the whole school and topGrades is empty.'),
+  "totalCans": zod.number(),
+  "topGrades": zod.array(zod.object({
+  "grade": zod.string(),
+  "cans": zod.number()
+}))
 })
 
 
