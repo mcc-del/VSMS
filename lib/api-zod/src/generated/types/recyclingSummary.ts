@@ -5,6 +5,7 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
+import type { TopContributor } from './topContributor';
 import type { TopGrade } from './topGrade';
 
 export interface RecyclingSummary {
@@ -12,8 +13,12 @@ export interface RecyclingSummary {
   goal: number;
   binSize: number;
   cansPerPound: number;
-  /** Grade-vs-grade credit is on. When false, drop-offs count for the whole school and topGrades is empty. */
+  /** The optional grade question and public grade totals are shown. No grade prizes either way. */
   gradesEnabled: boolean;
+  /** Staff "log a bin" is allowed. When false, the QR drop-off form is the only input. */
+  binLoggingEnabled: boolean;
   totalCans: number;
   topGrades: TopGrade[];
+  /** Top 10 named contributors, shown as first name + last initial. */
+  topContributors: TopContributor[];
 }

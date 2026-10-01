@@ -24,10 +24,11 @@ export function CanContributorsCard() {
   function downloadCsv() {
     if (!rows) return;
     const lines = [
-      ["Name", "Drop-offs", "Pounds", "Cans", "First drop-off", "Last drop-off"].join(","),
+      ["Name", "Grade", "Drop-offs", "Pounds", "Cans", "First drop-off", "Last drop-off"].join(","),
       ...rows.map((r) =>
         [
           r.name,
+          r.grade ?? "",
           r.dropoffs,
           r.weightLbs,
           r.cans,
@@ -55,7 +56,8 @@ export function CanContributorsCard() {
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-3">
-          Everyone who added their name on the QR form, with their totals. Only Super Admins can see this list.
+          Everyone who added their name on the QR form, with their totals and latest grade. Only Super Admins see full
+          names; the public scoreboard shows first name + last initial.
         </p>
         <div className="flex flex-wrap gap-2 mb-3">
           <Input
@@ -78,6 +80,7 @@ export function CanContributorsCard() {
               <thead className="text-xs uppercase tracking-wide text-muted-foreground text-left">
                 <tr>
                   <th className="py-1.5 font-medium">Name</th>
+                  <th className="py-1.5 font-medium">Grade</th>
                   <th className="py-1.5 font-medium text-right">Bags</th>
                   <th className="py-1.5 font-medium text-right">Lbs</th>
                   <th className="py-1.5 font-medium text-right">Cans</th>
@@ -88,6 +91,7 @@ export function CanContributorsCard() {
                 {shown.map((r) => (
                   <tr key={r.name.toLowerCase()}>
                     <td className="py-1.5 pr-2">{r.name}</td>
+                    <td className="py-1.5 pr-2 text-muted-foreground">{r.grade ?? "—"}</td>
                     <td className="py-1.5 text-right font-mono">{r.dropoffs}</td>
                     <td className="py-1.5 text-right font-mono">{r.weightLbs}</td>
                     <td className="py-1.5 text-right font-mono font-semibold">{r.cans.toLocaleString()}</td>

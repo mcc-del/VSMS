@@ -1,5 +1,15 @@
 import { describe, it, expect } from "vitest";
-import { cansFromPounds, parseDropoff, CANS_PER_POUND, MAX_DROPOFF_LBS, SCHOOL_WIDE } from "./cans";
+import {
+  cansFromPounds,
+  parseDropoff,
+  publicName,
+  undoToken,
+  canUndo,
+  CANS_PER_POUND,
+  MAX_DROPOFF_LBS,
+  SCHOOL_WIDE,
+  UNDO_WINDOW_MS,
+} from "./cans";
 
 const GRADES = ["Kindergarten", "Grade 4"];
 
@@ -21,9 +31,12 @@ describe("parseDropoff", () => {
     const r = parseDropoff({ grade: "Kindergarten", weightLbs: "2" }, GRADES);
     expect(r).toEqual({ ok: true, value: { grade: "Kindergarten", contributorName: null, weightLbs: 2 } });
   });
-  it("requires a known grade", () => {
+  it("treats grade as optional but rejects unknown grades", () => {
     expect(parseDropoff({ grade: "Grade 99", weightLbs: 2 }, GRADES).ok).toBe(false);
-    expect(parseDropoff({ weightLbs: 2 }, GRADES).ok).toBe(false);
+    const none = parseDropoff({ weightLbs: 2 }, GRADES);
+    expect(none.ok && none.value.grade).toBe(SCHOOL_WIDE);
+    const blank = parseDropoff({ grade: "  ", weightLbs: 2 }, GRADES);
+    expect(blank.ok && blank.value.grade).toBe(SCHOOL_WIDE);
   });
   it("rejects missing, zero, negative and absurd weights", () => {
     expect(parseDropoff({ grade: "Grade 4" }, GRADES).ok).toBe(false);
@@ -33,7 +46,7 @@ describe("parseDropoff", () => {
     expect(parseDropoff({ grade: "Grade 4", weightLbs: MAX_DROPOFF_LBS + 1 }, GRADES).ok).toBe(false);
     expect(parseDropoff({ grade: "Grade 4", weightLbs: 0.001 }, GRADES).ok).toBe(false);
   });
-  it("credits the whole school and ignores grade when the grade competition is off", () => {
+  it("ignores grade when grades are turned off", () => {
     expect(parseDropoff({ weightLbs: 2 }, null)).toEqual({
       ok: true,
       value: { grade: SCHOOL_WIDE, contributorName: null, weightLbs: 2 },
@@ -41,5 +54,33 @@ describe("parseDropoff", () => {
     const r = parseDropoff({ grade: "Grade 4", weightLbs: 2 }, null);
     expect(r.ok && r.value.grade).toBe(SCHOOL_WIDE);
     expect(parseDropoff({ weightLbs: 0 }, null).ok).toBe(false);
+  });
+});
+
+describe("publicName (first name + last initial)", () => {
+  it("shortens and tidies names", () => {
+    expect(publicName("  aisha   khan ")).toBe("Aisha K.");
+    expect(publicName("Omar ibn Ali")).toBe("Omar A.");
+    expect(publicName("ZAYD")).toBe("Zayd");
+    expect(publicName("   ")).toBe("");
+  });
+});
+
+describe("undo tokens", () => {
+  const secret = "test-secret-at-least-16-chars";
+  const at = new Date("2026-10-01T12:00:00Z");
+  const tok = undoToken(secret, "drop-1", at);
+
+  it("lets the same phone undo within the window", () => {
+    expect(canUndo(secret, "drop-1", at, tok, at.getTime() + 60_000)).toBe(true);
+  });
+  it("expires after the window", () => {
+    expect(canUndo(secret, "drop-1", at, tok, at.getTime() + UNDO_WINDOW_MS + 1)).toBe(false);
+  });
+  it("rejects a token for another drop-off, a wrong secret or garbage", () => {
+    expect(canUndo(secret, "drop-2", at, tok, at.getTime())).toBe(false);
+    expect(canUndo("another-secret-1234567", "drop-1", at, tok, at.getTime())).toBe(false);
+    expect(canUndo(secret, "drop-1", at, "nope", at.getTime())).toBe(false);
+    expect(canUndo(secret, "drop-1", at, undefined, at.getTime())).toBe(false);
   });
 });

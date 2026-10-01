@@ -47,6 +47,9 @@ export default function CansSignPage() {
           <li>Empty the cans into the dumpster. Take your bag with you.</li>
         </ol>
         <p className="mt-4 text-base font-semibold">Aluminum cans only · Weigh each bag once</p>
+        <p className="mt-2 text-sm text-neutral-700">
+          A school recycling drive, not a volunteer activity: drop-offs don't count toward volunteer hours.
+        </p>
 
         <p className="mt-6 text-sm text-neutral-600 break-all">{url}</p>
       </div>

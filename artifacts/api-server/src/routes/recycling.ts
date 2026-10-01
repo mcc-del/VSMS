@@ -1,15 +1,24 @@
 import { Router, type Request } from "express";
 import { db, recyclingBinsTable } from "@workspace/db";
-import { sql, desc, eq, and, isNotNull } from "drizzle-orm";
+import { sql, desc, eq, and, ne, isNotNull } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
 import { recordAudit } from "../lib/audit";
 import {
   CANS_PER_POUND,
   GRADES,
-  GRADE_COMPETITION_ENABLED,
+  GRADES_ENABLED,
+  STAFF_BIN_LOGGING_ENABLED,
+  SCHOOL_WIDE,
   cansFromPounds,
   parseDropoff,
+  publicName,
+  undoToken,
+  canUndo,
+  UNDO_WINDOW_MS,
 } from "../lib/cans";
+
+// Validated at startup by the auth middleware; reused to sign undo tokens.
+const UNDO_SECRET = process.env.SESSION_SECRET ?? "";
 
 const router = Router();
 
@@ -19,30 +28,52 @@ const NAME = "Million Cans Recycling Competition";
 const GOAL = 100000;
 const BIN_SIZE = 250;
 
+// Free-text names are grouped ignoring case and extra spaces, so
+// "aisha  khan" and "Aisha Khan" are one person.
+const contributorKey = sql`lower(regexp_replace(trim(${recyclingBinsTable.contributorName}), '\\s+', ' ', 'g'))`;
+
 async function summary() {
   const [totals] = await db
     .select({ total: sql<string>`coalesce(sum(${recyclingBinsTable.cans}), 0)` })
     .from(recyclingBinsTable);
   const totalCans = Number(totals?.total ?? 0);
 
-  const byGrade = !GRADE_COMPETITION_ENABLED ? [] : await db
+  // Cans per grade, just for fun (no grade prizes). Drop-offs with no grade
+  // only count toward the school total.
+  const byGrade = !GRADES_ENABLED ? [] : await db
     .select({
       grade: recyclingBinsTable.grade,
       cans: sql<string>`sum(${recyclingBinsTable.cans})`,
     })
     .from(recyclingBinsTable)
+    .where(ne(recyclingBinsTable.grade, SCHOOL_WIDE))
     .groupBy(recyclingBinsTable.grade)
+    .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`));
+
+  // Top named contributors, shown publicly as first name + last initial.
+  const top = await db
+    .select({
+      name: sql<string>`(array_agg(${recyclingBinsTable.contributorName} order by ${recyclingBinsTable.createdAt} desc))[1]`,
+      cans: sql<string>`sum(${recyclingBinsTable.cans})`,
+    })
+    .from(recyclingBinsTable)
+    .where(isNotNull(recyclingBinsTable.contributorName))
+    .groupBy(contributorKey)
     .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`))
-    .limit(3);
+    .limit(10);
 
   return {
     name: NAME,
     goal: GOAL,
     binSize: BIN_SIZE,
     cansPerPound: CANS_PER_POUND,
-    gradesEnabled: GRADE_COMPETITION_ENABLED,
+    gradesEnabled: GRADES_ENABLED,
+    binLoggingEnabled: STAFF_BIN_LOGGING_ENABLED,
     totalCans,
     topGrades: byGrade.map((r) => ({ grade: r.grade, cans: Number(r.cans) })),
+    topContributors: top
+      .map((r) => ({ name: publicName(r.name), cans: Number(r.cans) }))
+      .filter((r) => r.name),
   };
 }
 
@@ -53,14 +84,14 @@ router.get("/v1/recycling/summary", async (_req, res) => {
 
 // POST /api/v1/recycling/bins — log one collected bin toward the total.
 // Admins / supervisors / org admins log bins (e.g. when a class bin is emptied).
-// Disabled while the grade competition is off: the QR drop-off form is the
-// only thing that moves the total.
+// Off (STAFF_BIN_LOGGING_ENABLED) while the QR drop-off form is the only
+// thing that moves the total.
 router.post(
   "/v1/recycling/bins",
   authenticate,
   requireRole("admin", "supervisor", "org_admin"),
   async (req, res) => {
-    if (!GRADE_COMPETITION_ENABLED) {
+    if (!STAFF_BIN_LOGGING_ENABLED) {
       res.status(403).json({ error: "Bin logging is turned off. Cans are logged from the dumpster QR form." });
       return;
     }
@@ -121,7 +152,7 @@ function allowDropoff(ip: string, now = Date.now()): boolean {
 // POST /api/v1/recycling/dropoffs — PUBLIC. The QR code on the dumpster opens
 // the drop-off form: weigh the bag, enter the pounds, credit a grade.
 router.post("/v1/recycling/dropoffs", async (req, res) => {
-  const parsed = parseDropoff(req.body, GRADE_COMPETITION_ENABLED ? GRADES : null);
+  const parsed = parseDropoff(req.body, GRADES_ENABLED ? GRADES : null);
   if (!parsed.ok) {
     res.status(400).json({ error: parsed.error });
     return;
@@ -133,14 +164,51 @@ router.post("/v1/recycling/dropoffs", async (req, res) => {
 
   const { grade, contributorName, weightLbs } = parsed.value;
   const cansAdded = cansFromPounds(weightLbs);
-  await db.insert(recyclingBinsTable).values({
-    grade,
-    cans: cansAdded,
-    contributorName,
-    weightLbs: weightLbs.toFixed(2),
-  });
+  const [row] = await db
+    .insert(recyclingBinsTable)
+    .values({
+      grade,
+      cans: cansAdded,
+      contributorName,
+      weightLbs: weightLbs.toFixed(2),
+    })
+    .returning({ binId: recyclingBinsTable.binId, createdAt: recyclingBinsTable.createdAt });
 
-  res.status(201).json({ cansAdded, weightLbs, grade, summary: await summary() });
+  res.status(201).json({
+    dropoffId: row.binId,
+    undoToken: undoToken(UNDO_SECRET, row.binId, row.createdAt),
+    undoMinutes: UNDO_WINDOW_MS / 60_000,
+    cansAdded,
+    weightLbs,
+    grade,
+    summary: await summary(),
+  });
+});
+
+// POST /api/v1/recycling/dropoffs/:dropoffId/undo — PUBLIC, but only with the
+// undo token handed back when the drop-off was made, and only for a few
+// minutes. Lets someone fix "30 lbs" that should have been "3.0".
+router.post("/v1/recycling/dropoffs/:dropoffId/undo", async (req, res) => {
+  const { dropoffId } = req.params as { dropoffId: string };
+  const token = (req.body ?? {}).undoToken;
+  const notAllowed = () =>
+    res.status(403).json({ error: "This drop-off can't be undone anymore. Ask a teacher to fix it." });
+
+  if (!/^[0-9a-f-]{36}$/i.test(dropoffId)) {
+    notAllowed();
+    return;
+  }
+  const [row] = await db
+    .select({ binId: recyclingBinsTable.binId, createdAt: recyclingBinsTable.createdAt })
+    .from(recyclingBinsTable)
+    .where(and(eq(recyclingBinsTable.binId, dropoffId), isNotNull(recyclingBinsTable.weightLbs)));
+  if (!row || !canUndo(UNDO_SECRET, row.binId, row.createdAt, token)) {
+    notAllowed();
+    return;
+  }
+
+  await db.delete(recyclingBinsTable).where(eq(recyclingBinsTable.binId, row.binId));
+  res.json(await summary());
 });
 
 // GET /api/v1/recycling/dropoffs — recent public drop-offs so an admin can
@@ -169,7 +237,6 @@ router.get("/v1/recycling/dropoffs", authenticate, requireRole("admin"), async (
 // case and extra spaces ("aisha  khan" and "Aisha Khan" are one person).
 // Admin only: these are students' names.
 router.get("/v1/recycling/contributors", authenticate, requireRole("admin"), async (_req, res) => {
-  const key = sql`lower(regexp_replace(trim(${recyclingBinsTable.contributorName}), '\\s+', ' ', 'g'))`;
   const rows = await db
     .select({
       // Show the most recent spelling of the name.
@@ -177,12 +244,14 @@ router.get("/v1/recycling/contributors", authenticate, requireRole("admin"), asy
       dropoffs: sql<string>`count(*)`,
       weightLbs: sql<string>`coalesce(sum(${recyclingBinsTable.weightLbs}), 0)`,
       cans: sql<string>`sum(${recyclingBinsTable.cans})`,
+      // Most recent grade they chose, if any.
+      grade: sql<string | null>`(array_agg(${recyclingBinsTable.grade} order by ${recyclingBinsTable.createdAt} desc) filter (where ${recyclingBinsTable.grade} <> ${SCHOOL_WIDE}))[1]`,
       firstAt: sql<Date>`min(${recyclingBinsTable.createdAt})`,
       lastAt: sql<Date>`max(${recyclingBinsTable.createdAt})`,
     })
     .from(recyclingBinsTable)
     .where(and(isNotNull(recyclingBinsTable.weightLbs), isNotNull(recyclingBinsTable.contributorName)))
-    .groupBy(key)
+    .groupBy(contributorKey)
     .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`));
 
   res.json(
@@ -191,6 +260,7 @@ router.get("/v1/recycling/contributors", authenticate, requireRole("admin"), asy
       dropoffs: Number(r.dropoffs),
       weightLbs: Math.round(Number(r.weightLbs) * 100) / 100,
       cans: Number(r.cans),
+      grade: r.grade ?? null,
       firstDropoffAt: new Date(r.firstAt).toISOString(),
       lastDropoffAt: new Date(r.lastAt).toISOString(),
     })),

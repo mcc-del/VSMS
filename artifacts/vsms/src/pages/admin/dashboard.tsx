@@ -96,9 +96,9 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Staff bin logging is off while the grade competition is off; the
-            QR drop-off form is the only thing that moves the total. */}
-        {recycling?.gradesEnabled && <RecyclingLogCard />}
+        {/* Staff bin logging is off: the QR drop-off form is the only thing
+            that moves the total (STAFF_BIN_LOGGING_ENABLED on the server). */}
+        {recycling?.binLoggingEnabled && <RecyclingLogCard />}
         <CanDropoffsCard />
         <CanContributorsCard />
         <NotificationToggle description="Get an email when a new user signs up. Password resets always send." />

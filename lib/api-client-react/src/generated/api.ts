@@ -110,6 +110,7 @@ import type {
   SupervisorReports,
   TestEmailBody,
   TestEmailResult,
+  UndoDropoffBody,
   UpdateUserInput,
   UploadUrlRequest,
   UploadUrlResponse,
@@ -4695,6 +4696,78 @@ export function useListCanDropoffs<TData = Awaited<ReturnType<typeof listCanDrop
 
 
 
+
+export const getUndoCanDropoffUrl = (dropoffId: string,) => {
+
+
+
+
+  return `/api/v1/recycling/dropoffs/${dropoffId}/undo`
+}
+
+/**
+ * @summary Undo your own drop-off shortly after making it (public, needs the undo token)
+ */
+export const undoCanDropoff = async (dropoffId: string,
+    undoDropoffBody: UndoDropoffBody, options?: RequestInit): Promise<RecyclingSummary> => {
+
+  return customFetch<RecyclingSummary>(getUndoCanDropoffUrl(dropoffId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      undoDropoffBody,)
+  }
+);}
+
+
+
+
+export const getUndoCanDropoffMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof undoCanDropoff>>, TError,{dropoffId: string;data: BodyType<UndoDropoffBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof undoCanDropoff>>, TError,{dropoffId: string;data: BodyType<UndoDropoffBody>}, TContext> => {
+
+const mutationKey = ['undoCanDropoff'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof undoCanDropoff>>, {dropoffId: string;data: BodyType<UndoDropoffBody>}> = (props) => {
+          const {dropoffId,data} = props ?? {};
+
+          return  undoCanDropoff(dropoffId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UndoCanDropoffMutationResult = NonNullable<Awaited<ReturnType<typeof undoCanDropoff>>>
+    export type UndoCanDropoffMutationBody = BodyType<UndoDropoffBody>
+    export type UndoCanDropoffMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Undo your own drop-off shortly after making it (public, needs the undo token)
+ */
+export const useUndoCanDropoff = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof undoCanDropoff>>, TError,{dropoffId: string;data: BodyType<UndoDropoffBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof undoCanDropoff>>,
+        TError,
+        {dropoffId: string;data: BodyType<UndoDropoffBody>},
+        TContext
+      > => {
+      return useMutation(getUndoCanDropoffMutationOptions(options));
+    }
 
 export const getListCanContributorsUrl = () => {
 

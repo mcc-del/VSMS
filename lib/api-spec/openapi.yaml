@@ -1422,6 +1422,37 @@ paths:
                 items:
                   $ref: "#/components/schemas/CanDropoff"
 
+  /v1/recycling/dropoffs/{dropoffId}/undo:
+    post:
+      operationId: undoCanDropoff
+      tags: [recycling]
+      summary: Undo your own drop-off shortly after making it (public, needs the undo token)
+      parameters:
+        - name: dropoffId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UndoDropoffBody"
+      responses:
+        "200":
+          description: Undone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecyclingSummary"
+        "403":
+          description: Token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/recycling/contributors:
     get:
       operationId: listCanContributors
@@ -2935,7 +2966,7 @@ components:
           type: number
     RecyclingSummary:
       type: object
-      required: [name, goal, binSize, cansPerPound, gradesEnabled, totalCans, topGrades]
+      required: [name, goal, binSize, cansPerPound, gradesEnabled, binLoggingEnabled, totalCans, topGrades, topContributors]
       properties:
         name:
           type: string
@@ -2947,13 +2978,21 @@ components:
           type: number
         gradesEnabled:
           type: boolean
-          description: Grade-vs-grade credit is on. When false, drop-offs count for the whole school and topGrades is empty.
+          description: The optional grade question and public grade totals are shown. No grade prizes either way.
+        binLoggingEnabled:
+          type: boolean
+          description: Staff "log a bin" is allowed. When false, the QR drop-off form is the only input.
         totalCans:
           type: number
         topGrades:
           type: array
           items:
             $ref: "#/components/schemas/TopGrade"
+        topContributors:
+          type: array
+          description: Top 10 named contributors, shown as first name + last initial.
+          items:
+            $ref: "#/components/schemas/TopContributor"
     LogBinBody:
       type: object
       required: [grade]
@@ -2968,15 +3007,22 @@ components:
       properties:
         grade:
           type: string
-          description: Required only while the grade competition is on (see RecyclingSummary.gradesEnabled).
+          description: Optional. Omit or leave empty to count for the whole school only.
         weightLbs:
           type: number
         contributorName:
           type: string
     CanDropoffResult:
       type: object
-      required: [cansAdded, weightLbs, grade, summary]
+      required: [dropoffId, undoToken, undoMinutes, cansAdded, weightLbs, grade, summary]
       properties:
+        dropoffId:
+          type: string
+        undoToken:
+          type: string
+          description: Lets this device undo the drop-off for undoMinutes.
+        undoMinutes:
+          type: number
         cansAdded:
           type: number
         weightLbs:
@@ -2985,6 +3031,20 @@ components:
           type: string
         summary:
           $ref: "#/components/schemas/RecyclingSummary"
+    UndoDropoffBody:
+      type: object
+      required: [undoToken]
+      properties:
+        undoToken:
+          type: string
+    TopContributor:
+      type: object
+      required: [name, cans]
+      properties:
+        name:
+          type: string
+        cans:
+          type: number
     CanContributor:
       type: object
       required: [name, dropoffs, weightLbs, cans, firstDropoffAt, lastDropoffAt]
@@ -2997,6 +3057,8 @@ components:
           type: number
         cans:
           type: number
+        grade:
+          type: ["string", "null"]
         firstDropoffAt:
           type: string
           format: date-time

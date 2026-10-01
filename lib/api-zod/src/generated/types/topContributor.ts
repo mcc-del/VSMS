@@ -6,13 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CanContributor {
+export interface TopContributor {
   name: string;
-  dropoffs: number;
-  weightLbs: number;
   cans: number;
-  /** @nullable */
-  grade?: string | null;
-  firstDropoffAt: Date;
-  lastDropoffAt: Date;
 }
