@@ -223,6 +223,7 @@ export default function CansDropoffPage() {
                 onChange={(e) => {
                   setWeight(e.target.value);
                   setHeavyWarning(false);
+                  setError(null); // clear "more than 100 lbs" etc. once they fix it
                 }}
                 className="h-14 text-2xl md:text-2xl font-mono pr-16"
                 data-testid="input-weight"

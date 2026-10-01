@@ -33,9 +33,10 @@ export function publicName(name: string): string {
 // Grades a drop-off can be credited to (mirrors the frontend list).
 export const GRADES = [
   "Pre-School",
+  "Pre-K",
   "Kindergarten",
   "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6",
-  "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12",
+  "Grade 7", "Grade 8", "Grade 9",
 ] as const;
 
 export function cansFromPounds(lbs: number): number {

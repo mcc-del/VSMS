@@ -2,9 +2,10 @@
 // Keep in sync with GRADES in artifacts/api-server/src/lib/cans.ts.
 export const GRADES = [
   "Pre-School",
+  "Pre-K",
   "Kindergarten",
   "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6",
-  "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12",
+  "Grade 7", "Grade 8", "Grade 9",
 ];
 
 // Label the server stores on drop-offs while the grade competition is off.
