@@ -7,7 +7,7 @@
  */
 
 export interface CanDropoffBody {
-  /** Required only while the grade competition is on (see RecyclingSummary.gradesEnabled). */
+  /** Optional. Omit or leave empty to count for the whole school only. */
   grade?: string;
   weightLbs: number;
   contributorName?: string;

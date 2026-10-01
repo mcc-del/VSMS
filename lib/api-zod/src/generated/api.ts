@@ -1252,12 +1252,17 @@ export const GetRecyclingSummaryResponse = zod.object({
   "goal": zod.number(),
   "binSize": zod.number(),
   "cansPerPound": zod.number(),
-  "gradesEnabled": zod.boolean().describe('Grade-vs-grade credit is on. When false, drop-offs count for the whole school and topGrades is empty.'),
+  "gradesEnabled": zod.boolean().describe('The optional grade question and public grade totals are shown. No grade prizes either way.'),
+  "binLoggingEnabled": zod.boolean().describe('Staff \"log a bin\" is allowed. When false, the QR drop-off form is the only input.'),
   "totalCans": zod.number(),
   "topGrades": zod.array(zod.object({
   "grade": zod.string(),
   "cans": zod.number()
-}))
+})),
+  "topContributors": zod.array(zod.object({
+  "name": zod.string(),
+  "cans": zod.number()
+})).describe('Top 10 named contributors, shown as first name + last initial.')
 })
 
 
@@ -1274,7 +1279,7 @@ export const LogRecyclingBinBody = zod.object({
  * @summary Public dumpster drop-off (QR form) — weight in lbs, credited to a grade
  */
 export const SubmitCanDropoffBody = zod.object({
-  "grade": zod.string().optional().describe('Required only while the grade competition is on (see RecyclingSummary.gradesEnabled).'),
+  "grade": zod.string().optional().describe('Optional. Omit or leave empty to count for the whole school only.'),
   "weightLbs": zod.number(),
   "contributorName": zod.string().optional()
 })
@@ -1295,6 +1300,51 @@ export const ListCanDropoffsResponse = zod.array(ListCanDropoffsResponseItem)
 
 
 /**
+ * @summary Undo your own drop-off shortly after making it (public, needs the undo token)
+ */
+export const UndoCanDropoffParams = zod.object({
+  "dropoffId": zod.coerce.string()
+})
+
+export const UndoCanDropoffBody = zod.object({
+  "undoToken": zod.string()
+})
+
+export const UndoCanDropoffResponse = zod.object({
+  "name": zod.string(),
+  "goal": zod.number(),
+  "binSize": zod.number(),
+  "cansPerPound": zod.number(),
+  "gradesEnabled": zod.boolean().describe('The optional grade question and public grade totals are shown. No grade prizes either way.'),
+  "binLoggingEnabled": zod.boolean().describe('Staff \"log a bin\" is allowed. When false, the QR drop-off form is the only input.'),
+  "totalCans": zod.number(),
+  "topGrades": zod.array(zod.object({
+  "grade": zod.string(),
+  "cans": zod.number()
+})),
+  "topContributors": zod.array(zod.object({
+  "name": zod.string(),
+  "cans": zod.number()
+})).describe('Top 10 named contributors, shown as first name + last initial.')
+})
+
+
+/**
+ * @summary Named drop-off contributors with their totals (admin)
+ */
+export const ListCanContributorsResponseItem = zod.object({
+  "name": zod.string(),
+  "dropoffs": zod.number(),
+  "weightLbs": zod.number(),
+  "cans": zod.number(),
+  "grade": zod.string().nullish(),
+  "firstDropoffAt": zod.coerce.date(),
+  "lastDropoffAt": zod.coerce.date()
+})
+export const ListCanContributorsResponse = zod.array(ListCanContributorsResponseItem)
+
+
+/**
  * @summary Remove a mistaken drop-off (admin)
  */
 export const DeleteCanDropoffParams = zod.object({
@@ -1306,12 +1356,17 @@ export const DeleteCanDropoffResponse = zod.object({
   "goal": zod.number(),
   "binSize": zod.number(),
   "cansPerPound": zod.number(),
-  "gradesEnabled": zod.boolean().describe('Grade-vs-grade credit is on. When false, drop-offs count for the whole school and topGrades is empty.'),
+  "gradesEnabled": zod.boolean().describe('The optional grade question and public grade totals are shown. No grade prizes either way.'),
+  "binLoggingEnabled": zod.boolean().describe('Staff \"log a bin\" is allowed. When false, the QR drop-off form is the only input.'),
   "totalCans": zod.number(),
   "topGrades": zod.array(zod.object({
   "grade": zod.string(),
   "cans": zod.number()
-}))
+})),
+  "topContributors": zod.array(zod.object({
+  "name": zod.string(),
+  "cans": zod.number()
+})).describe('Top 10 named contributors, shown as first name + last initial.')
 })
 
 

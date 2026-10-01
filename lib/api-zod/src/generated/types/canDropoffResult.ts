@@ -8,6 +8,10 @@
 import type { RecyclingSummary } from './recyclingSummary';
 
 export interface CanDropoffResult {
+  dropoffId: string;
+  /** Lets this device undo the drop-off for undoMinutes. */
+  undoToken: string;
+  undoMinutes: number;
   cansAdded: number;
   weightLbs: number;
   grade: string;

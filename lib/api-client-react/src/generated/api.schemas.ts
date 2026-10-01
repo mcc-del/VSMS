@@ -430,15 +430,24 @@ export interface TopGrade {
   cans: number;
 }
 
+export interface TopContributor {
+  name: string;
+  cans: number;
+}
+
 export interface RecyclingSummary {
   name: string;
   goal: number;
   binSize: number;
   cansPerPound: number;
-  /** Grade-vs-grade credit is on. When false, drop-offs count for the whole school and topGrades is empty. */
+  /** The optional grade question and public grade totals are shown. No grade prizes either way. */
   gradesEnabled: boolean;
+  /** Staff "log a bin" is allowed. When false, the QR drop-off form is the only input. */
+  binLoggingEnabled: boolean;
   totalCans: number;
   topGrades: TopGrade[];
+  /** Top 10 named contributors, shown as first name + last initial. */
+  topContributors: TopContributor[];
 }
 
 export interface LogBinBody {
@@ -447,17 +456,36 @@ export interface LogBinBody {
 }
 
 export interface CanDropoffBody {
-  /** Required only while the grade competition is on (see RecyclingSummary.gradesEnabled). */
+  /** Optional. Omit or leave empty to count for the whole school only. */
   grade?: string;
   weightLbs: number;
   contributorName?: string;
 }
 
 export interface CanDropoffResult {
+  dropoffId: string;
+  /** Lets this device undo the drop-off for undoMinutes. */
+  undoToken: string;
+  undoMinutes: number;
   cansAdded: number;
   weightLbs: number;
   grade: string;
   summary: RecyclingSummary;
+}
+
+export interface UndoDropoffBody {
+  undoToken: string;
+}
+
+export interface CanContributor {
+  name: string;
+  dropoffs: number;
+  weightLbs: number;
+  cans: number;
+  /** @nullable */
+  grade?: string | null;
+  firstDropoffAt: string;
+  lastDropoffAt: string;
 }
 
 export interface CanDropoff {
