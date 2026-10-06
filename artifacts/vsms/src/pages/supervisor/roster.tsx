@@ -304,7 +304,15 @@ export default function RosterPage() {
       setCheckoutBusy(null);
     }
   }
-  async function undoCheckout(userId: string) {
+  async function undoCheckout(userId: string, name?: string) {
+    const who = name ? name + "'s" : "this volunteer's";
+    if (
+      !window.confirm(
+        `Undo check-out for ${who} and REMOVE the credited hours for this event?\n\nThis deletes the approved hours. Only do this if the check-out was a mistake.`,
+      )
+    ) {
+      return;
+    }
     setCheckoutBusy(userId);
     try {
       await customFetch(`/api/v1/events/${eventId}/checkout`, {
@@ -509,7 +517,7 @@ export default function RosterPage() {
                               size="sm"
                               variant="ghost"
                               className="gap-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800"
-                              onClick={() => undoCheckout(p.userId)}
+                              onClick={() => undoCheckout(p.userId, p.name)}
                               disabled={checkoutBusy === p.userId}
                               title="Undo checkout (removes credited hours)"
                             >

@@ -62,6 +62,21 @@ export function RecyclingRibbon() {
       <span style={{ fontFamily: "ui-monospace, monospace", fontSize: "12px", whiteSpace: "nowrap", opacity: 0.95 }}>
         {pct}% to our {data.goal.toLocaleString()} goal · {remaining.toLocaleString()} to go 🍦
       </span>
+      <span
+        title="Counted by the bin and corrected at weigh-ins — a good-faith estimate that runs on everyone's honesty, not an exact count."
+        style={{
+          fontWeight: 800,
+          fontSize: "11px",
+          letterSpacing: "0.04em",
+          textTransform: "uppercase",
+          background: "rgba(0,0,0,0.18)",
+          padding: "3px 10px",
+          borderRadius: "999px",
+          whiteSpace: "nowrap",
+        }}
+      >
+        ⓘ Estimate · honor system
+      </span>
     </div>
   );
 }
