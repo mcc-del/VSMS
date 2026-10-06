@@ -2,6 +2,9 @@ import { Router } from "express";
 import { db, recyclingBinsTable } from "@workspace/db";
 import { sql, desc } from "drizzle-orm";
 import { authenticate, requireRole } from "../middlewares/auth";
+import { recordAudit } from "../lib/audit";
+
+const ADJUSTMENT_GRADE = "Adjustment";
 
 const router = Router();
 
@@ -23,6 +26,7 @@ async function summary() {
       cans: sql<string>`sum(${recyclingBinsTable.cans})`,
     })
     .from(recyclingBinsTable)
+    .where(sql`${recyclingBinsTable.grade} <> ${ADJUSTMENT_GRADE}`)
     .groupBy(recyclingBinsTable.grade)
     .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`))
     .limit(3);
@@ -66,6 +70,45 @@ router.post(
     });
 
     res.status(201).json(await summary());
+  },
+);
+
+// POST /api/v1/recycling/set-total — correct the running total to a known
+// figure (e.g. after a physical weigh-in). Admin only. Keeps the append-only
+// bin model by inserting a single "Adjustment" row for the difference, so the
+// correction is traceable and reversible. The difference may be negative.
+router.post(
+  "/v1/recycling/set-total",
+  authenticate,
+  requireRole("admin"),
+  async (req, res) => {
+    const body = (req.body ?? {}) as { total?: unknown };
+    if (typeof body.total !== "number" || !Number.isFinite(body.total) || body.total < 0) {
+      res.status(400).json({ error: "A total (0 or more) is required." });
+      return;
+    }
+    const target = Math.round(body.total);
+
+    const [totals] = await db
+      .select({ total: sql<string>`coalesce(sum(${recyclingBinsTable.cans}), 0)` })
+      .from(recyclingBinsTable);
+    const current = Number(totals?.total ?? 0);
+    const delta = target - current;
+
+    if (delta !== 0) {
+      await db.insert(recyclingBinsTable).values({
+        grade: ADJUSTMENT_GRADE,
+        cans: delta,
+        loggedByUserId: req.auth!.userId,
+      });
+      await recordAudit({
+        actorUserId: req.auth!.userId,
+        action: "recycling_set_total",
+        summary: `Corrected recycling total from ${current.toLocaleString()} to ${target.toLocaleString()} (adjustment ${delta > 0 ? "+" : ""}${delta.toLocaleString()})`,
+      });
+    }
+
+    res.json(await summary());
   },
 );
 
