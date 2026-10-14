@@ -87,6 +87,7 @@ import type {
   ReassignEvents200,
   ReassignEventsInput,
   RecyclingSummary,
+  RecyclingTotalBody,
   RegisterInput,
   ReportRow,
   ResetPasswordInput,
@@ -4767,6 +4768,77 @@ export const useUndoCanDropoff = <TError = ErrorType<ErrorResponse>,
         TContext
       > => {
       return useMutation(getUndoCanDropoffMutationOptions(options));
+    }
+
+export const getSetRecyclingTotalUrl = () => {
+
+
+
+
+  return `/api/v1/recycling/set-total`
+}
+
+/**
+ * @summary Correct the running total to a known figure (super admin)
+ */
+export const setRecyclingTotal = async (recyclingTotalBody: RecyclingTotalBody, options?: RequestInit): Promise<RecyclingSummary> => {
+
+  return customFetch<RecyclingSummary>(getSetRecyclingTotalUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      recyclingTotalBody,)
+  }
+);}
+
+
+
+
+export const getSetRecyclingTotalMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setRecyclingTotal>>, TError,{data: BodyType<RecyclingTotalBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setRecyclingTotal>>, TError,{data: BodyType<RecyclingTotalBody>}, TContext> => {
+
+const mutationKey = ['setRecyclingTotal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setRecyclingTotal>>, {data: BodyType<RecyclingTotalBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  setRecyclingTotal(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetRecyclingTotalMutationResult = NonNullable<Awaited<ReturnType<typeof setRecyclingTotal>>>
+    export type SetRecyclingTotalMutationBody = BodyType<RecyclingTotalBody>
+    export type SetRecyclingTotalMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Correct the running total to a known figure (super admin)
+ */
+export const useSetRecyclingTotal = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setRecyclingTotal>>, TError,{data: BodyType<RecyclingTotalBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setRecyclingTotal>>,
+        TError,
+        {data: BodyType<RecyclingTotalBody>},
+        TContext
+      > => {
+      return useMutation(getSetRecyclingTotalMutationOptions(options));
     }
 
 export const getListCanContributorsUrl = () => {

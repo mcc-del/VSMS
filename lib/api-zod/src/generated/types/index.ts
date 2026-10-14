@@ -91,6 +91,7 @@ export * from './publicThresholds';
 export * from './reassignEvents200';
 export * from './reassignEventsInput';
 export * from './recyclingSummary';
+export * from './recyclingTotalBody';
 export * from './registerInput';
 export * from './registerInputAccountType';
 export * from './reportEvent';

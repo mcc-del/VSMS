@@ -203,8 +203,11 @@ export default function CansDropoffPage() {
         >
           {!banner && (
             <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-              <li>Pour out any liquid, then press <b>ZERO</b> on the scale.</li>
-              <li>Weigh your bag of cans and type the weight below. <b>Double-check the number!</b></li>
+              <li>Pour out any liquid.</li>
+              <li>
+                Hang your bag on the luggage scale's hook and read the weight once it stops moving. Type it below.{" "}
+                <b>Double-check the number!</b>
+              </li>
               <li>Empty the cans into the dumpster and take your bag with you.</li>
             </ol>
           )}
@@ -397,6 +400,9 @@ export default function CansDropoffPage() {
 
         <div className="text-xs text-center text-muted-foreground mt-6 space-y-1.5">
           <p>Counting ends April 30. The school with the most cans wins!</p>
+          <p>
+            Please leave the scale here for everyone, and don't pull on it or hang from it.
+          </p>
           <p>
             This is a school recycling drive, <b>not a volunteer activity</b>. Can drop-offs don't count toward
             volunteer service hours or awards.

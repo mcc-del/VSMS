@@ -1453,6 +1453,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/recycling/set-total:
+    post:
+      operationId: setRecyclingTotal
+      tags: [recycling]
+      summary: Correct the running total to a known figure (super admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecyclingTotalBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecyclingSummary"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /v1/recycling/contributors:
     get:
       operationId: listCanContributors
@@ -3031,6 +3056,12 @@ components:
           type: string
         summary:
           $ref: "#/components/schemas/RecyclingSummary"
+    RecyclingTotalBody:
+      type: object
+      required: [total]
+      properties:
+        total:
+          type: number
     UndoDropoffBody:
       type: object
       required: [undoToken]

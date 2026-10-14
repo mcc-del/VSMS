@@ -473,6 +473,10 @@ export interface CanDropoffResult {
   summary: RecyclingSummary;
 }
 
+export interface RecyclingTotalBody {
+  total: number;
+}
+
 export interface UndoDropoffBody {
   undoToken: string;
 }
