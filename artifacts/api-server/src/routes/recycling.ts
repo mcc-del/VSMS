@@ -232,6 +232,40 @@ router.get("/v1/recycling/dropoffs", authenticate, requireRole("admin"), async (
   );
 });
 
+// POST /api/v1/recycling/set-total — Super Admin corrects the running total
+// to a known figure (e.g. after a real weigh-in or the recycler's ticket).
+// Append-only: inserts ONE adjustment row for the difference (may be
+// negative), credited to the whole school with no weight, so it moves the
+// total but not grade or contributor standings (same as
+// lib/db/set-recycling-total.mjs). Audit-logged.
+router.post("/v1/recycling/set-total", authenticate, requireRole("admin"), async (req, res) => {
+  const body = (req.body ?? {}) as { total?: unknown };
+  if (typeof body.total !== "number" || !Number.isFinite(body.total) || body.total < 0) {
+    res.status(400).json({ error: "A total (0 or more) is required." });
+    return;
+  }
+  const target = Math.round(body.total);
+  const [totals] = await db
+    .select({ total: sql<string>`coalesce(sum(${recyclingBinsTable.cans}), 0)` })
+    .from(recyclingBinsTable);
+  const current = Number(totals?.total ?? 0);
+  const delta = target - current;
+
+  if (delta !== 0) {
+    await db.insert(recyclingBinsTable).values({
+      grade: SCHOOL_WIDE,
+      cans: delta,
+      loggedByUserId: req.auth!.userId,
+    });
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "recycling.set_total",
+      summary: `Corrected recycling total from ${current.toLocaleString()} to ${target.toLocaleString()} (adjustment ${delta > 0 ? "+" : ""}${delta.toLocaleString()})`,
+    });
+  }
+  res.json(await summary());
+});
+
 // GET /api/v1/recycling/contributors — everyone who typed a name on the QR
 // form, with their totals. Names are free text, so they're grouped ignoring
 // case and extra spaces ("aisha  khan" and "Aisha Khan" are one person).

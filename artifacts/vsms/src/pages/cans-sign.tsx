@@ -41,12 +41,15 @@ export default function CansSignPage() {
         />
 
         <ol className="text-left text-lg space-y-2 max-w-sm mx-auto list-decimal list-inside">
-          <li>Pour out any liquid. Press <b>ZERO</b> on the scale.</li>
-          <li>Weigh your bag of cans.</li>
-          <li>Scan this code and enter the weight.</li>
+          <li>Pour out any liquid.</li>
+          <li>Hang your bag on the luggage scale's hook. Read the weight once it stops moving.</li>
+          <li>Scan this code and enter the weight. <b>Double-check the number!</b></li>
           <li>Empty the cans into the dumpster. Take your bag with you.</li>
         </ol>
         <p className="mt-4 text-base font-semibold">Aluminum cans only · Weigh each bag once</p>
+        <p className="mt-2 text-base font-semibold">
+          Please leave the scale here for everyone. Don't pull on it or hang from it.
+        </p>
         <p className="mt-2 text-sm text-neutral-700">
           A school recycling drive, not a volunteer activity: drop-offs don't count toward volunteer hours.
         </p>
