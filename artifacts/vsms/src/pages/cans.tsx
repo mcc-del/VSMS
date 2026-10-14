@@ -11,7 +11,7 @@ import { RecyclingRibbon } from "@/components/recycling-ribbon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GRADES, SCHOOL_WIDE } from "@/lib/grades";
-import { Scale, Recycle, CheckCircle2, Undo2, AlertTriangle, Trophy } from "lucide-react";
+import { Scale, Recycle, CheckCircle2, Undo2, AlertTriangle } from "lucide-react";
 
 const CANS_PER_POUND_FALLBACK = 35;
 const MAX_LBS = 100;
@@ -306,7 +306,7 @@ export default function CansDropoffPage() {
             />
             <p className="text-xs mt-1.5 text-muted-foreground">
               Students: add your name so we can thank you! Use the same spelling every time. Only your first name and
-              last initial are shown on the leaderboard.
+              last initial appear on the VSA leaderboard (signed-in members only).
             </p>
           </div>
 
@@ -334,7 +334,7 @@ export default function CansDropoffPage() {
         {/* Live scoreboard — refreshes every 20 seconds. */}
         {summary && (
           <section className="mt-5 bg-card border border-card-border/70 rounded-2xl p-4 shadow-soft" data-testid="scoreboard">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Live scoreboard</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Goal: 100,000 cans!</p>
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-3xl font-bold font-mono text-green-700 dark:text-green-400">
                 {total.toLocaleString()}
@@ -355,28 +355,9 @@ export default function CansDropoffPage() {
               )}
             </p>
 
-            {/* Public leaderboard of people who added their name. Grade totals
-                are not shown publicly; grades stay on the admin contributors list. */}
-            <div className="mt-5" data-testid="leaderboard">
-              <p className="text-sm font-bold mb-2 flex items-center gap-1.5">
-                <Trophy className="w-4 h-4 text-amber-500" /> Leaderboard
-              </p>
-              {summary.topContributors.length > 0 ? (
-                <ol className="space-y-1 text-sm">
-                  {summary.topContributors.map((c, i) => (
-                    <li key={`${c.name}-${i}`} className="flex justify-between">
-                      <span>{["🥇", "🥈", "🥉"][i] ?? `${i + 1}.`} {c.name}</span>
-                      <span className="font-mono font-semibold">{c.cans.toLocaleString()} cans</span>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p className="text-sm text-muted-foreground">No names yet. Add your name above to be the first on the leaderboard!</p>
-              )}
-            </div>
-
             <p className="text-xs text-muted-foreground mt-4">
-              Just for fun: there are <b>no grade or individual prizes</b>. It's a team effort across all our campuses.
+              <b>Honor system:</b> the count runs on your honesty. No grade or individual prizes. It's a team effort
+              across all our campuses.
             </p>
           </section>
         )}
@@ -384,7 +365,7 @@ export default function CansDropoffPage() {
         <div className="text-xs text-center text-muted-foreground mt-6 space-y-1.5">
           <p>Counting ends April 30. The school with the most cans wins!</p>
           <p>
-            Please leave the scale here for everyone, and don't pull on it or hang from it.
+            Leave the scale here. Don't hang on it or damage it. Aluminum cans only. No need to rinse.
           </p>
           <p>
             This is a school recycling drive, <b>not a volunteer activity</b>. Can drop-offs don't count toward

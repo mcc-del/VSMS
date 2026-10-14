@@ -36,6 +36,7 @@ import type {
   CanDropoff,
   CanDropoffBody,
   CanDropoffResult,
+  CanLeaderboard,
   CheckInResponse,
   ChildHoursInput,
   ChildInput,
@@ -4840,6 +4841,83 @@ export const useSetRecyclingTotal = <TError = ErrorType<ErrorResponse>,
       > => {
       return useMutation(getSetRecyclingTotalMutationOptions(options));
     }
+
+export const getGetCanLeaderboardUrl = () => {
+
+
+
+
+  return `/api/v1/recycling/leaderboard`
+}
+
+/**
+ * @summary Top 20 named can contributors, first name + last initial (signed-in users)
+ */
+export const getCanLeaderboard = async ( options?: RequestInit): Promise<CanLeaderboard> => {
+
+  return customFetch<CanLeaderboard>(getGetCanLeaderboardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCanLeaderboardQueryKey = () => {
+    return [
+    `/api/v1/recycling/leaderboard`
+    ] as const;
+    }
+
+
+export const getGetCanLeaderboardQueryOptions = <TData = Awaited<ReturnType<typeof getCanLeaderboard>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCanLeaderboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCanLeaderboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCanLeaderboard>>> = ({ signal }) => getCanLeaderboard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCanLeaderboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCanLeaderboardQueryResult = NonNullable<Awaited<ReturnType<typeof getCanLeaderboard>>>
+export type GetCanLeaderboardQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Top 20 named can contributors, first name + last initial (signed-in users)
+ */
+
+export function useGetCanLeaderboard<TData = Awaited<ReturnType<typeof getCanLeaderboard>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCanLeaderboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCanLeaderboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListCanContributorsUrl = () => {
 

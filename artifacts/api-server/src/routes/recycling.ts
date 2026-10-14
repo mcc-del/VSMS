@@ -50,7 +50,28 @@ async function summary() {
     .groupBy(recyclingBinsTable.grade)
     .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`));
 
-  // Public leaderboard: top 20 named contributors, as first name + last initial.
+  return {
+    name: NAME,
+    goal: GOAL,
+    binSize: BIN_SIZE,
+    cansPerPound: CANS_PER_POUND,
+    gradesEnabled: GRADES_ENABLED,
+    binLoggingEnabled: STAFF_BIN_LOGGING_ENABLED,
+    totalCans,
+    topGrades: byGrade.map((r) => ({ grade: r.grade, cans: Number(r.cans) })),
+  };
+}
+
+// GET /api/v1/recycling/summary — PUBLIC (the ribbon shows on login/landing too).
+// Never includes names: the public QR form is open to anyone.
+router.get("/v1/recycling/summary", async (_req, res) => {
+  res.json(await summary());
+});
+
+// GET /api/v1/recycling/leaderboard — SIGNED-IN users only (shown as its own
+// section on the VSA Leaderboard page, not on the public QR form). Top 20
+// named contributors as first name + last initial.
+router.get("/v1/recycling/leaderboard", authenticate, async (_req, res) => {
   const top = await db
     .select({
       name: sql<string>`(array_agg(${recyclingBinsTable.contributorName} order by ${recyclingBinsTable.createdAt} desc))[1]`,
@@ -61,25 +82,11 @@ async function summary() {
     .groupBy(contributorKey)
     .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`))
     .limit(20);
-
-  return {
-    name: NAME,
-    goal: GOAL,
-    binSize: BIN_SIZE,
-    cansPerPound: CANS_PER_POUND,
-    gradesEnabled: GRADES_ENABLED,
-    binLoggingEnabled: STAFF_BIN_LOGGING_ENABLED,
-    totalCans,
-    topGrades: byGrade.map((r) => ({ grade: r.grade, cans: Number(r.cans) })),
-    topContributors: top
+  res.json({
+    contributors: top
       .map((r) => ({ name: publicName(r.name), cans: Number(r.cans) }))
       .filter((r) => r.name),
-  };
-}
-
-// GET /api/v1/recycling/summary — PUBLIC (the ribbon shows on login/landing too).
-router.get("/v1/recycling/summary", async (_req, res) => {
-  res.json(await summary());
+  });
 });
 
 // POST /api/v1/recycling/bins — log one collected bin toward the total.

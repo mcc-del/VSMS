@@ -1478,6 +1478,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /v1/recycling/leaderboard:
+    get:
+      operationId: getCanLeaderboard
+      tags: [recycling]
+      summary: Top 20 named can contributors, first name + last initial (signed-in users)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CanLeaderboard"
+
   /v1/recycling/contributors:
     get:
       operationId: listCanContributors
@@ -2991,7 +3004,7 @@ components:
           type: number
     RecyclingSummary:
       type: object
-      required: [name, goal, binSize, cansPerPound, gradesEnabled, binLoggingEnabled, totalCans, topGrades, topContributors]
+      required: [name, goal, binSize, cansPerPound, gradesEnabled, binLoggingEnabled, totalCans, topGrades]
       properties:
         name:
           type: string
@@ -3013,11 +3026,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TopGrade"
-        topContributors:
-          type: array
-          description: Top 20 named contributors (public leaderboard), shown as first name + last initial.
-          items:
-            $ref: "#/components/schemas/TopContributor"
     LogBinBody:
       type: object
       required: [grade]
@@ -3068,6 +3076,14 @@ components:
       properties:
         undoToken:
           type: string
+    CanLeaderboard:
+      type: object
+      required: [contributors]
+      properties:
+        contributors:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopContributor"
     TopContributor:
       type: object
       required: [name, cans]

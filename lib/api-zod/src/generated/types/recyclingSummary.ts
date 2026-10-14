@@ -5,7 +5,6 @@
  * Volunteer Service Management System API
  * OpenAPI spec version: 0.1.0
  */
-import type { TopContributor } from './topContributor';
 import type { TopGrade } from './topGrade';
 
 export interface RecyclingSummary {
@@ -19,6 +18,4 @@ export interface RecyclingSummary {
   binLoggingEnabled: boolean;
   totalCans: number;
   topGrades: TopGrade[];
-  /** Top 20 named contributors (public leaderboard), shown as first name + last initial. */
-  topContributors: TopContributor[];
 }

@@ -31,7 +31,7 @@ export default function CansSignPage() {
       <div className="w-full max-w-xl text-center border-4 border-green-700 rounded-3xl p-8">
         <p className="text-5xl">🥫♻️</p>
         <h1 className="text-4xl font-extrabold mt-3 text-green-800">Million Cans Challenge</h1>
-        <p className="text-xl mt-2 font-semibold">Help us reach 100,000 cans by April 30!</p>
+        <p className="text-xl mt-2 font-semibold">Goal: 100,000 cans by April 30!</p>
         <p className="text-lg mt-1">
           Every can helps bring an <b>ice cream machine</b> to Medina Academy. The more cans we collect, the more
           campuses get one! 🍦
@@ -43,16 +43,14 @@ export default function CansSignPage() {
           dangerouslySetInnerHTML={{ __html: svg }}
         />
 
-        <ol className="text-left text-lg space-y-2 max-w-sm mx-auto list-decimal list-inside">
-          <li>Pour out any liquid.</li>
-          <li>Hang your bag on the luggage scale's hook. Read the weight once it stops moving.</li>
-          <li>Scan this code and enter the weight. <b>Double-check the number!</b></li>
-          <li>Empty the cans into the dumpster. Take your bag with you.</li>
+        <p className="text-base font-extrabold tracking-widest text-blue-700">STEPS</p>
+        <ol className="text-left text-lg space-y-2 max-w-md mx-auto list-decimal list-inside mt-2">
+          <li>Weigh the bag your cans are in.</li>
+          <li>Scan the QR code and enter the weight, so we have an estimate.</li>
+          <li>Remember, it's an <b>honor system</b>: the count runs on your honesty.</li>
+          <li><b>Leave the scale here.</b> Don't hang on it or damage it.</li>
+          <li><b>Aluminum cans only.</b> No need to rinse.</li>
         </ol>
-        <p className="mt-4 text-base font-semibold">Aluminum cans only · Weigh each bag once</p>
-        <p className="mt-2 text-base font-semibold">
-          Please leave the scale here for everyone. Don't pull on it or hang from it.
-        </p>
         <p className="mt-2 text-sm text-neutral-700">
           A school recycling drive, not a volunteer activity: drop-offs don't count toward volunteer hours.
         </p>

@@ -27,6 +27,7 @@ export * from './canContributor';
 export * from './canDropoff';
 export * from './canDropoffBody';
 export * from './canDropoffResult';
+export * from './canLeaderboard';
 export * from './checkInResponse';
 export * from './childHoursInput';
 export * from './childInput';

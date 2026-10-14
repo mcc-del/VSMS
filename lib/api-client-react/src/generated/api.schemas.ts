@@ -430,11 +430,6 @@ export interface TopGrade {
   cans: number;
 }
 
-export interface TopContributor {
-  name: string;
-  cans: number;
-}
-
 export interface RecyclingSummary {
   name: string;
   goal: number;
@@ -446,8 +441,6 @@ export interface RecyclingSummary {
   binLoggingEnabled: boolean;
   totalCans: number;
   topGrades: TopGrade[];
-  /** Top 20 named contributors (public leaderboard), shown as first name + last initial. */
-  topContributors: TopContributor[];
 }
 
 export interface LogBinBody {
@@ -479,6 +472,15 @@ export interface RecyclingTotalBody {
 
 export interface UndoDropoffBody {
   undoToken: string;
+}
+
+export interface TopContributor {
+  name: string;
+  cans: number;
+}
+
+export interface CanLeaderboard {
+  contributors: TopContributor[];
 }
 
 export interface CanContributor {

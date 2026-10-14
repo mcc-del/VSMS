@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Trophy, Medal, Settings } from "lucide-react";
 import { MedalBadge } from "@/components/medal-badge";
+import { CanLeaderboardCard } from "@/components/can-leaderboard-card";
 
 export default function LeaderboardPage() {
   const { role } = useAuth();
@@ -160,6 +161,9 @@ export default function LeaderboardPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Separate section: recycling drive, not volunteer hours. */}
+        <CanLeaderboardCard />
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
