@@ -151,7 +151,8 @@ export default function CansDropoffPage() {
           <h1 className="text-2xl font-bold text-foreground">Drop off your cans 🥫</h1>
           <p className="text-muted-foreground text-sm mt-1">Million Cans Recycling Competition</p>
           <p className="text-sm mt-2">
-            Every can helps bring <b>ice cream</b> to all Medina Academy campuses 🍦
+            Every can helps bring an <b>ice cream machine</b> to Medina Academy. The more cans we collect, the
+            more campuses get one! 🍦
           </p>
         </div>
 
@@ -393,7 +394,7 @@ export default function CansDropoffPage() {
             )}
 
             <p className="text-xs text-muted-foreground mt-4">
-              Just for fun: there are <b>no grade or individual prizes</b>. All campuses share the reward.
+              Just for fun: there are <b>no grade or individual prizes</b>. It's a team effort across all our campuses.
             </p>
           </section>
         )}
