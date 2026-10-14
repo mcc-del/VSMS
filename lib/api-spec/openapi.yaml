@@ -3015,7 +3015,7 @@ components:
             $ref: "#/components/schemas/TopGrade"
         topContributors:
           type: array
-          description: Top 10 named contributors, shown as first name + last initial.
+          description: Top 20 named contributors (public leaderboard), shown as first name + last initial.
           items:
             $ref: "#/components/schemas/TopContributor"
     LogBinBody:
