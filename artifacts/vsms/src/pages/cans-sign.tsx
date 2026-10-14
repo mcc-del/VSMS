@@ -32,7 +32,7 @@ export default function CansSignPage() {
         <p className="text-5xl">🥫♻️</p>
         <h1 className="text-4xl font-extrabold mt-3 text-green-800">Million Cans Challenge</h1>
         <p className="text-xl mt-2 font-semibold">Help us reach 100,000 cans by April 30!</p>
-        <p className="text-lg mt-1">Every can helps buy an <b>ice cream machine</b> for our school 🍦</p>
+        <p className="text-lg mt-1">Every can helps bring <b>ice cream</b> to all Medina Academy campuses 🍦</p>
 
         <div
           className="mx-auto my-6 w-72 h-72 print:w-[4in] print:h-[4in] [&>svg]:w-full [&>svg]:h-full"
