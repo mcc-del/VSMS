@@ -446,7 +446,7 @@ export interface RecyclingSummary {
   binLoggingEnabled: boolean;
   totalCans: number;
   topGrades: TopGrade[];
-  /** Top 10 named contributors, shown as first name + last initial. */
+  /** Top 20 named contributors (public leaderboard), shown as first name + last initial. */
   topContributors: TopContributor[];
 }
 

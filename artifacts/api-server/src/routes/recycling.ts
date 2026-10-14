@@ -50,7 +50,7 @@ async function summary() {
     .groupBy(recyclingBinsTable.grade)
     .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`));
 
-  // Top named contributors, shown publicly as first name + last initial.
+  // Public leaderboard: top 20 named contributors, as first name + last initial.
   const top = await db
     .select({
       name: sql<string>`(array_agg(${recyclingBinsTable.contributorName} order by ${recyclingBinsTable.createdAt} desc))[1]`,
@@ -60,7 +60,7 @@ async function summary() {
     .where(isNotNull(recyclingBinsTable.contributorName))
     .groupBy(contributorKey)
     .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`))
-    .limit(10);
+    .limit(20);
 
   return {
     name: NAME,

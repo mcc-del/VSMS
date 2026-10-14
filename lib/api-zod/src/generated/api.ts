@@ -1262,7 +1262,7 @@ export const GetRecyclingSummaryResponse = zod.object({
   "topContributors": zod.array(zod.object({
   "name": zod.string(),
   "cans": zod.number()
-})).describe('Top 10 named contributors, shown as first name + last initial.')
+})).describe('Top 20 named contributors (public leaderboard), shown as first name + last initial.')
 })
 
 
@@ -1325,7 +1325,7 @@ export const UndoCanDropoffResponse = zod.object({
   "topContributors": zod.array(zod.object({
   "name": zod.string(),
   "cans": zod.number()
-})).describe('Top 10 named contributors, shown as first name + last initial.')
+})).describe('Top 20 named contributors (public leaderboard), shown as first name + last initial.')
 })
 
 
@@ -1351,7 +1351,7 @@ export const SetRecyclingTotalResponse = zod.object({
   "topContributors": zod.array(zod.object({
   "name": zod.string(),
   "cans": zod.number()
-})).describe('Top 10 named contributors, shown as first name + last initial.')
+})).describe('Top 20 named contributors (public leaderboard), shown as first name + last initial.')
 })
 
 
@@ -1392,7 +1392,7 @@ export const DeleteCanDropoffResponse = zod.object({
   "topContributors": zod.array(zod.object({
   "name": zod.string(),
   "cans": zod.number()
-})).describe('Top 10 named contributors, shown as first name + last initial.')
+})).describe('Top 20 named contributors (public leaderboard), shown as first name + last initial.')
 })
 
 
