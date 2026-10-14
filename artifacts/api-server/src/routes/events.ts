@@ -766,10 +766,16 @@ router.post(
     if (!reg) { res.status(404).json({ error: "That participant isn't registered." }); return; }
 
     const [existing] = await db
-      .select({ submissionId: volunteerSubmissionsTable.submissionId, status: volunteerSubmissionsTable.status, comments: volunteerSubmissionsTable.supervisorComments })
+      .select({ submissionId: volunteerSubmissionsTable.submissionId, status: volunteerSubmissionsTable.status, hoursWorked: volunteerSubmissionsTable.hoursWorked, comments: volunteerSubmissionsTable.supervisorComments })
       .from(volunteerSubmissionsTable)
       .where(and(eq(volunteerSubmissionsTable.eventId, eventId), eq(volunteerSubmissionsTable.userId, targetUserId)))
       .limit(1);
+
+    const [student] = await db
+      .select({ firstName: usersTable.firstName, lastName: usersTable.lastName })
+      .from(usersTable).where(eq(usersTable.userId, targetUserId)).limit(1);
+    const studentName = student ? `${student.firstName} ${student.lastName}`.trim() : targetUserId;
+    const eventLabel = event.slotLabel ? `${event.title} — ${event.slotLabel}` : event.title;
 
     if (checkedOut) {
       // Mark attended and credit planned hours as approved.
@@ -795,14 +801,28 @@ router.post(
           reviewedAt: new Date(),
         });
       }
+      await recordAudit({
+        actorUserId: req.auth!.userId,
+        action: "checkout_credit",
+        summary: `Checked out ${studentName} — credited ${creditHours}h for "${eventLabel}"`,
+        targetType: "user",
+        targetId: targetUserId,
+      });
       res.json({ ok: true, checkedOut: true });
       return;
     }
 
     // Undo: only remove hours that were auto-credited by a check-out — never a
-    // student's own submission.
+    // student's own submission. Log the removed amount so it's always recoverable.
     if (existing && existing.comments === CHECKOUT_COMMENT) {
       await db.delete(volunteerSubmissionsTable).where(eq(volunteerSubmissionsTable.submissionId, existing.submissionId));
+      await recordAudit({
+        actorUserId: req.auth!.userId,
+        action: "checkout_undo",
+        summary: `Undid check-out for ${studentName} — removed ${existing.hoursWorked ?? "?"}h from "${eventLabel}"`,
+        targetType: "user",
+        targetId: targetUserId,
+      });
     }
     res.json({ ok: true, checkedOut: false });
   },
@@ -857,6 +877,15 @@ router.post(
     if (toInsert.length > 0) {
       await db.insert(volunteerSubmissionsTable).values(toInsert);
       credited += toInsert.length;
+    }
+    if (credited > 0) {
+      await recordAudit({
+        actorUserId: req.auth!.userId,
+        action: "checkout_all",
+        summary: `Checked out ${credited} student${credited === 1 ? "" : "s"} for "${event.slotLabel ? `${event.title} — ${event.slotLabel}` : event.title}"`,
+        targetType: "event",
+        targetId: eventId,
+      });
     }
     res.json({ ok: true, checkedOut: credited });
   },
