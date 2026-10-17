@@ -11,7 +11,7 @@ import { RecyclingRibbon } from "@/components/recycling-ribbon";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GRADES, SCHOOL_WIDE } from "@/lib/grades";
-import { Scale, Recycle, CheckCircle2, Undo2, AlertTriangle, Trophy, Users } from "lucide-react";
+import { Scale, Recycle, CheckCircle2, Undo2, AlertTriangle, Trophy } from "lucide-react";
 
 const CANS_PER_POUND_FALLBACK = 35;
 const MAX_LBS = 100;
@@ -139,7 +139,6 @@ export default function CansDropoffPage() {
   const goal = summary?.goal ?? 0;
   const remaining = Math.max(0, goal - total);
   const pct = goal > 0 ? Math.min(100, (total / goal) * 100) : 0;
-  const maxGradeCans = Math.max(1, ...(summary?.topGrades ?? []).map((g) => g.cans));
 
   return (
     <div className="min-h-screen flex flex-col app-surface">
@@ -151,7 +150,8 @@ export default function CansDropoffPage() {
           <h1 className="text-2xl font-bold text-foreground">Drop off your cans 🥫</h1>
           <p className="text-muted-foreground text-sm mt-1">Million Cans Recycling Competition</p>
           <p className="text-sm mt-2">
-            Every can helps our school buy an <b>ice cream machine</b> 🍦
+            Every can helps bring an <b>ice cream machine</b> to Medina Academy. The more cans we collect, the
+            more campuses get one! 🍦
           </p>
         </div>
 
@@ -203,8 +203,11 @@ export default function CansDropoffPage() {
         >
           {!banner && (
             <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-              <li>Pour out any liquid, then press <b>ZERO</b> on the scale.</li>
-              <li>Weigh your bag of cans and type the weight below. <b>Double-check the number!</b></li>
+              <li>Pour out any liquid.</li>
+              <li>
+                Hang your bag on the luggage scale's hook and read the weight once it stops moving. Type it below.{" "}
+                <b>Double-check the number!</b>
+              </li>
               <li>Empty the cans into the dumpster and take your bag with you.</li>
             </ol>
           )}
@@ -223,6 +226,7 @@ export default function CansDropoffPage() {
                 onChange={(e) => {
                   setWeight(e.target.value);
                   setHeavyWarning(false);
+                  setError(null); // clear "more than 100 lbs" etc. once they fix it
                 }}
                 className="h-14 text-2xl md:text-2xl font-mono pr-16"
                 data-testid="input-weight"
@@ -302,7 +306,7 @@ export default function CansDropoffPage() {
             />
             <p className="text-xs mt-1.5 text-muted-foreground">
               Students: add your name so we can thank you! Use the same spelling every time. Only your first name and
-              last initial are shown on the scoreboard.
+              last initial are shown on the leaderboard.
             </p>
           </div>
 
@@ -351,51 +355,37 @@ export default function CansDropoffPage() {
               )}
             </p>
 
-            {gradesEnabled && summary.topGrades.length > 0 && (
-              <div className="mt-5">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <Trophy className="w-3.5 h-3.5" /> Cans by grade
-                </p>
-                <ul className="space-y-1.5 text-sm">
-                  {summary.topGrades.map((g) => (
-                    <li key={g.grade}>
-                      <div className="flex justify-between">
-                        <span>{g.grade}</span>
-                        <span className="font-mono font-semibold">{g.cans.toLocaleString()}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-green-500 rounded-full" style={{ width: `${(g.cans / maxGradeCans) * 100}%` }} />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {summary.topContributors.length > 0 && (
-              <div className="mt-5">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5" /> Top contributors
-                </p>
+            {/* Public leaderboard of people who added their name. Grade totals
+                are not shown publicly; grades stay on the admin contributors list. */}
+            <div className="mt-5" data-testid="leaderboard">
+              <p className="text-sm font-bold mb-2 flex items-center gap-1.5">
+                <Trophy className="w-4 h-4 text-amber-500" /> Leaderboard
+              </p>
+              {summary.topContributors.length > 0 ? (
                 <ol className="space-y-1 text-sm">
                   {summary.topContributors.map((c, i) => (
                     <li key={`${c.name}-${i}`} className="flex justify-between">
                       <span>{["🥇", "🥈", "🥉"][i] ?? `${i + 1}.`} {c.name}</span>
-                      <span className="font-mono font-semibold">{c.cans.toLocaleString()}</span>
+                      <span className="font-mono font-semibold">{c.cans.toLocaleString()} cans</span>
                     </li>
                   ))}
                 </ol>
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-muted-foreground">No names yet. Add your name above to be the first on the leaderboard!</p>
+              )}
+            </div>
 
             <p className="text-xs text-muted-foreground mt-4">
-              Just for fun: there are <b>no grade or individual prizes</b>. The whole school shares the reward.
+              Just for fun: there are <b>no grade or individual prizes</b>. It's a team effort across all our campuses.
             </p>
           </section>
         )}
 
         <div className="text-xs text-center text-muted-foreground mt-6 space-y-1.5">
           <p>Counting ends April 30. The school with the most cans wins!</p>
+          <p>
+            Please leave the scale here for everyone, and don't pull on it or hang from it.
+          </p>
           <p>
             This is a school recycling drive, <b>not a volunteer activity</b>. Can drop-offs don't count toward
             volunteer service hours or awards.

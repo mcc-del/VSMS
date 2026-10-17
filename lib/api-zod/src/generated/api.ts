@@ -1262,7 +1262,7 @@ export const GetRecyclingSummaryResponse = zod.object({
   "topContributors": zod.array(zod.object({
   "name": zod.string(),
   "cans": zod.number()
-})).describe('Top 10 named contributors, shown as first name + last initial.')
+})).describe('Top 20 named contributors (public leaderboard), shown as first name + last initial.')
 })
 
 
@@ -1325,7 +1325,33 @@ export const UndoCanDropoffResponse = zod.object({
   "topContributors": zod.array(zod.object({
   "name": zod.string(),
   "cans": zod.number()
-})).describe('Top 10 named contributors, shown as first name + last initial.')
+})).describe('Top 20 named contributors (public leaderboard), shown as first name + last initial.')
+})
+
+
+/**
+ * @summary Correct the running total to a known figure (super admin)
+ */
+export const SetRecyclingTotalBody = zod.object({
+  "total": zod.number()
+})
+
+export const SetRecyclingTotalResponse = zod.object({
+  "name": zod.string(),
+  "goal": zod.number(),
+  "binSize": zod.number(),
+  "cansPerPound": zod.number(),
+  "gradesEnabled": zod.boolean().describe('The optional grade question and public grade totals are shown. No grade prizes either way.'),
+  "binLoggingEnabled": zod.boolean().describe('Staff \"log a bin\" is allowed. When false, the QR drop-off form is the only input.'),
+  "totalCans": zod.number(),
+  "topGrades": zod.array(zod.object({
+  "grade": zod.string(),
+  "cans": zod.number()
+})),
+  "topContributors": zod.array(zod.object({
+  "name": zod.string(),
+  "cans": zod.number()
+})).describe('Top 20 named contributors (public leaderboard), shown as first name + last initial.')
 })
 
 
@@ -1366,7 +1392,7 @@ export const DeleteCanDropoffResponse = zod.object({
   "topContributors": zod.array(zod.object({
   "name": zod.string(),
   "cans": zod.number()
-})).describe('Top 10 named contributors, shown as first name + last initial.')
+})).describe('Top 20 named contributors (public leaderboard), shown as first name + last initial.')
 })
 
 

@@ -50,7 +50,7 @@ async function summary() {
     .groupBy(recyclingBinsTable.grade)
     .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`));
 
-  // Top named contributors, shown publicly as first name + last initial.
+  // Public leaderboard: top 20 named contributors, as first name + last initial.
   const top = await db
     .select({
       name: sql<string>`(array_agg(${recyclingBinsTable.contributorName} order by ${recyclingBinsTable.createdAt} desc))[1]`,
@@ -60,7 +60,7 @@ async function summary() {
     .where(isNotNull(recyclingBinsTable.contributorName))
     .groupBy(contributorKey)
     .orderBy(desc(sql`sum(${recyclingBinsTable.cans})`))
-    .limit(10);
+    .limit(20);
 
   return {
     name: NAME,
@@ -230,6 +230,40 @@ router.get("/v1/recycling/dropoffs", authenticate, requireRole("admin"), async (
       createdAt: r.createdAt.toISOString(),
     })),
   );
+});
+
+// POST /api/v1/recycling/set-total — Super Admin corrects the running total
+// to a known figure (e.g. after a real weigh-in or the recycler's ticket).
+// Append-only: inserts ONE adjustment row for the difference (may be
+// negative), credited to the whole school with no weight, so it moves the
+// total but not grade or contributor standings (same as
+// lib/db/set-recycling-total.mjs). Audit-logged.
+router.post("/v1/recycling/set-total", authenticate, requireRole("admin"), async (req, res) => {
+  const body = (req.body ?? {}) as { total?: unknown };
+  if (typeof body.total !== "number" || !Number.isFinite(body.total) || body.total < 0) {
+    res.status(400).json({ error: "A total (0 or more) is required." });
+    return;
+  }
+  const target = Math.round(body.total);
+  const [totals] = await db
+    .select({ total: sql<string>`coalesce(sum(${recyclingBinsTable.cans}), 0)` })
+    .from(recyclingBinsTable);
+  const current = Number(totals?.total ?? 0);
+  const delta = target - current;
+
+  if (delta !== 0) {
+    await db.insert(recyclingBinsTable).values({
+      grade: SCHOOL_WIDE,
+      cans: delta,
+      loggedByUserId: req.auth!.userId,
+    });
+    recordAudit({
+      actorUserId: req.auth!.userId,
+      action: "recycling.set_total",
+      summary: `Corrected recycling total from ${current.toLocaleString()} to ${target.toLocaleString()} (adjustment ${delta > 0 ? "+" : ""}${delta.toLocaleString()})`,
+    });
+  }
+  res.json(await summary());
 });
 
 // GET /api/v1/recycling/contributors — everyone who typed a name on the QR
